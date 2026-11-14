@@ -48,7 +48,7 @@ for lane in $LANES; do
     run "Core (macOS)" "$LOG_DIR/core-macos.log" sh -c "cd Packages/Core && swift test"
     ;;
   packages)
-    for package in Core Adapters Presentation AppShell; do
+    for package in Core Adapters Presentation Features AppShell; do
       scheme=$(cd "Packages/$package" && xcodebuild -list 2>/dev/null | sed -n '/Schemes:/,$p' | grep -E "^ +$package(-Package)?$" | tail -1 | tr -d ' ')
       action=build
       grep -q 'testTarget' "Packages/$package/Package.swift" && [ "$package" != Core ] && action=test

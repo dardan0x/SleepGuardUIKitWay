@@ -12,17 +12,17 @@ Last updated: 2026-11-14
 |--------|-------|
 | Features | 10 |
 | Done | 2 |
-| In Progress | 1 |
-| Backlog | 7 |
+| In Progress | 2 |
+| Backlog | 6 |
 | Blocked | 0 |
 | — | — |
 | Total Tasks | 50 |
-| Tasks Done | 19 |
+| Tasks Done | 20 |
 | Tasks In Progress | 0 |
 | Tasks Blocked | 0 |
-| Tasks Backlog | 31 |
+| Tasks Backlog | 30 |
 | — | — |
-| **Progress** | **38%** |
+| **Progress** | **40%** |
 
 ## Features
 
@@ -31,7 +31,7 @@ Last updated: 2026-11-14
 | F0 | Shared repo | P0 | In Progress | 6/6 (0.4.0 release pending) | ██████████ 100% | [tracker](trackers/f0-shared-repo.md) |
 | F1 | Foundation | P0 | Done | 8/8 | ██████████ 100% | [tracker](trackers/f1-foundation.md) |
 | F2 | Domain and persistence | P0 | Done | 5/5 | ██████████ 100% | [tracker](trackers/f2-domain-persistence.md) |
-| F3 | History → Session Detail | P0 | Backlog | 0/5 | ░░░░░░░░░░ 0% | [tracker](trackers/f3-history-session-detail.md) |
+| F3 | History → Session Detail | P0 | In Progress | 1/5 | ██░░░░░░░░ 20% | [tracker](trackers/f3-history-session-detail.md) |
 | F4 | Statistics | P1 | Backlog | 0/4 | ░░░░░░░░░░ 0% | [tracker](trackers/f4-statistics.md) |
 | F5 | Clip playback | P1 | Backlog | 0/3 | ░░░░░░░░░░ 0% | [tracker](trackers/f5-clip-playback.md) |
 | F6 | Design kit adoption in SleepGuard | P2 | Backlog | 0/3 | ░░░░░░░░░░ 0% | [tracker](trackers/f6-design-kit-adoption.md) |
@@ -41,11 +41,11 @@ Last updated: 2026-11-14
 
 ## Currently Active
 
-- None. F2 is complete: merge `feature/f2-domain-persistence` into `main`, then F3.
+- **F3-T2** — Session detail screen.
 
 ## Up Next
 
-1. **F3-T1** — History screen (branch `feature/f3-history-session-detail` from `main`).
+1. **F3-T3** — Composers and `HistoryFlow`: the History tab shows the real list.
 2. **F0** — Shared CI also builds SleepGuardUIKitWay (the open F0-T5 item).
 
 ## Blockers
@@ -64,6 +64,7 @@ Last updated: 2026-11-14
 | 2026-11-14 | F0-T3 | Completed | Owner created and pushed both repos; `SleepGuardShared` made public; tag `0.1.0` |
 | 2026-11-14 | F0-T4 | Completed | SleepGuard depends on `SleepGuardShared` 0.1.0 by URL; `SleepGuard.xcworkspace` overrides it with the local checkout; `bump-shared.sh` |
 | 2026-11-14 | F0-T5 | Completed | Shared-repo CI (tests, strings sync, SleepGuard build); SleepGuard's `strings-sync` removed. Not yet run on GitHub |
+| 2026-11-14 | F3-T1 | Completed | `HistoryFeature` (first feature module): live list by month and day, expand multi-night days, swipe to delete; 4 tests. Branch `feature/f3/t1-history` |
 | 2026-11-14 | F0-T6 | Completed | Night entities and rules moved to `SleepCore` (`Night`, `NightEvent`, `NightEpisode`, `NightSummary`); this app and SleepGuard both use them; SleepGuard's tests unchanged and green. Needs shared 0.4.0 |
 | 2026-11-14 | F2-T5 | Completed | Store wired into the shell in each brand's app group; 14 deterministic Debug sample nights. **F2 done.** Branch `feature/f2/t5-seeder` |
 | 2026-11-14 | F2-T4 | Completed | SwiftData store as a `@ModelActor` (records never leave it), versioned schema, mappers, observation, file store; 9 tests on real SwiftData. Branch `feature/f2/t4-swiftdata` |
