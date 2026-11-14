@@ -4,13 +4,13 @@
 
 | Field | Value |
 |-------|-------|
-| **Status** | In Progress |
+| **Status** | Done |
 | **Priority** | P0 |
 | **Milestone** | M2 |
 | **Blocked By** | — |
 | **Started** | 2026-11-14 |
-| **Completed** | — |
-| **Feature Doc** | — |
+| **Completed** | 2026-11-14 |
+| **Feature Doc** | [f3-history-session-detail.md](../features/f3-history-session-detail.md) |
 
 ## Summary
 
@@ -24,7 +24,7 @@ The user sees their nights grouped by month, opens one, reads its score, timelin
 | F3-T2 | `SessionDetailFeature`: header, timeline, stats grid, event list with category filter | UI | Done | F2 | SessionDetailFeature | Matches the design; loads through `LoadSessionDetail` |
 | F3-T3 | Composers and `HistoryFlow`: push detail, delete then pop | Shell | Done | F3-T1, F3-T2 | AppShell | Flow tests with `NavigatorSpy` |
 | F3-T4 | Events sheet as a UIKit sheet presented by the flow | Shell | Done | F3-T3 | AppShell, SessionDetailFeature | Detents work; dismissal returns to detail |
-| F3-T5 | Timeline, stats grid, legends, event row, score badge and night row in the design kit, fed by view-data structs; UIKitWay's own copies removed | UI | Backlog | F1-T4 | Shared repo | No domain types in the kit; a view change is made once |
+| F3-T5 | Timeline, stats grid, legends, event row, score badge and night row in the design kit, fed by view-data structs; UIKitWay's own copies removed | UI | Done | F1-T4 | Shared repo | No domain types in the kit; a view change is made once |
 
 ## Task Details
 
@@ -65,6 +65,15 @@ The user sees their nights grouped by month, opens one, reads its score, timelin
 - [x] One colour rule for rows and cards (`DetailEventRow.color(in:)`)
 - [x] Tests: flow (present with detents, rows passed through, close dismisses); card render in two themes (reviewed); in-app in each brand: real sheet, detents, close returns to the detail
 - Not here: Play on each card (F5). Card start-time line shrinks to fit (SleepGuard only shrinks the time), since three cards share 390 pt.
+
+### F3-T5 — Detail components in the shared kit (done 2026-11-14; shared 0.6.0)
+- [x] In `SleepGuardDesignKit` (shared): `SessionStatsGrid`, `NightTimeline` + `TimelineMark`, `RecordingGapsBanner`, `LowBatteryBanner`, `EventRow`, `EventCard` (Play/Share only when given), `ScoreBadge`, `NightRow`, `Palette.eventColor(_:intensity:)`; values and `SleepCore` types only. The kit now depends on `SleepCore`.
+- [x] Detail gallery in the kit, rendered in two themes (reviewed); tests for event colours and duration formats
+- [x] UIKitWay uses them; its copies removed (`DetailEventRowView`, `EventCardView`, `HistoryNightRow`, `ScoreBadge`, the header's stat grid)
+- [x] Detail now has the timeline and both banners (SleepGuard's order: header, timeline, banners, filter, events)
+- [x] Formats follow SleepGuard (so F6/F24 brings no visual change there): stat durations "8:24:00"; times use the locale's short time
+- [x] Fixed: the night row showed full dates for a night crossing midnight; now times only
+- Not moved: the two intensity legends (used by Statistics and the player: they move with F4/F5); the expandable day row (built on UIKitWay's day grouping; compare with SleepGuard's in F6/F24).
 
 ## Notes
 

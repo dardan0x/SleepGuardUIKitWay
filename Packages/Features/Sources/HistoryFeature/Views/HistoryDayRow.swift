@@ -37,7 +37,7 @@ struct HistoryDayRow: View {
       if isExpanded {
         Divider().overlay(theme.palette.textTertiary.opacity(0.2)).padding(.horizontal, 16)
         ForEach(day.nights) { night in
-          HistoryNightRow(night: night) { onOpen(night) }
+          NightRow(start: night.start, end: night.end, eventCount: night.eventCount, score: night.score) { onOpen(night) }
         }
         .padding(.bottom, 4)
       }
@@ -72,48 +72,5 @@ struct HistoryDayRow: View {
     } else {
       withAnimation(.easeInOut(duration: 0.2)) { isExpanded.toggle() }
     }
-  }
-}
-
-/// A night inside an expanded day.
-struct HistoryNightRow: View {
-  let night: NightSummary
-  let onOpen: () -> Void
-  @Environment(\.theme) private var theme
-
-  var body: some View {
-    Button(action: onOpen) {
-      HStack(spacing: 12) {
-        VStack(alignment: .leading, spacing: 2) {
-          Text((night.start..<night.end).formatted(.interval.hour().minute()))
-            .font(theme.typography.font(size: 14, weight: .medium))
-            .foregroundStyle(theme.palette.textPrimary)
-          Text(String(format: Strings.recordingsDetailEventsCountFormat, night.eventCount))
-            .font(theme.typography.font(size: 12))
-            .foregroundStyle(theme.palette.textSecondary)
-        }
-        Spacer()
-        ScoreBadge(score: night.score, size: 32)
-      }
-      .padding(.horizontal, 16)
-      .padding(.vertical, 8)
-      .contentShape(Rectangle())
-    }
-    .buttonStyle(.plain)
-  }
-}
-
-/// The score in a circle of its band's colour.
-struct ScoreBadge: View {
-  let score: Int
-  let size: CGFloat
-  @Environment(\.theme) private var theme
-
-  var body: some View {
-    Text("\(score)")
-      .font(.system(size: size * 0.38, weight: .bold, design: .rounded))
-      .foregroundStyle(theme.palette.textPrimary)
-      .frame(width: size, height: size)
-      .background(theme.scoreColor(score), in: .circle)
   }
 }

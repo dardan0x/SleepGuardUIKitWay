@@ -21,7 +21,8 @@ struct SessionDetailRenderTests {
     return theme
   }()
 
-  /// Eight hours: three snoring episodes, sleep talking, a cough.
+  /// Eight hours: three snoring episodes, sleep talking, a cough, a 30-minute
+  /// detection gap, saved on low battery (so both banners show).
   private func detail() -> SessionDetail {
     let start = Date(timeIntervalSinceReferenceDate: 815_000_000)
     func event(_ minute: Double, _ seconds: TimeInterval, _ category: SoundCategory = .snoring, _ intensity: SnoreIntensity = .light) -> NightEvent {
@@ -31,7 +32,7 @@ struct SessionDetailRenderTests {
       event(30, 45, .snoring, .light), event(32, 80, .snoring, .loud),
       event(140, 120, .snoring, .epic), event(200, 12, .sleepTalking, .quiet),
       event(260, 4, .coughing, .quiet), event(400, 60, .snoring, .quiet),
-    ])
+    ], recordingGaps: [RecordingGap(startOffset: 300 * 60, duration: 1800)], endReason: .lowBattery)
     return SessionDetail(session: night, summary: night.summary(), episodes: night.displayableEpisodes)
   }
 
@@ -61,8 +62,8 @@ struct SessionDetailRenderTests {
     #expect(rows.count == 5)
     let render = { (theme: Theme) throws -> Data in
       let view = Grid(horizontalSpacing: 12, verticalSpacing: 12) {
-        GridRow { ForEach(rows.prefix(3)) { EventCardView(row: $0) } }
-        GridRow { ForEach(rows.dropFirst(3)) { EventCardView(row: $0) } }
+        GridRow { ForEach(rows.prefix(3)) { card($0) } }
+        GridRow { ForEach(rows.dropFirst(3)) { card($0) } }
       }
       .padding(16)
       .frame(width: 390)
@@ -79,5 +80,9 @@ struct SessionDetailRenderTests {
       try sleepGuard.write(to: URL(fileURLWithPath: directory).appendingPathComponent("cards-sleepguard.png"))
       try violet.write(to: URL(fileURLWithPath: directory).appendingPathComponent("cards-violet.png"))
     }
+  }
+
+  private func card(_ row: DetailEventRow) -> EventCard {
+    EventCard(start: row.start, duration: row.duration, category: row.category, intensity: row.intensity)
   }
 }
