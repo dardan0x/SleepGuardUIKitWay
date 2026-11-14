@@ -22,7 +22,7 @@ The domain model of a night exists as plain values with its rules tested on macO
 |----|------|------|--------|------------|--------|--------------------|
 | F2-T1 | Entities and values: `SleepSession`, `SnoreEvent`, `SessionSummary`, `SnoringEpisode` | Domain | Done | F1-T3 | SleepDomain | `Sendable` structs; no framework imports |
 | F2-T2 | Policies: episode merging, snoring duration, score inputs, minimum save duration | Domain | Done | F2-T1 | SleepDomain (or `SleepCore` if SleepGuard adopts them) | Same results as SleepGuard's `SessionStatsTests` / `SnoringEpisodeTests` cases |
-| F2-T3 | Ports and use cases: `SessionRepository`, `SessionFileStore`, `DeleteSession`, `LoadSessionDetail`; fakes | Domain | Backlog | F2-T1 | SleepDomain, TestSupport | Use-case tests with fakes on macOS |
+| F2-T3 | Ports and use cases: `SessionRepository`, `SessionFileStore`, `DeleteSession`, `LoadSessionDetail`; fakes | Domain | Done | F2-T1 | SleepDomain, TestSupport | Use-case tests with fakes on macOS |
 | F2-T4 | SwiftData adapter: records, `@ModelActor` store, mappers, `observeSummaries()` | Adapter | Backlog | F2-T3 | SleepPersistence | Round-trip and observation tests against an in-memory store; records never leave the actor |
 | F2-T5 | Debug sample-night seeder | Tooling | Backlog | F2-T4 | SleepPersistence, AppShell | Each brand launches with seeded nights in Debug |
 
@@ -39,6 +39,14 @@ The domain model of a night exists as plain values with its rules tested on macO
 - [x] `SleepSession` metrics: `snoringDuration` (with SleepGuard's gap rule), sleep talking, `eventCount`, `stageStats`, `scoreInputs`, `score(using:)`, `summary(using:)`
 - [x] SleepGuard's `SnoringEpisodeTests`, `SessionStatsTests` and `SleepScoreTests` cases ported with the same numbers: 42 domain tests pass on macOS
 - Moved out: minimum save duration → F7 (saving a night); timeline segments → F3-T5 (the timeline).
+
+### F2-T3 — Ports and use cases (done 2026-11-14)
+- [x] Ports: `SessionRepository` (save with summary, load, delete, `observeSummaries()`), `SessionFileStore`, `SleepStagePort`; `SessionError.notFound`
+- [x] `DeleteSession`: record first, then clips (a failed delete keeps the clips)
+- [x] `LoadSessionDetail`: adds missing stages and re-saves with the new score; a failing stage source still opens the night
+- [x] Fakes (actors) in `SleepDomainTestSupport`: `FakeSessionRepository` (with observation), `FakeSessionFileStore`, `FakeSleepStagePort`
+- [x] Use-case tests with fakes on macOS: 52 domain tests pass
+- Notes: `SleepStagePort` added here because loading a night needs it (no adapter until F8; brands without HealthKit get a port that returns none). `observeSummaries()` is `async` so actor-based stores can implement it.
 
 ## Notes
 
