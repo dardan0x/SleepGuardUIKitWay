@@ -6,7 +6,7 @@ Vertical slices: the architecture and all three brands first, then one complete 
 
 | # | Feature | Status | Tasks | Notes |
 |---|---------|--------|-------|-------|
-| F0 | Shared repo | In Progress | 5/5 | Extracted, released as 0.1.0, consumed by SleepGuard by version with a dev-workspace override, CI written. This app's side follows in F1 |
+| F0 | Shared repo | In Progress | 6/6 | Extracted (0.1.0); versioned with a dev-workspace override; CI; design kit (0.2.0); night entities and rules shared by both apps (F0-T6, 0.4.0) |
 
 ## M1 — Architecture and brands
 

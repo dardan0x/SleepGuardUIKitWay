@@ -6,12 +6,12 @@ import Testing
 
 struct DeleteSessionTests {
   @Test func deletesTheRecordThenItsClips() async throws {
-    var withClip = Night.event(at: 0)
+    var withClip = Sample.event(at: 0)
     withClip.clipFileName = "a.m4a"
-    var otherClip = Night.event(at: 3600)
+    var otherClip = Sample.event(at: 3600)
     otherClip.clipFileName = "b.m4a"
-    let noClip = Night.event(at: 7200, category: .sleepTalking)
-    let session = Night.session(events: [withClip, otherClip, noClip])
+    let noClip = Sample.event(at: 7200, category: .sleepTalking)
+    let session = Sample.night(events: [withClip, otherClip, noClip])
     let repository = FakeSessionRepository([session])
     let files = FakeSessionFileStore()
 
@@ -33,9 +33,9 @@ struct DeleteSessionTests {
 
   /// The record goes first, so a failed delete keeps the clips it points at.
   @Test func failedDeleteKeepsTheClips() async throws {
-    var event = Night.event(at: 0)
+    var event = Sample.event(at: 0)
     event.clipFileName = "a.m4a"
-    let session = Night.session(events: [event])
+    let session = Sample.night(events: [event])
     let repository = FakeSessionRepository([session])
     let files = FakeSessionFileStore()
 
@@ -47,10 +47,10 @@ struct DeleteSessionTests {
     /// Reads succeed; delete throws.
     struct FailingDelete: SessionRepository {
       let wrapping: FakeSessionRepository
-      func save(_: SleepSession, summary _: SessionSummary) async throws {}
-      func session(id: SleepSession.ID) async throws -> SleepSession { try await wrapping.session(id: id) }
-      func delete(id _: SleepSession.ID) async throws { throw DiskFull() }
-      func observeSummaries() async -> AsyncStream<[SessionSummary]> { await wrapping.observeSummaries() }
+      func save(_: Night, summary _: NightSummary) async throws {}
+      func session(id: Night.ID) async throws -> Night { try await wrapping.session(id: id) }
+      func delete(id _: Night.ID) async throws { throw DiskFull() }
+      func observeSummaries() async -> AsyncStream<[NightSummary]> { await wrapping.observeSummaries() }
     }
   }
 }
@@ -61,10 +61,10 @@ struct LoadSessionDetailTests {
   ]
 
   @Test func returnsTheNightItsSummaryAndDisplayableEpisodes() async throws {
-    let session = Night.session(events: [
-      Night.event(at: 0, duration: 60),
-      Night.event(at: 120, duration: 60), // same episode
-      Night.event(at: 3600, duration: 1), // hidden
+    let session = Sample.night(events: [
+      Sample.event(at: 0, duration: 60),
+      Sample.event(at: 120, duration: 60), // same episode
+      Sample.event(at: 3600, duration: 1), // hidden
     ])
     let load = LoadSessionDetail(sessions: FakeSessionRepository([session]), sleepStages: FakeSleepStagePort())
 
@@ -77,7 +77,7 @@ struct LoadSessionDetailTests {
 
   /// Light sleep only: −15 for missing deep and REM (see SessionMetricsTests).
   @Test func addsMissingStagesAndSavesTheNewScore() async throws {
-    let session = Night.session()
+    let session = Sample.night()
     let repository = FakeSessionRepository([session])
     let port = FakeSleepStagePort(stages: stages)
 
@@ -92,7 +92,7 @@ struct LoadSessionDetailTests {
   }
 
   @Test func nightWithStagesIsNotFetchedAgain() async throws {
-    let session = Night.session(stages: stages)
+    let session = Sample.night(stages: stages)
     let repository = FakeSessionRepository([session])
     let port = FakeSleepStagePort(stages: stages)
 
@@ -103,7 +103,7 @@ struct LoadSessionDetailTests {
   }
 
   @Test func noStagesAvailableChangesNothing() async throws {
-    let session = Night.session()
+    let session = Sample.night()
     let repository = FakeSessionRepository([session])
 
     let detail = try await LoadSessionDetail(sessions: repository, sleepStages: FakeSleepStagePort())(session.id)
@@ -113,7 +113,7 @@ struct LoadSessionDetailTests {
   }
 
   @Test func failingStageSourceStillOpensTheNight() async throws {
-    let session = Night.session()
+    let session = Sample.night()
     let load = LoadSessionDetail(
       sessions: FakeSessionRepository([session]),
       sleepStages: FakeSleepStagePort(fails: true))
@@ -130,8 +130,8 @@ struct LoadSessionDetailTests {
 struct FakeSessionRepositoryTests {
   /// Observers get the current list first, then every change, newest night first.
   @Test func observeSummariesYieldsCurrentThenChanges() async throws {
-    let older = Night.session()
-    let newer = SleepSession(start: Night.at(86400), end: Night.at(86400 + 3600))
+    let older = Sample.night()
+    let newer = Night(start: Sample.at(86400), end: Sample.at(86400 + 3600))
     let repository = FakeSessionRepository([older])
     var updates = await repository.observeSummaries().makeAsyncIterator()
 

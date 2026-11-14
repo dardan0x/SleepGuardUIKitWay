@@ -4,7 +4,7 @@ import SleepDomain
 import SwiftData
 
 /// A stored night. Internal: only `SwiftDataSessionStore` touches records;
-/// everything else sees `SleepSession` / `SessionSummary` values.
+/// everything else sees `Night` / `NightSummary` values.
 ///
 /// Schema rules (same as SleepGuard): add properties with defaults, never rename
 /// or remove one. Enums are stored as raw strings so a value written by a newer
@@ -18,7 +18,7 @@ final class SessionRecord {
   var end = Date.distantPast
   var averageDB = 0.0
   var peakDB = 0.0
-  var endReason = SleepSession.EndReason.stopped.rawValue
+  var endReason = Night.EndReason.stopped.rawValue
   var recordingGaps: [RecordingGap] = []
   var sleepStages: [SleepStageSegment] = []
 

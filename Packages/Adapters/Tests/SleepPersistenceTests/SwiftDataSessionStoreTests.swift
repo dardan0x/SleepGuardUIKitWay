@@ -9,16 +9,16 @@ import Testing
 struct SwiftDataSessionStoreTests {
   private let start = Date(timeIntervalSinceReferenceDate: 23 * 3600)
 
-  private func event(at seconds: TimeInterval, category: SoundCategory = .snoring, clip: String? = nil) -> SnoreEvent {
-    SnoreEvent(
+  private func event(at seconds: TimeInterval, category: SoundCategory = .snoring, clip: String? = nil) -> NightEvent {
+    NightEvent(
       start: start.addingTimeInterval(seconds), duration: 60, category: category, intensity: .loud,
       averageDB: -30, peakDB: -20, averageConfidence: 0.8,
       bursts: [SnoreBurst(startOffset: 0, endOffset: 20), SnoreBurst(startOffset: 30, endOffset: 55)],
       clipFileName: clip)
   }
 
-  private func night(events: [SnoreEvent] = [], startOffset: TimeInterval = 0) -> SleepSession {
-    SleepSession(
+  private func night(events: [NightEvent] = [], startOffset: TimeInterval = 0) -> Night {
+    Night(
       start: start.addingTimeInterval(startOffset), end: start.addingTimeInterval(startOffset + 8 * 3600),
       averageDB: -42, peakDB: -12, events: events,
       recordingGaps: [RecordingGap(startOffset: 600, duration: 30, snoringResumed: false)],

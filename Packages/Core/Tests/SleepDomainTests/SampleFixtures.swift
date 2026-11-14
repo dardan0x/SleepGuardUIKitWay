@@ -3,20 +3,20 @@ import SleepCore
 @testable import SleepDomain
 
 /// Same defaults as SleepGuard's test fixtures, so ported cases keep their numbers.
-enum Night {
+enum Sample {
   static let start = Date(timeIntervalSinceReferenceDate: 23 * 3600)
 
   static func at(_ seconds: TimeInterval) -> Date {
     start.addingTimeInterval(seconds)
   }
 
-  static func session(
+  static func night(
     hours: Double = 8,
-    events: [SnoreEvent] = [],
+    events: [NightEvent] = [],
     gaps: [RecordingGap] = [],
-    stages: [SleepStageSegment] = []) -> SleepSession
+    stages: [SleepStageSegment] = []) -> Night
   {
-    SleepSession(
+    Night(
       start: start, end: start.addingTimeInterval(hours * 3600),
       events: events, recordingGaps: gaps, sleepStages: stages)
   }
@@ -28,9 +28,9 @@ enum Night {
     category: SoundCategory = .snoring,
     averageDB: Double = -35,
     peakDB: Double = -25,
-    bursts: [SnoreBurst] = []) -> SnoreEvent
+    bursts: [SnoreBurst] = []) -> NightEvent
   {
-    SnoreEvent(
+    NightEvent(
       start: at(seconds), duration: duration, category: category, intensity: intensity,
       averageDB: averageDB, peakDB: peakDB, bursts: bursts)
   }

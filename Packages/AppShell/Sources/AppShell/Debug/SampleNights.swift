@@ -8,7 +8,7 @@ import SleepDomain
 /// on every run and every device, which keeps screenshots stable.
 enum SampleNights {
   /// `count` nights, newest first, the newest starting the evening before `today`.
-  static func make(count: Int = 14, before today: Date = .now, calendar: Calendar = .current) -> [SleepSession] {
+  static func make(count: Int = 14, before today: Date = .now, calendar: Calendar = .current) -> [Night] {
     var random = SeededRandom(seed: 0x5EED)
     let midnight = calendar.startOfDay(for: today)
     return (1...count).map { daysBack in
@@ -28,16 +28,16 @@ enum SampleNights {
 
   // MARK: - Generation
 
-  private static func night(starting base: Date, index: Int, random: inout SeededRandom) -> SleepSession {
+  private static func night(starting base: Date, index: Int, random: inout SeededRandom) -> Night {
     let start = base.addingTimeInterval(Double.random(in: 0...5400, using: &random))
     let duration = Double.random(in: 5.5...9, using: &random) * 3600
 
-    var events: [SnoreEvent] = []
+    var events: [NightEvent] = []
     for _ in 0..<Int.random(in: 0...6, using: &random) {
       events += episode(at: Double.random(in: 1800...(duration - 3600), using: &random), from: start, random: &random)
     }
     for _ in 0..<Int.random(in: 0...3, using: &random) {
-      events.append(SnoreEvent(
+      events.append(NightEvent(
         id: random.uuid(),
         start: start.addingTimeInterval(Double.random(in: 600...(duration - 600), using: &random)),
         duration: Double.random(in: 5...20, using: &random),
@@ -52,7 +52,7 @@ enum SampleNights {
         snoringResumed: random.chance(0.5))]
       : []
 
-    return SleepSession(
+    return Night(
       id: random.uuid(),
       start: start,
       end: start.addingTimeInterval(duration),
@@ -64,14 +64,14 @@ enum SampleNights {
   }
 
   /// One to four snoring events a few minutes apart: one episode.
-  private static func episode(at offset: TimeInterval, from start: Date, random: inout SeededRandom) -> [SnoreEvent] {
-    var events: [SnoreEvent] = []
+  private static func episode(at offset: TimeInterval, from start: Date, random: inout SeededRandom) -> [NightEvent] {
+    var events: [NightEvent] = []
     var cursor = offset
     for _ in 0..<Int.random(in: 1...4, using: &random) {
       let duration = Double.random(in: 8...90, using: &random)
       let intensity: SnoreIntensity = [.quiet, .light, .light, .loud, .loud, .epic][Int.random(in: 0...5, using: &random)]
       let firstBurst = duration * Double.random(in: 0.3...0.6, using: &random)
-      events.append(SnoreEvent(
+      events.append(NightEvent(
         id: random.uuid(),
         start: start.addingTimeInterval(cursor),
         duration: duration,

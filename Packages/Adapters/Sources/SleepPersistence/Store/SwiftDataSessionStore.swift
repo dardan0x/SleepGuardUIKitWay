@@ -1,4 +1,5 @@
 import Foundation
+import SleepCore
 import SleepDomain
 import SwiftData
 
@@ -12,9 +13,9 @@ import SwiftData
 /// list to its observers, rather than watching the context from outside.
 @ModelActor
 actor SwiftDataSessionStore: SessionRepository {
-  private var observers: [UUID: AsyncStream<[SessionSummary]>.Continuation] = [:]
+  private var observers: [UUID: AsyncStream<[NightSummary]>.Continuation] = [:]
 
-  func save(_ session: SleepSession, summary: SessionSummary) async throws {
+  func save(_ session: Night, summary: NightSummary) async throws {
     let record = try record(id: session.id) ?? {
       let record = SessionRecord(id: session.id)
       modelContext.insert(record)
@@ -26,20 +27,20 @@ actor SwiftDataSessionStore: SessionRepository {
     try publish()
   }
 
-  func session(id: SleepSession.ID) async throws -> SleepSession {
+  func session(id: Night.ID) async throws -> Night {
     guard let record = try record(id: id) else { throw SessionError.notFound(id) }
-    return record.session
+    return record.night
   }
 
-  func delete(id: SleepSession.ID) async throws {
+  func delete(id: Night.ID) async throws {
     guard let record = try record(id: id) else { throw SessionError.notFound(id) }
     modelContext.delete(record) // events cascade
     try modelContext.save()
     try publish()
   }
 
-  func observeSummaries() async -> AsyncStream<[SessionSummary]> {
-    let (stream, continuation) = AsyncStream.makeStream(of: [SessionSummary].self)
+  func observeSummaries() async -> AsyncStream<[NightSummary]> {
+    let (stream, continuation) = AsyncStream.makeStream(of: [NightSummary].self)
     let key = UUID()
     observers[key] = continuation
     continuation.onTermination = { [weak self] _ in
@@ -58,7 +59,7 @@ actor SwiftDataSessionStore: SessionRepository {
   }
 
   /// Events are replaced wholesale: a saved night's events are a value.
-  private func replaceEvents(of record: SessionRecord, with events: [SnoreEvent]) {
+  private func replaceEvents(of record: SessionRecord, with events: [NightEvent]) {
     for old in record.events {
       modelContext.delete(old)
     }
@@ -70,7 +71,7 @@ actor SwiftDataSessionStore: SessionRepository {
     }
   }
 
-  private func summaries() throws -> [SessionSummary] {
+  private func summaries() throws -> [NightSummary] {
     try modelContext.fetch(FetchDescriptor<SessionRecord>(sortBy: [SortDescriptor(\.start, order: .reverse)])).map(\.summary)
   }
 
