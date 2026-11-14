@@ -1,0 +1,18 @@
+.DS_Store
+
+# Xcode / SwiftPM
+build/
+DerivedData/
+.build/
+.swiftpm/
+xcuserdata/
+*.xcuserstate
+
+# Tuist: the project and workspace are generated from Project.swift
+*.xcodeproj
+*.xcworkspace
+Derived/
+Tuist/.build/
+
+# Generated docs
+docs/SESSION_SUMMARY.md
