@@ -21,7 +21,7 @@ Three branded apps build from one codebase and launch into an empty, themed tab 
 | ID | Task | Type | Status | Depends On | Module | Started | Completed |
 |----|------|------|--------|------------|--------|---------|-----------|
 | F1-T1 | Repo docs and agent setup | Docs | Done | — | — | 2026-11-14 | 2026-11-14 |
-| F1-T2 | Tuist project; three brand app targets that launch | Infra | Backlog | — | Apps, Tuist | — | — |
+| F1-T2 | Tuist project; three brand app targets that launch | Infra | Done | — | Apps, Tuist | 2026-11-14 | 2026-11-14 |
 | F1-T3 | Package skeletons with Swift 6 settings | Infra | Backlog | F1-T2 | Packages | — | — |
 | F1-T4 | `SleepGuardDesignKit`: `Theme`, environment key, primitive components | UI | Backlog | — | Shared repo | — | — |
 | F1-T5 | `ScreenKit`: `HostingScreen`, `ScreenChrome`, `Navigator` | UI | Backlog | F1-T3, F1-T4 | ScreenKit | — | — |
@@ -47,11 +47,18 @@ Three branded apps build from one codebase and launch into an empty, themed tab 
 | Arch Ref | `brands.md`, `modules.md` |
 
 **Acceptance Criteria:**
-- [ ] `Project.swift` builds app targets from one brand list in `Tuist/ProjectDescriptionHelpers`
-- [ ] `SleepGuard`, `SleepGuardLite`, `Nocturne` each have their own bundle id, display name, icon, launch colour, entitlements
-- [ ] Swift 6 language mode on all three
-- [ ] `tuist generate` succeeds; each scheme builds and launches on the pinned simulator
-- [ ] Generated project and workspace are git-ignored
+- [x] `Project.swift` builds app targets from `Brand.all` in `Tuist/ProjectDescriptionHelpers`
+- [x] `SleepGuard`, `SleepGuardLite`, `Nocturne` each have their own bundle id, display name, icon, launch colour, entitlements
+- [x] Swift 6 language mode on all three (`SWIFT_VERSION` 6.0, complete checking, `MainActor` default isolation)
+- [x] `tuist generate` succeeds; each scheme builds and launches on the pinned simulator
+- [x] Generated project and workspace are git-ignored
+
+**Notes:**
+- Tuist 4.55.5. No per-brand xcconfig: the brand list entry holds the build-time identity, so an xcconfig would only duplicate it. Docs updated.
+- Entitlements checked in the build output: SleepGuard and Nocturne have HealthKit + their app group; Lite only its app group.
+- Icons are generated placeholders (accent circle on the brand background).
+- Root screen is a temporary `PlaceholderViewController` showing the display name in the brand accent; it goes in F1-T6.
+- The build signed with the team Xcode found automatically (`application-identifier` has a team prefix). No team is set in the project; device builds will need one.
 
 ### F1-T3 — Package skeletons
 
