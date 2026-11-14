@@ -4,13 +4,13 @@
 
 | Field | Value |
 |-------|-------|
-| **Status** | In Progress |
+| **Status** | Done |
 | **Priority** | P0 |
 | **Milestone** | M1 |
 | **Blocked By** | — |
 | **Started** | 2026-11-14 |
-| **Completed** | — |
-| **Feature Doc** | — |
+| **Completed** | 2026-11-14 |
+| **Feature Doc** | [f2-domain-persistence](../features/f2-domain-persistence.md) |
 
 ## Summary
 
@@ -24,7 +24,7 @@ The domain model of a night exists as plain values with its rules tested on macO
 | F2-T2 | Policies: episode merging, snoring duration, score inputs, minimum save duration | Domain | Done | F2-T1 | SleepDomain (or `SleepCore` if SleepGuard adopts them) | Same results as SleepGuard's `SessionStatsTests` / `SnoringEpisodeTests` cases |
 | F2-T3 | Ports and use cases: `SessionRepository`, `SessionFileStore`, `DeleteSession`, `LoadSessionDetail`; fakes | Domain | Done | F2-T1 | SleepDomain, TestSupport | Use-case tests with fakes on macOS |
 | F2-T4 | SwiftData adapter: records, `@ModelActor` store, mappers, `observeSummaries()` | Adapter | Done | F2-T3 | SleepPersistence | Round-trip and observation tests against an in-memory store; records never leave the actor |
-| F2-T5 | Debug sample-night seeder | Tooling | Backlog | F2-T4 | SleepPersistence, AppShell | Each brand launches with seeded nights in Debug |
+| F2-T5 | Debug sample-night seeder | Tooling | Done | F2-T4 | SleepPersistence, AppShell | Each brand launches with seeded nights in Debug |
 
 ## Task Details
 
@@ -57,6 +57,14 @@ The domain model of a night exists as plain values with its rules tested on macO
 - [x] Public surface: `SleepPersistence.makeSessionRepository(storeURL:)`, `makeSessionFileStore(directory:)`
 - [x] 9 tests against real SwiftData (in memory, and on disk for reopening), run standalone on the simulator
 - Notes: no `@Attribute(.unique)` on ids (keeps CloudKit possible; the actor serializes saves). Not wired into `AppShell` yet: the first consumer is the seeder (T5) and the History screen (F3).
+
+### F2-T5 — Store wiring and sample nights (done 2026-11-14)
+- [x] `StorageLocation`: the brand's app group container (id from Info.plist), Application Support as fallback; `Nights.store` and `Clips/`
+- [x] Container: `storageLocation`, `sessionRepository` (a store that can't open falls back to memory for that launch and logs a fault; the file is never deleted), `sessionFileStore`
+- [x] `SampleNights` (Debug only): 14 deterministic nights (fixed seed, ids included), varied snoring, sleep talking, gaps, stages, one low-battery night; seeded only into an empty store, by `AppCoordinator` at launch
+- [x] Tests: 6 shell tests (sample nights valid, varied, deterministic; seeding only when empty; storage fallback) and, in each brand's app, registrations resolve and the Debug launch has sample nights
+- [x] Each brand launches with seeded nights in Debug: confirmed in each brand's app group on the simulator
+- Notes: `DeleteSession` / `LoadSessionDetail` are not registered yet; their first consumer is F3.
 
 ## Notes
 
