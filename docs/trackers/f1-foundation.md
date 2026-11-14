@@ -23,7 +23,7 @@ Three branded apps build from one codebase and launch into an empty, themed tab 
 | F1-T1 | Repo docs and agent setup | Docs | Done | — | — | 2026-11-14 | 2026-11-14 |
 | F1-T2 | Tuist project; three brand app targets that launch | Infra | Done | — | Apps, Tuist | 2026-11-14 | 2026-11-14 |
 | F1-T3 | Package skeletons with Swift 6 settings | Infra | Done | F1-T2 | Packages | 2026-11-14 | 2026-11-14 |
-| F1-T4 | `SleepGuardDesignKit`: `Theme`, environment key, primitive components | UI | Backlog | — | Shared repo | — | — |
+| F1-T4 | `SleepGuardDesignKit`: `Theme`, environment key, primitive components | UI | Done | — | Shared repo | 2026-11-14 | 2026-11-14 |
 | F1-T5 | `ScreenKit`: `HostingScreen`, `ScreenChrome`, `Navigator` | UI | Backlog | F1-T3, F1-T4 | ScreenKit | — | — |
 | F1-T6 | `AppShell`: `BrandComposition`, bootstrap, container, `AppCoordinator`, tab shell | Shell | Backlog | F1-T5 | AppShell | — | — |
 | F1-T7 | Three brands: configuration, theme, capabilities, assets; bootstrap test | Brand | Backlog | F1-T6 | Apps, AppShell | — | — |
@@ -87,11 +87,19 @@ Three branded apps build from one codebase and launch into an empty, themed tab 
 | Arch Ref | `brands.md` |
 
 **Acceptance Criteria:**
-- [ ] `SleepGuardDesignKit` product in the shared repo: `Theme` (`Palette`, `Typography`, `Radii`), `@Environment(\.theme)`
-- [ ] Default palette equals SleepGuard's tokens
-- [ ] Primitive components with no domain types: stat card, score gauge, mini bar chart, level meter, buttons, sheet header, button style
-- [ ] Re-exports `SleepStrings` (`@_exported import`); no dependency on `Models` or Factory
-- [ ] Previews render in at least two themes
+- [x] `SleepGuardDesignKit` product in the shared repo: `Theme` (`Palette`, `Typography`, `Radii`) as a `Sendable` value, `@Environment(\.theme)` defaulting to `Theme.sleepGuard`
+- [x] Default palette equals SleepGuard's `Theme.swift` tokens
+- [x] Components with no domain types: `StatCard`, `SleepScoreGauge`, `MiniBarChart`, `AudioLevelMeter`, `SheetHandle`, `SheetNavHeader`, `ScaleButtonStyle`, `RecordingActionButton`, `StartRecordingButton`, `StopRecordingButton`
+- [x] Re-exports `SleepStrings`; no dependency on `Models`, Factory or `SleepCore`
+- [x] Renders in two themes: render tests draw a gallery of every component with `Theme.sleepGuard` and a deliberately different theme, and check the renders differ; both images reviewed by eye
+
+**Notes:**
+- Ported from SleepGuard's `DesignSystem` with `@Injected(\.theme)` → `@Environment(\.theme)`. The hard-coded hex colours in the recording buttons and sheet handle now use tokens (`destructive`, `bgCard`, `textTertiary`), which is what lets a brand restyle them.
+- Text fonts go through `theme.typography.font(size:weight:)`; large numbers stay `.rounded` in every theme.
+- **Token mismatch in SleepGuard:** its `CLAUDE.md` lists `bg-card` = `#2C2C2E`, its `Theme.swift` uses `#22232B` (as `surface2`). The kit takes the code's value. Needs a decision against `designs/SleepGuard.pen`.
+- Not verified against the `.pen` design file in this task: the components are ported unchanged in layout, so they match SleepGuard as it ships today.
+- Released as `0.2.0` only after the shared PR is merged; this app adopts it in F1-T5.
+- Unchanged in SleepGuard: it doesn't use the kit until F6. Its dev workspace still builds against the shared branch.
 
 ### F1-T5 — ScreenKit
 
