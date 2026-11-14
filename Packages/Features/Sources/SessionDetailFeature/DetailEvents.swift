@@ -25,15 +25,16 @@ enum EventFilter: CaseIterable, Hashable {
   }
 }
 
-/// One row in the event list.
-struct DetailEventRow: Identifiable, Equatable {
+/// One row in the event list. Public so "Show all" can hand the rows on
+/// screen to the events sheet; only this module creates them.
+public struct DetailEventRow: Identifiable, Equatable, Sendable {
   /// The event that plays when the row is tapped (an episode's representative).
-  let id: UUID
-  let start: Date
+  public let id: UUID
+  public let start: Date
   /// For snoring, the whole episode's summed event time.
-  let duration: TimeInterval
-  let category: SoundCategory
-  let intensity: SnoreIntensity
+  public let duration: TimeInterval
+  public let category: SoundCategory
+  public let intensity: SnoreIntensity
 
   /// Snoring is shown per displayable episode (keyed by its representative
   /// event), every other event on its own. Time order. Same rule as SleepGuard.

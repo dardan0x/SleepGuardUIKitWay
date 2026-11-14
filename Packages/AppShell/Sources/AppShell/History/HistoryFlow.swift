@@ -37,7 +37,14 @@ final class HistoryFlow: TabFlow {
     navigator.push(detail.make(
       night: night,
       onDelete: { [weak self] in self?.confirmDeleting(night.id) },
-      routes: SessionDetailRoutes(showAllEvents: {})))
+      routes: SessionDetailRoutes(showAllEvents: { [weak self] rows in self?.showEvents(rows) })))
+  }
+
+  /// Medium and large detents; the close button dismisses it.
+  private func showEvents(_ rows: [DetailEventRow]) {
+    navigator.present(
+      detail.makeEventsSheet(rows: rows, onClose: { [weak self] in self?.navigator.dismiss() }),
+      style: .sheet(detents: [.medium, .large]))
   }
 
   private func confirmDeleting(_ id: Night.ID) {

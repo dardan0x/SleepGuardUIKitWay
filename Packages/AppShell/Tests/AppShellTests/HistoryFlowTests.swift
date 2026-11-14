@@ -1,7 +1,6 @@
 import AppShellTestSupport
 import FactoryKit
 import Foundation
-import SessionDetailFeature
 import SleepCore
 import SleepDomain
 import SleepDomainTestSupport
@@ -11,6 +10,7 @@ import UIKit
 @testable import AppShell
 @testable import HistoryFeature
 @testable import ScreenKit
+@testable import SessionDetailFeature
 
 struct HistoryFlowTests {
   private let night = Night(
@@ -76,6 +76,42 @@ struct HistoryFlowTests {
     #expect(alert.actions.map(\.title) == [Strings.actionCancel, Strings.actionDelete])
     #expect(alert.actions.map(\.style) == [.cancel, .destructive])
     #expect(await repository.deletedIDs.isEmpty)
+  }
+
+  /// "Show all" presents the rows it was given in a sheet; close dismisses it.
+  @Test func showAllPresentsTheEventsSheet() throws {
+    let start = night.start
+    let events = [
+      NightEvent(start: start.addingTimeInterval(600), duration: 60, category: .snoring, intensity: .loud),
+      NightEvent(start: start.addingTimeInterval(3600), duration: 10, category: .sleepTalking, intensity: .quiet),
+    ]
+    let noisy = Night(start: start, end: night.end, events: events)
+    let rows = DetailEventRow.make(episodes: noisy.displayableEpisodes, events: noisy.events, filter: .all)
+    let (flow, spy, _) = makeFlow([noisy])
+    flow.start()
+    try #require(rootList(spy)).rootView.content.routes.openNight(noisy.summary())
+    guard case let .push(pushed) = spy.calls.last else {
+      Issue.record("expected push, got \(spy.calls)")
+      return
+    }
+    let detail = try #require(pushed as? HostingScreen<SessionDetailScreen>)
+
+    detail.rootView.content.routes.showAllEvents(rows)
+
+    guard case let .present(presented, style) = spy.calls.last else {
+      Issue.record("expected present, got \(spy.calls)")
+      return
+    }
+    #expect(style == .sheet(detents: [.medium, .large]))
+    let navigation = try #require(presented as? UINavigationController)
+    let sheet = try #require(navigation.viewControllers.first as? HostingScreen<EventsSheetScreen>)
+    #expect(sheet.rootView.content.rows == rows)
+    #expect(sheet.navigationItem.title == Strings.recordingsDetailEventsLabel)
+    let close = try #require(sheet.navigationItem.rightBarButtonItems?.first)
+    #expect(close.accessibilityLabel == Strings.actionClose)
+
+    close.primaryAction?.performWithSender(nil, target: nil)
+    #expect(spy.calls.last == .dismiss)
   }
 
   @Test func deletingANightRemovesItThenPops() async {

@@ -36,4 +36,18 @@ struct SessionDetailComposer {
         title: night.start.formatted(.dateTime.weekday(.wide).month(.abbreviated).day()),
         trailingItems: [BarItem(systemImage: "trash", accessibilityLabel: Strings.actionDelete, action: onDelete)]))
   }
+
+  /// The events sheet in its own navigation controller, for its title bar.
+  func makeEventsSheet(rows: [DetailEventRow], onClose: @escaping @MainActor () -> Void) -> UIViewController {
+    let theme = container.theme()
+    let screen = HostingScreen(
+      rootView: EventsSheetScreen(rows: rows),
+      theme: theme,
+      chrome: ScreenChrome(
+        title: Strings.recordingsDetailEventsLabel,
+        trailingItems: [BarItem(systemImage: "xmark.circle.fill", accessibilityLabel: Strings.actionClose, action: onClose)]))
+    let navigation = UINavigationController(rootViewController: screen)
+    Appearance.apply(theme, to: navigation.navigationBar)
+    return navigation
+  }
 }

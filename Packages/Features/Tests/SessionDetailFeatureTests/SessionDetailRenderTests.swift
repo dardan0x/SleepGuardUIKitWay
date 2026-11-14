@@ -37,7 +37,7 @@ struct SessionDetailRenderTests {
 
   @Test func contentFollowsTheTheme() throws {
     let render = { (theme: Theme) throws -> Data in
-      let view = SessionDetailContent(detail: detail(), onShowAll: {})
+      let view = SessionDetailContent(detail: detail(), onShowAll: { _ in })
         .frame(width: 390)
         .background(theme.palette.bgPrimary)
         .environment(\.theme, theme)
@@ -51,6 +51,33 @@ struct SessionDetailRenderTests {
     if let directory = ProcessInfo.processInfo.environment["DETAIL_RENDER_DIR"] {
       try sleepGuard.write(to: URL(fileURLWithPath: directory).appendingPathComponent("detail-sleepguard.png"))
       try violet.write(to: URL(fileURLWithPath: directory).appendingPathComponent("detail-violet.png"))
+    }
+  }
+
+  /// The events sheet's cards (a plain grid: `ImageRenderer` can't draw a lazy one).
+  @Test func eventCardsFollowTheTheme() throws {
+    let detail = detail()
+    let rows = DetailEventRow.make(episodes: detail.episodes, events: detail.session.events, filter: .all)
+    #expect(rows.count == 5)
+    let render = { (theme: Theme) throws -> Data in
+      let view = Grid(horizontalSpacing: 12, verticalSpacing: 12) {
+        GridRow { ForEach(rows.prefix(3)) { EventCardView(row: $0) } }
+        GridRow { ForEach(rows.dropFirst(3)) { EventCardView(row: $0) } }
+      }
+      .padding(16)
+      .frame(width: 390)
+      .background(theme.palette.bgPrimary)
+      .environment(\.theme, theme)
+      let renderer = ImageRenderer(content: view)
+      renderer.scale = 2
+      return try #require(renderer.uiImage?.pngData())
+    }
+    let sleepGuard = try render(.sleepGuard)
+    let violet = try render(Self.violet)
+    #expect(sleepGuard != violet)
+    if let directory = ProcessInfo.processInfo.environment["DETAIL_RENDER_DIR"] {
+      try sleepGuard.write(to: URL(fileURLWithPath: directory).appendingPathComponent("cards-sleepguard.png"))
+      try violet.write(to: URL(fileURLWithPath: directory).appendingPathComponent("cards-violet.png"))
     }
   }
 }

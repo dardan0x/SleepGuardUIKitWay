@@ -17,12 +17,12 @@ Last updated: 2026-11-14
 | Blocked | 0 |
 | — | — |
 | Total Tasks | 51 |
-| Tasks Done | 22 |
+| Tasks Done | 23 |
 | Tasks In Progress | 0 |
 | Tasks Blocked | 0 |
-| Tasks Backlog | 29 |
+| Tasks Backlog | 28 |
 | — | — |
-| **Progress** | **43%** |
+| **Progress** | **45%** |
 
 ## Features
 
@@ -31,7 +31,7 @@ Last updated: 2026-11-14
 | F0 | Shared repo | P0 | In Progress | 6/6 (0.4.0 release pending) | ██████████ 100% | [tracker](trackers/f0-shared-repo.md) |
 | F1 | Foundation | P0 | Done | 8/8 | ██████████ 100% | [tracker](trackers/f1-foundation.md) |
 | F2 | Domain and persistence | P0 | Done | 5/5 | ██████████ 100% | [tracker](trackers/f2-domain-persistence.md) |
-| F3 | History → Session Detail | P0 | In Progress | 3/5 | ██████░░░░ 60% | [tracker](trackers/f3-history-session-detail.md) |
+| F3 | History → Session Detail | P0 | In Progress | 4/5 | ████████░░ 80% | [tracker](trackers/f3-history-session-detail.md) |
 | F4 | Statistics | P1 | Backlog | 0/4 | ░░░░░░░░░░ 0% | [tracker](trackers/f4-statistics.md) |
 | F5 | Clip playback | P1 | Backlog | 0/3 | ░░░░░░░░░░ 0% | [tracker](trackers/f5-clip-playback.md) |
 | F6 | Design kit adoption in SleepGuard | P2 | Backlog | 0/4 | ░░░░░░░░░░ 0% | [tracker](trackers/f6-design-kit-adoption.md) |
@@ -41,11 +41,11 @@ Last updated: 2026-11-14
 
 ## Currently Active
 
-- **F3-T4** — Events sheet.
+- **F3-T5** — Timeline, stats grid, legends and rows into the design kit.
 
 ## Up Next
 
-1. **F3-T5** — Timeline, stats grid and legend into the design kit.
+1. **F4** — Statistics.
 2. **F0** — Shared CI also builds SleepGuardUIKitWay (the open F0-T5 item).
 
 ## Blockers
@@ -64,6 +64,7 @@ Last updated: 2026-11-14
 | 2026-11-14 | F0-T3 | Completed | Owner created and pushed both repos; `SleepGuardShared` made public; tag `0.1.0` |
 | 2026-11-14 | F0-T4 | Completed | SleepGuard depends on `SleepGuardShared` 0.1.0 by URL; `SleepGuard.xcworkspace` overrides it with the local checkout; `bump-shared.sh` |
 | 2026-11-14 | F0-T5 | Completed | Shared-repo CI (tests, strings sync, SleepGuard build); SleepGuard's `strings-sync` removed. Not yet run on GitHub |
+| 2026-11-14 | F3-T4 | Completed | Events sheet: card grid for the current filter, UIKit sheet (medium/large) from `HistoryFlow`, close dismisses. Branch `feature/f3/t4-events-sheet` |
 | 2026-11-14 | F6 | Planned | Design kit adoption detailed (4 tasks) and mirrored in SleepGuard as F24; no longer waits for F4. F3-T5 widened: event row, score badge, night row also move to the kit. Rule: values-only views go in the kit |
 | 2026-11-14 | F3-T3 | Completed | Sessions tab live: `HistoryFlow`, composers, delete with confirmation then pop; inline list title. Shared bumped to 0.5.0. Branch `feature/f3/t3-history-flow` |
 | 2026-11-14 | F3-T2 | Completed | `SessionDetailFeature`: header with gauge and stats, category filter, episode-collapsed event rows; 5 tests. Branch `feature/f3/t2-session-detail` |

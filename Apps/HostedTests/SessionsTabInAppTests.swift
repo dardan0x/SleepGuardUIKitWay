@@ -1,6 +1,5 @@
 import FactoryKit
 import Foundation
-import SessionDetailFeature
 import SleepCore
 import SleepDomain
 import Testing
@@ -8,6 +7,7 @@ import UIKit
 @testable import AppShell
 @testable import HistoryFeature
 @testable import ScreenKit
+@testable import SessionDetailFeature
 
 /// The Sessions tab inside the running app: the real flow, navigation stack
 /// and store (Debug sample nights). Set `TEST_RUNNER_SCREENSHOT_DIR` to save
@@ -32,7 +32,29 @@ struct SessionsTabInAppTests {
     let detail = try #require(navigation.topViewController as? HostingScreen<SessionDetailScreen>)
     #expect(detail.navigationItem.rightBarButtonItems?.count == 1)
     if let screenshots { try await capture(window, to: screenshots, name: "sessions-detail") }
+
+    // "Show all": the events sheet at medium and large; close returns to the detail.
+    let loaded = try await Container.shared.loadSessionDetail()(#require(nights.first).id)
+    let rows = DetailEventRow.make(episodes: loaded.episodes, events: loaded.session.events, filter: .all)
+    detail.rootView.content.routes.showAllEvents(rows)
+    let sheet = try #require(await until { navigation.presentedViewController as? UINavigationController })
+    #expect(sheet.sheetPresentationController?.detents.map(\.identifier) == [.medium, .large])
+    let events = try #require(sheet.viewControllers.first as? HostingScreen<EventsSheetScreen>)
+    if let screenshots { try await capture(window, to: screenshots, name: "sessions-events") }
+
+    events.navigationItem.rightBarButtonItems?.first?.primaryAction?.performWithSender(nil, target: nil)
+    #expect(await until { navigation.presentedViewController == nil ? true : nil } == true)
+    #expect(navigation.topViewController === detail)
     navigation.popToRootViewController(animated: false)
+  }
+
+  /// Polls (UIKit transitions have no completion to await here) for up to 5 s.
+  private func until<T>(_ condition: () -> T?) async -> T? {
+    for _ in 0..<50 {
+      if let value = condition() { return value }
+      try? await Task.sleep(for: .milliseconds(100))
+    }
+    return nil
   }
 
   private func firstNonEmptyList() async -> [NightSummary] {
