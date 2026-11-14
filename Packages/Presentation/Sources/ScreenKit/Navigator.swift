@@ -15,6 +15,8 @@ public protocol Navigator: AnyObject {
 public enum PresentationStyle: Equatable {
   case sheet(detents: [SheetDetent])
   case fullScreen
+  /// A `UIAlertController`, which sets its own style.
+  case alert
 }
 
 public enum SheetDetent: Equatable {
@@ -88,6 +90,8 @@ public final class NavigationControllerNavigator: Navigator {
       }
     case .fullScreen:
       controller.modalPresentationStyle = .fullScreen
+    case .alert:
+      break
     }
   }
 

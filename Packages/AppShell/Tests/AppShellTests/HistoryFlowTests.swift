@@ -1,0 +1,122 @@
+import AppShellTestSupport
+import FactoryKit
+import Foundation
+import SessionDetailFeature
+import SleepCore
+import SleepDomain
+import SleepDomainTestSupport
+import SleepGuardDesignKit
+import Testing
+import UIKit
+@testable import AppShell
+@testable import HistoryFeature
+@testable import ScreenKit
+
+struct HistoryFlowTests {
+  private let night = Night(
+    start: Date(timeIntervalSinceReferenceDate: 815_000_000),
+    end: Date(timeIntervalSinceReferenceDate: 815_000_000 + 8 * 3600))
+
+  private func makeFlow(_ nights: [Night] = []) -> (HistoryFlow, NavigatorSpy, FakeSessionRepository) {
+    let repository = FakeSessionRepository(nights)
+    let container = Container.test(repository: repository)
+    let spy = NavigatorSpy()
+    return (HistoryFlow(navigator: spy, container: container), spy, repository)
+  }
+
+  @Test func startShowsTheListTitledSessions() throws {
+    let (flow, spy, _) = makeFlow()
+    flow.start()
+    guard case let .setRoot(root) = try #require(spy.calls.first) else {
+      Issue.record("expected setRoot, got \(spy.calls)")
+      return
+    }
+    let list = try #require(root as? HostingScreen<HistoryScreen>)
+    #expect(list.navigationItem.title == Strings.tabSessions)
+    #expect(list.navigationItem.largeTitleDisplayMode == .never)
+  }
+
+  /// Opening a night pushes its detail, titled with its date, delete in the bar.
+  @Test func openingANightPushesItsDetail() throws {
+    let (flow, spy, _) = makeFlow([night])
+    flow.start()
+    let list = try #require(rootList(spy))
+
+    list.rootView.content.routes.openNight(night.summary())
+
+    guard case let .push(pushed) = spy.calls.last else {
+      Issue.record("expected push, got \(spy.calls)")
+      return
+    }
+    let detail = try #require(pushed as? HostingScreen<SessionDetailScreen>)
+    #expect(detail.navigationItem.title == night.start.formatted(.dateTime.weekday(.wide).month(.abbreviated).day()))
+    #expect(detail.navigationItem.rightBarButtonItems?.map(\.accessibilityLabel) == [Strings.actionDelete])
+  }
+
+  /// The trash button asks first; nothing is deleted until the user confirms.
+  @Test func theDeleteButtonAsksForConfirmation() async throws {
+    let (flow, spy, repository) = makeFlow([night])
+    flow.start()
+    try #require(rootList(spy)).rootView.content.routes.openNight(night.summary())
+    guard case let .push(pushed) = spy.calls.last else {
+      Issue.record("expected push, got \(spy.calls)")
+      return
+    }
+    let trash = try #require(pushed.navigationItem.rightBarButtonItems?.first?.primaryAction)
+
+    trash.performWithSender(nil, target: nil)
+
+    guard case let .present(presented, style) = spy.calls.last else {
+      Issue.record("expected present, got \(spy.calls)")
+      return
+    }
+    let alert = try #require(presented as? UIAlertController)
+    #expect(style == .alert)
+    #expect(alert.title == Strings.sessionDeleteConfirmTitle)
+    #expect(alert.actions.map(\.title) == [Strings.actionCancel, Strings.actionDelete])
+    #expect(alert.actions.map(\.style) == [.cancel, .destructive])
+    #expect(await repository.deletedIDs.isEmpty)
+  }
+
+  @Test func deletingANightRemovesItThenPops() async {
+    let (flow, spy, repository) = makeFlow([night])
+    flow.start()
+    await flow.delete(night.id)
+    #expect(await repository.deletedIDs == [night.id])
+    #expect(spy.calls.last == .pop)
+  }
+
+  @Test func aFailedDeleteStaysOnTheDetail() async {
+    let (flow, spy, repository) = makeFlow([night])
+    flow.start()
+    struct Failure: Error {}
+    await repository.failNextCall(with: Failure())
+    await flow.delete(night.id)
+    #expect(spy.calls.last != .pop)
+  }
+
+  @Test func theFlowIsNotRetainedByItsScreens() {
+    var (flow, _, _): (HistoryFlow?, NavigatorSpy, FakeSessionRepository) = makeFlow([night])
+    flow?.start()
+    weak var weakFlow = flow
+    flow = nil
+    #expect(weakFlow == nil)
+  }
+
+  private func rootList(_ spy: NavigatorSpy) -> HostingScreen<HistoryScreen>? {
+    guard case let .setRoot(root) = spy.calls.first else { return nil }
+    return root as? HostingScreen<HistoryScreen>
+  }
+}
+
+extension Container {
+  /// A container for flow tests: a test brand and in-memory fakes, no disk.
+  static func test(brand: TestBrand = TestBrand(), repository: FakeSessionRepository = FakeSessionRepository()) -> Container {
+    let container = Container()
+    container.brand.register { brand }
+    container.sessionRepository.register { repository }
+    container.sessionFileStore.register { FakeSessionFileStore() }
+    container.sleepStagePort.register { FakeSleepStagePort() }
+    return container
+  }
+}

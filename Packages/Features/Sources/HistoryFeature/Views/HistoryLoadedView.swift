@@ -5,7 +5,7 @@ import SwiftUI
 /// Month sections of day rows. Swipe a day to delete it (after confirmation).
 struct HistoryLoadedView: View {
   let months: [HistoryMonth]
-  let onOpen: (Night.ID) -> Void
+  let onOpen: (NightSummary) -> Void
   let onDelete: (HistoryDay) -> Void
   @Environment(\.theme) private var theme
 

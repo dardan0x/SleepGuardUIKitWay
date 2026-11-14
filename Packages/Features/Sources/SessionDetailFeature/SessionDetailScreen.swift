@@ -26,10 +26,9 @@ public struct SessionDetailRoutes {
 /// One night: score, stats, and its events with a category filter. The title
 /// and the delete button belong to the navigation bar, owned by the shell.
 public struct SessionDetailScreen: View {
-  private let dependencies: SessionDetailDependencies
-  private let routes: SessionDetailRoutes
+  let dependencies: SessionDetailDependencies
+  let routes: SessionDetailRoutes
   @State private var viewState: ViewState = .loading
-  @Environment(\.theme) private var theme
 
   public init(dependencies: SessionDetailDependencies, routes: SessionDetailRoutes) {
     self.dependencies = dependencies
@@ -47,7 +46,6 @@ public struct SessionDetailScreen: View {
         SessionDetailErrorView { viewState = .loading }
       }
     }
-    .background(theme.palette.bgPrimary.ignoresSafeArea())
     // Runs again after "Try again" puts the screen back into `.loading`.
     .task(id: viewState.isLoading) {
       guard viewState.isLoading else { return }

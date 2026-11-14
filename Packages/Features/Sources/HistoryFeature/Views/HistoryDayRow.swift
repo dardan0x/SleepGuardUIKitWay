@@ -6,7 +6,7 @@ import SwiftUI
 /// it on tap; a day with several expands to list them.
 struct HistoryDayRow: View {
   let day: HistoryDay
-  let onOpen: (Night.ID) -> Void
+  let onOpen: (NightSummary) -> Void
   @State private var isExpanded = false
   @Environment(\.theme) private var theme
 
@@ -37,7 +37,7 @@ struct HistoryDayRow: View {
       if isExpanded {
         Divider().overlay(theme.palette.textTertiary.opacity(0.2)).padding(.horizontal, 16)
         ForEach(day.nights) { night in
-          HistoryNightRow(night: night) { onOpen(night.id) }
+          HistoryNightRow(night: night) { onOpen(night) }
         }
         .padding(.bottom, 4)
       }
@@ -68,7 +68,7 @@ struct HistoryDayRow: View {
 
   private func tap() {
     if day.nights.count == 1 {
-      onOpen(day.nights[0].id)
+      onOpen(day.nights[0])
     } else {
       withAnimation(.easeInOut(duration: 0.2)) { isExpanded.toggle() }
     }
