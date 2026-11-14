@@ -17,12 +17,12 @@ Last updated: 2026-11-14
 | Blocked | 0 |
 | — | — |
 | Total Tasks | 49 |
-| Tasks Done | 15 |
+| Tasks Done | 16 |
 | Tasks In Progress | 0 |
 | Tasks Blocked | 0 |
-| Tasks Backlog | 34 |
+| Tasks Backlog | 33 |
 | — | — |
-| **Progress** | **31%** |
+| **Progress** | **33%** |
 
 ## Features
 
@@ -30,7 +30,7 @@ Last updated: 2026-11-14
 |----|---------|----------|--------|-------|----------|------|
 | F0 | Shared repo | P0 | In Progress | 5/5 (app side pending F1) | ██████████ 100% | [tracker](trackers/f0-shared-repo.md) |
 | F1 | Foundation | P0 | Done | 8/8 | ██████████ 100% | [tracker](trackers/f1-foundation.md) |
-| F2 | Domain and persistence | P0 | In Progress | 2/5 | ████░░░░░░ 40% | [tracker](trackers/f2-domain-persistence.md) |
+| F2 | Domain and persistence | P0 | In Progress | 3/5 | ██████░░░░ 60% | [tracker](trackers/f2-domain-persistence.md) |
 | F3 | History → Session Detail | P0 | Backlog | 0/5 | ░░░░░░░░░░ 0% | [tracker](trackers/f3-history-session-detail.md) |
 | F4 | Statistics | P1 | Backlog | 0/4 | ░░░░░░░░░░ 0% | [tracker](trackers/f4-statistics.md) |
 | F5 | Clip playback | P1 | Backlog | 0/3 | ░░░░░░░░░░ 0% | [tracker](trackers/f5-clip-playback.md) |
@@ -41,11 +41,13 @@ Last updated: 2026-11-14
 
 ## Currently Active
 
-- **F2-T3** — Ports and use cases (`SessionRepository`, `SessionFileStore`, `DeleteSession`, `LoadSessionDetail`) and their fakes.
+- **F2-T4** — SwiftData adapter behind a `@ModelActor`.
 
 ## Up Next
 
-1. **F2-T4** — SwiftData adapter behind a `@ModelActor`.
+1. **F2-T5** — Debug sample-night seeder.
+
+**Blocker for CI on `feature/f2-domain-persistence`:** shared 0.3.0 not released yet (commit + merge `feature/f2/t1-equatable-values` in SleepGuardShared, tag `0.3.0`, then `sh scripts/bump-shared.sh 0.3.0`).
 2. **F0** — Shared CI also builds SleepGuardUIKitWay (the open F0-T5 item).
 
 ## Blockers
@@ -64,6 +66,7 @@ Last updated: 2026-11-14
 | 2026-11-14 | F0-T3 | Completed | Owner created and pushed both repos; `SleepGuardShared` made public; tag `0.1.0` |
 | 2026-11-14 | F0-T4 | Completed | SleepGuard depends on `SleepGuardShared` 0.1.0 by URL; `SleepGuard.xcworkspace` overrides it with the local checkout; `bump-shared.sh` |
 | 2026-11-14 | F0-T5 | Completed | Shared-repo CI (tests, strings sync, SleepGuard build); SleepGuard's `strings-sync` removed. Not yet run on GitHub |
+| 2026-11-14 | F2-T3 | Completed | Ports (`SessionRepository`, `SessionFileStore`, `SleepStagePort`), `DeleteSession`, `LoadSessionDetail`, actor fakes; 52 domain tests. Branch `feature/f2/t3-ports` |
 | 2026-11-14 | F2-T1, F2-T2 | Completed | Domain entities and policies; SleepGuard's episode/stats/score cases ported (42 tests). Needs shared 0.3.0 (`Equatable` values). Branch `feature/f2/t1-entities` |
 | 2026-11-14 | F1-T8 | Completed | Checks (layering, view size, strings), `run-tests.sh` (3 lanes, isolated package builds), `bump-shared.sh`, PR CI. **F1 done.** Branch `feature/f1/t8-scripts-ci` |
 | 2026-11-14 | F1-T7 | Completed | Three distinct brands: themes, tab sets, Lite without `SleepHealth`; per-brand hosted tests (4 each); themed bar fonts. Branch `feature/f1/t7-brands` |
