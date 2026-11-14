@@ -1,0 +1,72 @@
+name: ci
+
+# Every pull request (task branches into feature/*, features into main) and
+# manual runs. CI builds the pinned SleepGuardShared release, never a sibling
+# checkout: TUIST_SHARED_RELEASE=1.
+on: [pull_request, workflow_dispatch]
+
+env:
+  TUIST_SHARED_RELEASE: "1"
+  # The pinned local simulator UDID doesn't exist on runners.
+  DESTINATION: platform=iOS Simulator,name=iPhone 17 Pro,OS=latest
+
+jobs:
+  checks:
+    # Fast, no build: layering, view size, hardcoded strings, formatting.
+    runs-on: macos-26
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - name: Layering
+        run: python3 scripts/check-layering.py
+      - name: View size
+        run: python3 scripts/check-view-size.py
+      - name: Hardcoded strings
+        run: python3 scripts/check-hardcoded-strings.py
+      - name: SwiftFormat lint
+        run: |
+          brew install swiftformat
+          swiftformat Packages Apps Project.swift Tuist --lint
+
+  build:
+    # All three brands, Release, unsigned.
+    runs-on: macos-26
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+      - uses: jdx/mise-action@v2
+      - name: Select newest Xcode 26
+        run: sudo xcode-select -s "$(ls -d /Applications/Xcode_26*.app | sort -V | tail -1)"
+      - name: Generate
+        run: tuist generate --no-open
+      - name: Build brands
+        run: |
+          set -o pipefail
+          for brand in SleepGuard SleepGuardLite Nocturne; do
+            echo "::group::$brand"
+            xcodebuild build -workspace SleepGuardUIKitWay.xcworkspace -scheme "$brand" \
+              -configuration Release -destination 'generic/platform=iOS Simulator' \
+              -derivedDataPath .build/ci CODE_SIGNING_ALLOWED=NO \
+              | grep -E '^(error|warning):|\*\* BUILD' || true
+            echo "::endgroup::"
+            test -d ".build/ci/Build/Products/Release-iphonesimulator/$brand.app"
+          done
+
+  tests:
+    # macOS domain tests, every package built standalone (catches undeclared
+    # imports), package tests, and each brand's in-app tests.
+    runs-on: macos-26
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v4
+      - uses: jdx/mise-action@v2
+      - name: Select newest Xcode 26
+        run: sudo xcode-select -s "$(ls -d /Applications/Xcode_26*.app | sort -V | tail -1)"
+      - name: Run tests
+        run: sh scripts/run-tests.sh
+      - name: Upload logs
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-logs
+          path: .build/test-derived-data/logs

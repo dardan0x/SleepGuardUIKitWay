@@ -13,8 +13,8 @@ The project ships three apps (SleepGuard, SleepGuard Lite, Nocturne) from one co
 ## Decision
 
 - **Tuist generates the app targets from one brand list.** The project file is not committed.
-- **A brand is one folder** (`Brand.swift`, assets, xcconfig, entitlements) plus one list entry.
-- **`BrandComposition` is a protocol** with a `BrandConfiguration` value (name, URL scheme, app group, theme, tabs, capabilities) and the few factory methods that differ per brand. A missing binding is a compile error.
+- **A brand is one folder** (`Brand.swift`, assets, entitlements) plus one entry in the Tuist brand list, which holds its build-time identity (name, bundle id, URL scheme). No per-brand xcconfig: those values would only duplicate the list entry.
+- **`BrandComposition` is a protocol** with a `BrandConfiguration` value (theme and tabs today; capabilities when the first screen reads one) and, later, the few factory methods that differ per brand. A missing binding is a compile error. Identity values (name, URL scheme, app group) stay in the Tuist brand list and Info.plist.
 - **Capabilities are plain flags read in two places:** coordinators and composers. There is no brand enum.
 - **Theme is a value in the SwiftUI environment**, supplied by the brand and injected by the hosting controller.
 - **Adapters are split by framework** so Lite does not link HealthKit.

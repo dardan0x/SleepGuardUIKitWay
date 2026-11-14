@@ -4,13 +4,13 @@
 
 | Field | Value |
 |-------|-------|
-| **Status** | In Progress |
+| **Status** | Done |
 | **Priority** | P0 |
 | **Milestone** | M1 |
 | **Blocked By** | — |
 | **Started** | 2026-11-14 |
-| **Completed** | — |
-| **Feature Doc** | — |
+| **Completed** | 2026-11-14 |
+| **Feature Doc** | [f1-foundation](../features/f1-foundation.md) |
 
 ## Summary
 
@@ -21,13 +21,13 @@ Three branded apps build from one codebase and launch into an empty, themed tab 
 | ID | Task | Type | Status | Depends On | Module | Started | Completed |
 |----|------|------|--------|------------|--------|---------|-----------|
 | F1-T1 | Repo docs and agent setup | Docs | Done | — | — | 2026-11-14 | 2026-11-14 |
-| F1-T2 | Tuist project; three brand app targets that launch | Infra | Backlog | — | Apps, Tuist | — | — |
-| F1-T3 | Package skeletons with Swift 6 settings | Infra | Backlog | F1-T2 | Packages | — | — |
-| F1-T4 | `SleepGuardDesignKit`: `Theme`, environment key, primitive components | UI | Backlog | — | Shared repo | — | — |
-| F1-T5 | `ScreenKit`: `HostingScreen`, `ScreenChrome`, `Navigator` | UI | Backlog | F1-T3, F1-T4 | ScreenKit | — | — |
-| F1-T6 | `AppShell`: `BrandComposition`, bootstrap, container, `AppCoordinator`, tab shell | Shell | Backlog | F1-T5 | AppShell | — | — |
-| F1-T7 | Three brands: configuration, theme, capabilities, assets; bootstrap test | Brand | Backlog | F1-T6 | Apps, AppShell | — | — |
-| F1-T8 | Scripts and CI: test runner, layering, view size, format, PR workflow | CI | Backlog | F1-T3 | scripts, .github | — | — |
+| F1-T2 | Tuist project; three brand app targets that launch | Infra | Done | — | Apps, Tuist | 2026-11-14 | 2026-11-14 |
+| F1-T3 | Package skeletons with Swift 6 settings | Infra | Done | F1-T2 | Packages | 2026-11-14 | 2026-11-14 |
+| F1-T4 | `SleepGuardDesignKit`: `Theme`, environment key, primitive components | UI | Done | — | Shared repo | 2026-11-14 | 2026-11-14 |
+| F1-T5 | `ScreenKit`: `HostingScreen`, `ScreenChrome`, `Navigator` | UI | Done | F1-T3, F1-T4 | ScreenKit | 2026-11-14 | 2026-11-14 |
+| F1-T6 | `AppShell`: `BrandComposition`, bootstrap, container, `AppCoordinator`, tab shell | Shell | Done | F1-T5 | AppShell | 2026-11-14 | 2026-11-14 |
+| F1-T7 | Three brands: configuration, theme, capabilities, assets; bootstrap test | Brand | Done | F1-T6 | Apps, AppShell | 2026-11-14 | 2026-11-14 |
+| F1-T8 | Scripts and CI: test runner, layering, view size, format, PR workflow | CI | Done | F1-T3 | scripts, .github | 2026-11-14 | 2026-11-14 |
 
 ## Task Details
 
@@ -47,11 +47,18 @@ Three branded apps build from one codebase and launch into an empty, themed tab 
 | Arch Ref | `brands.md`, `modules.md` |
 
 **Acceptance Criteria:**
-- [ ] `Project.swift` builds app targets from one brand list in `Tuist/ProjectDescriptionHelpers`
-- [ ] `SleepGuard`, `SleepGuardLite`, `Nocturne` each have their own bundle id, display name, icon, launch colour, entitlements
-- [ ] Swift 6 language mode on all three
-- [ ] `tuist generate` succeeds; each scheme builds and launches on the pinned simulator
-- [ ] Generated project and workspace are git-ignored
+- [x] `Project.swift` builds app targets from `Brand.all` in `Tuist/ProjectDescriptionHelpers`
+- [x] `SleepGuard`, `SleepGuardLite`, `Nocturne` each have their own bundle id, display name, icon, launch colour, entitlements
+- [x] Swift 6 language mode on all three (`SWIFT_VERSION` 6.0, complete checking, `MainActor` default isolation)
+- [x] `tuist generate` succeeds; each scheme builds and launches on the pinned simulator
+- [x] Generated project and workspace are git-ignored
+
+**Notes:**
+- Tuist 4.55.5. No per-brand xcconfig: the brand list entry holds the build-time identity, so an xcconfig would only duplicate it. Docs updated.
+- Entitlements checked in the build output: SleepGuard and Nocturne have HealthKit + their app group; Lite only its app group.
+- Icons are generated placeholders (accent circle on the brand background).
+- Root screen is a temporary `PlaceholderViewController` showing the display name in the brand accent; it goes in F1-T6.
+- The build signed with the team Xcode found automatically (`application-identifier` has a team prefix). No team is set in the project; device builds will need one.
 
 ### F1-T3 — Package skeletons
 
@@ -60,11 +67,18 @@ Three branded apps build from one codebase and launch into an empty, themed tab 
 | Arch Ref | `modules.md`, `concurrency.md` |
 
 **Acceptance Criteria:**
-- [ ] `Core`, `Adapters`, `Presentation`, `Features`, `AppShell` packages with the products in `modules.md`
-- [ ] Manifests express the import table (a forbidden import fails to compile)
-- [ ] Swift 6 mode everywhere; `MainActor` default isolation only in features, `ScreenKit`, `AppShell`
-- [ ] `SleepDomain` builds and tests on macOS with `swift test`
-- [ ] Each package depends on `SleepGuardShared` only where the table allows
+- [x] `Core`, `Adapters`, `Presentation`, `AppShell` packages with the products in `modules.md`; `Features` deferred to F3-T1 (no screen to put in it yet)
+- [x] Manifests express the import table. A forbidden import fails to compile **when the package builds standalone** (`import ScreenKit` in `SleepDomain`; `import FactoryKit` in `SleepPersistence`), but the second one **compiled inside the app workspace**. Standalone package builds and an import check move into F1-T8.
+- [x] Swift 6 mode everywhere; `MainActor` default isolation only in `ScreenKit` and `AppShell`
+- [x] `SleepDomain` builds and tests on macOS with `swift test` (1 wiring test against `SleepCore` 0.1.0)
+- [x] `SleepGuardShared` only in `Core` and `Adapters`; Factory only in `AppShell`
+- [x] Dev override: `tuist generate` resolves `../SleepGuardShared` locally; `TUIST_SHARED_RELEASE=1` resolves GitHub 0.1.0 (both checked)
+- [x] All three brands build and launch with the root screen served by `AppShell`
+
+**Notes:**
+- Placeholder sources (one comment-only file per module) say which task fills them.
+- `exact:` versions for `SleepGuardShared` and Factory: the generated workspace's lockfile isn't committed, so the manifests are the pins.
+- `PlaceholderViewController` moved from the app target into `AppShell`; still deleted in F1-T6.
 
 ### F1-T4 — Design kit
 
@@ -73,11 +87,19 @@ Three branded apps build from one codebase and launch into an empty, themed tab 
 | Arch Ref | `brands.md` |
 
 **Acceptance Criteria:**
-- [ ] `SleepGuardDesignKit` product in the shared repo: `Theme` (`Palette`, `Typography`, `Radii`), `@Environment(\.theme)`
-- [ ] Default palette equals SleepGuard's tokens
-- [ ] Primitive components with no domain types: stat card, score gauge, mini bar chart, level meter, buttons, sheet header, button style
-- [ ] Re-exports `SleepStrings` (`@_exported import`); no dependency on `Models` or Factory
-- [ ] Previews render in at least two themes
+- [x] `SleepGuardDesignKit` product in the shared repo: `Theme` (`Palette`, `Typography`, `Radii`) as a `Sendable` value, `@Environment(\.theme)` defaulting to `Theme.sleepGuard`
+- [x] Default palette equals SleepGuard's `Theme.swift` tokens
+- [x] Components with no domain types: `StatCard`, `SleepScoreGauge`, `MiniBarChart`, `AudioLevelMeter`, `SheetHandle`, `SheetNavHeader`, `ScaleButtonStyle`, `RecordingActionButton`, `StartRecordingButton`, `StopRecordingButton`
+- [x] Re-exports `SleepStrings`; no dependency on `Models`, Factory or `SleepCore`
+- [x] Renders in two themes: render tests draw a gallery of every component with `Theme.sleepGuard` and a deliberately different theme, and check the renders differ; both images reviewed by eye
+
+**Notes:**
+- Ported from SleepGuard's `DesignSystem` with `@Injected(\.theme)` → `@Environment(\.theme)`. The hard-coded hex colours in the recording buttons and sheet handle now use tokens (`destructive`, `bgCard`, `textTertiary`), which is what lets a brand restyle them.
+- Text fonts go through `theme.typography.font(size:weight:)`; large numbers stay `.rounded` in every theme.
+- **Token mismatch in SleepGuard:** its `CLAUDE.md` lists `bg-card` = `#2C2C2E`, its `Theme.swift` uses `#22232B` (as `surface2`). The kit takes the code's value. Needs a decision against `designs/SleepGuard.pen`.
+- Not verified against the `.pen` design file in this task: the components are ported unchanged in layout, so they match SleepGuard as it ships today.
+- Released as `0.2.0` only after the shared PR is merged; this app adopts it in F1-T5.
+- Unchanged in SleepGuard: it doesn't use the kit until F6. Its dev workspace still builds against the shared branch.
 
 ### F1-T5 — ScreenKit
 
@@ -86,10 +108,17 @@ Three branded apps build from one codebase and launch into an empty, themed tab 
 | Arch Ref | `composition.md`, `navigation.md` |
 
 **Acceptance Criteria:**
-- [ ] `HostingScreen<Content>` injects the theme and applies `ScreenChrome`
-- [ ] `Navigator` protocol with a `UINavigationController` implementation, including presentation-in-flight guards
-- [ ] Child-containment helper for embedding a SwiftUI view
-- [ ] Tests: chrome is applied; navigator calls reach UIKit
+- [x] `HostingScreen<Content>` injects the theme into the SwiftUI environment, paints the theme background, applies `ScreenChrome` (title, large title, hidden bar, trailing icon items with required accessibility labels)
+- [x] `Navigator` protocol with `NavigationControllerNavigator`: every operation waits for a running transition to finish instead of being dropped
+- [ ] Child-containment helper: **deferred**, no planned screen embeds SwiftUI inside UIKit content; add it with the first one
+- [x] Tests (11, simulator): chrome on the navigation item, theme reaches SwiftUI content (probe view), background, hidden bar; set root / push / pop / pop to root; sheet and full-screen configuration; dismiss with nothing presented
+- [ ] Real present/dismiss (incl. the in-flight wait) checked inside the app in F1-T6
+
+**Notes:**
+- Packages now use shared `0.2.0` (`Core`, `Adapters`, `Presentation`); domain test passes against it.
+- **Package tests can't present.** They run without a host app, so a `UIWindow` has no scene and UIKit never finishes a presentation; two such tests hung the run (stopped). They were replaced by tests of the presentation configuration; actual presenting is verified in the app (F1-T6), where there is a scene.
+- Test runs now use xcodebuild's per-test time limit, so a hang fails fast instead of blocking.
+- `.package.resolved` (Tuist's root copy of the workspace lockfile) is git-ignored: it changes with the generate mode.
 
 ### F1-T6 — AppShell
 
@@ -98,12 +127,22 @@ Three branded apps build from one codebase and launch into an empty, themed tab 
 | Arch Ref | `dependencies.md`, `navigation.md` |
 
 **Acceptance Criteria:**
-- [ ] `BrandComposition`, `BrandConfiguration`, `Capabilities`
-- [ ] `AppShell.bootstrap(brand:)` registers the brand; container factories derive from it
-- [ ] `AppCoordinator` and `MainTabCoordinator` build tabs from `BrandConfiguration.tabs` with placeholder screens
-- [ ] Theme applied to navigation and tab bar appearance
-- [ ] `AppShellTestSupport`: `NavigatorSpy`, `TestBrand`
-- [ ] Tests: tabs match the configuration; a route closure produces the expected navigator call
+- [x] `BrandComposition` and `BrandConfiguration` (theme, tabs). `Capabilities` **deferred** to F3: nothing reads a capability yet
+- [x] `AppShell.bootstrap(brand:)` registers the brand; `theme` derives from it
+- [x] `AppCoordinator` and `MainTabCoordinator` build tabs from `BrandConfiguration.tabs` (order kept), each with a placeholder flow and screen
+- [x] Theme applied per instance to navigation and tab bar appearance (no global `UIAppearance`)
+- [x] `AppShellTestSupport`: `NavigatorSpy`, `TestBrand`
+- [x] In the running app: present and dismiss a sheet through `NavigationControllerNavigator`, including one issued during another transition (`AppHostedTests`, 2 tests, hosted by the SleepGuard app)
+- [x] Tests (6, package): tabs follow the brand's list and order; each tab starts on its own hosted screen with its title; bars use the theme; start sets the root; a route closure presents a sheet and close dismisses it; the flow isn't retained by its screens
+
+**Notes:**
+- Each brand has `Apps/<Brand>/Sources/Brand.swift`: its own type plus `let appBrand = …Brand()`, read by the shared scene delegate. All three are identical until F1-T7.
+- Identity (display name, URL scheme, app group) is left out of `BrandConfiguration`: it is set once in the Tuist brand list and read from Info.plist when needed.
+- The brand types are `nonisolated`: `AppShell` defaults to `MainActor`, Factory resolves outside it.
+- Coordinators take a `Container`, so tests build their own instead of using `Container.shared`.
+- Placeholder flow and screen are temporary, written like real ones (`Routes` closures, composer, theme from the environment); removed when each tab gets its feature.
+- `Project.swift` declares the shared package in release mode too (`.remote`, `exact`), because brand targets import the design kit. The shared version now appears in 5 places (4 manifests + `Project.swift`); a bump script belongs in F1-T8.
+- Visual check: SleepGuard brand launches into the themed tab shell (Statistics, Sessions, Settings, Learn).
 
 ### F1-T7 — Three brands
 
@@ -112,11 +151,17 @@ Three branded apps build from one codebase and launch into an empty, themed tab 
 | Arch Ref | `brands.md` |
 
 **Acceptance Criteria:**
-- [ ] Each brand's `Brand.swift` implements `BrandComposition`
-- [ ] SleepGuard Lite: three tabs, no sleep stages, no Snore Interrupter, no Learn; does not link `SleepHealth`
-- [ ] Nocturne: its own palette and typography, History tab first
-- [ ] Test: every brand bootstraps and resolves every registration
-- [ ] Run all three; palette and tab set visibly differ
+- [x] Each brand's `Brand.swift` implements `BrandComposition` with its own theme and tabs
+- [x] SleepGuard Lite: teal theme, three tabs (no Learn), does not link `SleepHealth` (checked in the generated project). "No sleep stages / no Snore Interrupter" become capabilities with those features (F3, F8)
+- [x] Nocturne: own palette (violet, amber recording), rounded type, larger radii, Sessions tab first
+- [x] Test: every brand bootstraps and resolves every registration (`<Brand>HostedTests`, one per brand, run inside that brand's app; also checks the tab bar matches the brand)
+- [x] All three launched: palette and tab set visibly differ
+
+**Notes:**
+- `Brand.usesHealthKit` in the Tuist list decides whether a target links `SleepHealth`; it has to agree with the brand's entitlements file (documented on the property).
+- Brand themes start from `Theme.sleepGuard` and override tokens; their background and accent repeat the `LaunchBackground` / `BrandAccent` asset colours (the launch screen can only use assets).
+- Navigation bar titles now follow the theme's type design too (`Appearance.font`), so Nocturne's bar title is rounded like its content. Covered by a test.
+- Hosted tests: 4 per brand (2 navigator, 2 bootstrap), all pass.
 
 ### F1-T8 — Scripts and CI
 
@@ -125,9 +170,16 @@ Three branded apps build from one codebase and launch into an empty, themed tab 
 | Arch Ref | `testing.md`, `rules.md` |
 
 **Acceptance Criteria:**
-- [ ] `scripts/run-tests.sh` runs both lanes
-- [ ] `scripts/check-layering.py`: forbidden imports, Factory outside `AppShell`, `.shared`, concurrency escape hatches, SwiftUI navigation APIs in features, `print(`
-- [ ] `scripts/check-view-size.py`: 200-line limit with an allowlist that can only shrink
-- [ ] Hardcoded-string check
-- [ ] GitHub Actions on pull request: generate, build three schemes, tests, checks, SwiftFormat lint
-- [ ] Each check is shown failing on a deliberate violation, then passing
+- [x] `scripts/run-tests.sh` runs three lanes (macOS domain tests; every package built standalone, with its tests; each brand's hosted tests), with xcodebuild's per-test time limit
+- [x] `scripts/check-layering.py`: imports per module against the AGENTS.md table, Factory outside `AppShell`, `.shared`, concurrency escape hatches, SwiftUI navigation/persistence/DI APIs in features, `print(`
+- [x] `scripts/check-view-size.py`: 200 lines per view file, 100 per `*Screen.swift`, allowlist that can only shrink (empty)
+- [x] `scripts/check-hardcoded-strings.py`: full scan of sources (no legacy code to exempt)
+- [x] `scripts/bump-shared.sh <version>`: checks the tag, updates the 4 manifests and `Project.swift`, re-resolves lockfiles
+- [x] GitHub Actions on pull request (`.github/workflows/ci.yml`): checks + SwiftFormat lint; Release build of all three brands; `run-tests.sh`; all with `TUIST_SHARED_RELEASE=1`; Tuist pinned in `mise.toml`
+- [x] Each check shown failing on a deliberate violation, then passing
+
+**Notes:**
+- Probes: layering caught 6 kinds (undeclared import, escape hatch, `print`, `.shared`, UIKit in a feature, `.sheet` in a feature); view size caught a 107-line screen; strings caught `Text("Hello world")`.
+- **The standalone lane first missed the probe.** Packages shared one derived-data folder, so Factory (built for `AppShell`) was importable from `Adapters`. Each package now builds in its own derived data; the probe then failed as intended.
+- Full run locally: all lanes pass (Core 1, Presentation 11, AppShell 7, hosted 4 × 3 brands).
+- Not verified: the workflow on GitHub (runs when this branch's PR is opened).

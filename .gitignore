@@ -12,7 +12,14 @@ xcuserdata/
 *.xcodeproj
 *.xcworkspace
 Derived/
+# Tuist's copy of the workspace lockfile. Its contents depend on the generate
+# mode (local shared override or not); the package manifests pin exact versions.
+.package.resolved
 Tuist/.build/
 
 # Generated docs
 docs/SESSION_SUMMARY.md
+
+# Local-only docs
+docs/architecture/
+docs/CODING_WORKFLOW.md
