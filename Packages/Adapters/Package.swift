@@ -33,6 +33,14 @@ let package = Package(
         .product(name: "SleepCore", package: "SleepGuardShared"),
       ],
       swiftSettings: [.swiftLanguageMode(.v6)]),
+    .testTarget(
+      name: "SleepPersistenceTests",
+      dependencies: [
+        "SleepPersistence",
+        .product(name: "SleepDomain", package: "Core"),
+        .product(name: "SleepCore", package: "SleepGuardShared"),
+      ],
+      swiftSettings: [.swiftLanguageMode(.v6)]),
     // HealthKit.
     .target(
       name: "SleepHealth",
