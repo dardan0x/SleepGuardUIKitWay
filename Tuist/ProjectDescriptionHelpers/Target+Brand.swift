@@ -34,6 +34,7 @@ public extension Target {
       sources: ["Apps/Shared/Sources/**"],
       resources: ["Apps/\(brand.name)/Resources/**"],
       entitlements: .file(path: "Apps/\(brand.name)/\(brand.name).entitlements"),
+      dependencies: [.package(product: "AppShell")],
       settings: .settings(base: [
         "SWIFT_VERSION": "6.0",
         "SWIFT_STRICT_CONCURRENCY": "complete",

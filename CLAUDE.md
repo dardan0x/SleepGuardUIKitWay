@@ -38,7 +38,7 @@ Features (SwiftUI)  ScreenKit      Adapters (SleepPersistence, SleepAudio, Sleep
 | `AppShell` | everything except `SleepHealth` | — |
 | Brand targets | `AppShell`, the adapters that brand links | — |
 
-Enforced by package manifests first, then `scripts/check-layering.py` (added in F1-T8). Full notes: `docs/architecture/modules.md`.
+Enforced by package manifests, **but only when a package builds on its own**: inside the app workspace Xcode lets any module it has already built be imported, declared or not (verified in F1-T3). So CI builds every package standalone, and `scripts/check-layering.py` checks imports (both F1-T8). Full notes: `docs/architecture/modules.md`.
 
 ## Domain
 
@@ -164,7 +164,8 @@ SESSION END     write a fragment in docs/sessions/ (see its README)
 ## Build and report
 
 ```bash
-tuist generate --no-open
+tuist generate --no-open                          # uses ../SleepGuardShared (local edits)
+TUIST_SHARED_RELEASE=1 tuist generate --no-open   # uses the pinned release (what CI builds)
 xcodebuild build -workspace SleepGuardUIKitWay.xcworkspace -scheme <SleepGuard|SleepGuardLite|Nocturne> \
   -destination 'platform=iOS Simulator,id=BD630AD5-5A05-4663-8F1B-A17283EBCBF5'
 sh scripts/run-tests.sh            # added in F1-T8
