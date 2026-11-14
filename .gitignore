@@ -16,3 +16,7 @@ Tuist/.build/
 
 # Generated docs
 docs/SESSION_SUMMARY.md
+
+# Local-only docs
+docs/architecture/
+docs/CODING_WORKFLOW.md
