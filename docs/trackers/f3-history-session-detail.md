@@ -24,7 +24,7 @@ The user sees their nights grouped by month, opens one, reads its score, timelin
 | F3-T2 | `SessionDetailFeature`: header, timeline, stats grid, event list with category filter | UI | Done | F2 | SessionDetailFeature | Matches the design; loads through `LoadSessionDetail` |
 | F3-T3 | Composers and `HistoryFlow`: push detail, delete then pop | Shell | Done | F3-T1, F3-T2 | AppShell | Flow tests with `NavigatorSpy` |
 | F3-T4 | Events sheet as a UIKit sheet presented by the flow | Shell | Backlog | F3-T3 | AppShell, SessionDetailFeature | Detents work; dismissal returns to detail |
-| F3-T5 | Timeline, stats grid and legend in the design kit, fed by view-data structs | UI | Backlog | F1-T4 | Shared repo | No domain types in the kit |
+| F3-T5 | Timeline, stats grid, legends, event row, score badge and night row in the design kit, fed by view-data structs; UIKitWay's own copies removed | UI | Backlog | F1-T4 | Shared repo | No domain types in the kit; a view change is made once |
 
 ## Task Details
 
@@ -59,6 +59,8 @@ The user sees their nights grouped by month, opens one, reads its score, timelin
 - Notes: screenshots taken by the app itself (`drawHierarchy`) showed a half-drawn ring and clipped cards that the simulator's own screenshots didn't: use `simctl io screenshot` for visual checks. Screens no longer paint their own background (the hosting controller does). Delete from the detail confirms first (unlike SleepGuard, decided 2026-11-14).
 
 ## Notes
+
+- Rule (2026-11-14): a view that only takes values and draws them goes in the shared kit; a view that loads data, holds state or navigates stays in the app. F3-T5 widened to move `DetailEventRowView`, `ScoreBadge` and the night row along with the timeline, stats grid and legends.
 
 - Port SleepGuard's `SessionGrouper` logic as a policy.
 - Share and PDF export are not in this slice (F8).
