@@ -10,6 +10,7 @@ let package = Package(
   platforms: [.iOS(.v17)],
   products: [
     .library(name: "HistoryFeature", targets: ["HistoryFeature"]),
+    .library(name: "SessionDetailFeature", targets: ["SessionDetailFeature"]),
   ],
   dependencies: [
     .package(path: "../Core"),
@@ -20,6 +21,30 @@ let package = Package(
       name: "HistoryFeature",
       dependencies: [
         .product(name: "SleepDomain", package: "Core"),
+        .product(name: "SleepCore", package: "SleepGuardShared"),
+        .product(name: "SleepGuardDesignKit", package: "SleepGuardShared"),
+      ],
+      swiftSettings: [
+        .swiftLanguageMode(.v6),
+        .defaultIsolation(MainActor.self),
+      ]),
+    .target(
+      name: "SessionDetailFeature",
+      dependencies: [
+        .product(name: "SleepDomain", package: "Core"),
+        .product(name: "SleepCore", package: "SleepGuardShared"),
+        .product(name: "SleepGuardDesignKit", package: "SleepGuardShared"),
+      ],
+      swiftSettings: [
+        .swiftLanguageMode(.v6),
+        .defaultIsolation(MainActor.self),
+      ]),
+    .testTarget(
+      name: "SessionDetailFeatureTests",
+      dependencies: [
+        "SessionDetailFeature",
+        .product(name: "SleepDomain", package: "Core"),
+        .product(name: "SleepDomainTestSupport", package: "Core"),
         .product(name: "SleepCore", package: "SleepGuardShared"),
         .product(name: "SleepGuardDesignKit", package: "SleepGuardShared"),
       ],
