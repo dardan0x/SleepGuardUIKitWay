@@ -4,11 +4,11 @@
 
 | Field | Value |
 |-------|-------|
-| **Status** | Backlog |
+| **Status** | In Progress |
 | **Priority** | P0 |
 | **Milestone** | M1 |
-| **Blocked By** | F1 |
-| **Started** | — |
+| **Blocked By** | — |
+| **Started** | 2026-11-14 |
 | **Completed** | — |
 | **Feature Doc** | — |
 
@@ -20,13 +20,27 @@ The domain model of a night exists as plain values with its rules tested on macO
 
 | ID | Task | Type | Status | Depends On | Module | Acceptance (short) |
 |----|------|------|--------|------------|--------|--------------------|
-| F2-T1 | Entities and values: `SleepSession`, `SnoreEvent`, `SessionSummary`, `SnoringEpisode` | Domain | Backlog | F1-T3 | SleepDomain | `Sendable` structs; no framework imports |
-| F2-T2 | Policies: episode merging, snoring duration, score inputs, minimum save duration | Domain | Backlog | F2-T1 | SleepDomain (or `SleepCore` if SleepGuard adopts them) | Same results as SleepGuard's `SessionStatsTests` / `SnoringEpisodeTests` cases |
+| F2-T1 | Entities and values: `SleepSession`, `SnoreEvent`, `SessionSummary`, `SnoringEpisode` | Domain | Done | F1-T3 | SleepDomain | `Sendable` structs; no framework imports |
+| F2-T2 | Policies: episode merging, snoring duration, score inputs, minimum save duration | Domain | Done | F2-T1 | SleepDomain (or `SleepCore` if SleepGuard adopts them) | Same results as SleepGuard's `SessionStatsTests` / `SnoringEpisodeTests` cases |
 | F2-T3 | Ports and use cases: `SessionRepository`, `SessionFileStore`, `DeleteSession`, `LoadSessionDetail`; fakes | Domain | Backlog | F2-T1 | SleepDomain, TestSupport | Use-case tests with fakes on macOS |
 | F2-T4 | SwiftData adapter: records, `@ModelActor` store, mappers, `observeSummaries()` | Adapter | Backlog | F2-T3 | SleepPersistence | Round-trip and observation tests against an in-memory store; records never leave the actor |
 | F2-T5 | Debug sample-night seeder | Tooling | Backlog | F2-T4 | SleepPersistence, AppShell | Each brand launches with seeded nights in Debug |
 
+## Task Details
+
+### F2-T1 — Entities (done 2026-11-14)
+- [x] `SleepSession` (finished night: events, gaps, stages, `EndReason`), `SnoreEvent` (span, bursts, `measuredDuration`, clip file name), `SessionSummary` (list row), `SnoringEpisode` (sorted events, aggregates)
+- [x] `Sendable`, `Equatable`, `Identifiable`; Foundation + `SleepCore` only
+- [x] Needs `SleepGuardShared` 0.3.0: `RecordingGap` and `SleepStageSegment` became `Equatable` there (additive; SleepGuard unaffected, checked for clashing extensions)
+- Notes: spectral fields (dominant frequency, centroid, low-frequency ratio) left out until a screen needs them.
+
+### F2-T2 — Policies (done 2026-11-14)
+- [x] `SnoringEpisodes`: 5-minute merge, 3 s display filter, playback events for a row
+- [x] `SleepSession` metrics: `snoringDuration` (with SleepGuard's gap rule), sleep talking, `eventCount`, `stageStats`, `scoreInputs`, `score(using:)`, `summary(using:)`
+- [x] SleepGuard's `SnoringEpisodeTests`, `SessionStatsTests` and `SleepScoreTests` cases ported with the same numbers: 42 domain tests pass on macOS
+- Moved out: minimum save duration → F7 (saving a night); timeline segments → F3-T5 (the timeline).
+
 ## Notes
 
-- Decide in F2-T2 whether the episode and duration rules go straight into `SleepCore` so SleepGuard can call them too. That edits SleepGuard and needs its goldens and tests green.
+- **Decision (F2-T2):** the episode and duration rules live in `SleepDomain`, not `SleepCore`. They operate on this app's entities; moving them to `SleepCore` would mean a shared event value type and SleepGuard mapping its `@Model` classes to it, a refactor of the working app with no feature gained today. The cost is duplication: the rules exist in both apps, kept identical by the ported tests. Revisit if they need to change.
 - Fresh store: no migration from SleepGuard's data.
