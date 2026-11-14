@@ -4,10 +4,10 @@
 
 | Field | Value |
 |-------|-------|
-| **Status** | In Progress |
+| **Status** | In Progress (UIKitWay side of T4/T5 waits for F1) |
 | **Priority** | P0 |
 | **Milestone** | M0 |
-| **Blocked By** | F0-T3 needs the GitHub CLI or a repo created by hand |
+| **Blocked By** | — |
 | **Started** | 2026-11-14 |
 | **Completed** | — |
 | **Feature Doc** | — |
@@ -22,9 +22,9 @@ Code that both apps need lives once, in `../SleepGuardShared`, and both apps con
 |----|------|------|--------|------------|-------|---------|-----------|
 | F0-T1 | Create the package; move `SleepCore` and `SleepStrings` out of SleepGuard | Refactor | Done | — | Shared, SleepGuard | 2026-11-14 | 2026-11-14 |
 | F0-T2 | Prove stored data still opens after the move | Test | Done | F0-T1 | SleepGuard | 2026-11-14 | 2026-11-14 |
-| F0-T3 | Private remote for `SleepGuardShared`; push | Infra | Blocked | F0-T1 | Shared | 2026-11-14 | — |
-| F0-T4 | Versioned URL dependency in both apps, sibling checkout as local override, `bump-shared.sh` | Infra | Backlog | F0-T3 | Both apps | — | — |
-| F0-T5 | Shared-repo CI (tests, strings in sync, builds both apps); SleepGuard CI fetches the shared repo | CI | Backlog | F0-T3 | Shared, SleepGuard | — | — |
+| F0-T3 | Remote for `SleepGuardShared`; push | Infra | Done | F0-T1 | Shared | 2026-11-14 | 2026-11-14 |
+| F0-T4 | Versioned URL dependency in SleepGuard, dev workspace as local override, `bump-shared.sh` | Infra | Done | F0-T3 | SleepGuard | 2026-11-14 | 2026-11-14 |
+| F0-T5 | Shared-repo CI (tests, strings in sync, builds SleepGuard); SleepGuard CI fetches the shared repo | CI | Done | F0-T3 | Shared, SleepGuard | 2026-11-14 | 2026-11-14 |
 
 ## Task Details
 
@@ -51,22 +51,33 @@ Code that both apps need lives once, in `../SleepGuardShared`, and both apps con
 ### F0-T3 — Remote
 
 **Acceptance Criteria:**
-- [ ] Private GitHub repo exists
-- [ ] `main` pushed
+- [x] GitHub repo exists (`dardan0x/SleepGuardShared`)
+- [x] `main` pushed; tag `0.1.0` pushed
 
-**Notes:** approved by the owner on 2026-11-14. Blocked: `gh` is not installed.
+**Notes:** the owner created the repo and pushed. Made **public** (owner's choice): SleepGuard is public and its CI must fetch the package without a token, and the code was already public in SleepGuard's history.
 
 ### F0-T4 — Versioned dependency
 
 **Acceptance Criteria:**
-- [ ] Both apps declare the package by URL and version
-- [ ] A sibling checkout overrides it locally in both apps
-- [ ] `scripts/bump-shared.sh` updates the pin
-- [ ] Sharing check: edit one string and one score constant locally; both apps pick it up
+- [x] SleepGuard declares the package by URL, `exact: "0.1.0"` (6 manifests)
+- [x] `SleepGuard.xcworkspace` adds `../SleepGuardShared` as a local package and overrides the release
+- [x] `scripts/bump-shared.sh <version>` checks the tag, rewrites the manifests, re-resolves both lockfiles
+- [x] Sharing check: a deliberate error added to the local shared checkout broke the workspace build and not the project build
+- [ ] SleepGuardUIKitWay: same setup once its Tuist project exists (F1-T2/T3)
+
+**Notes:**
+- Owner chose versioned URL + workspace over a plain path dependency, knowing that `run-tests.sh`, project and CLI builds use the release until a new version is tagged and bumped.
+- The workspace has its own `Package.resolved`; it was seeded from the project's so both pin the same Firebase/Factory versions (a fresh resolve picked newer ones).
+- `.xcodebuildmcp/config.yaml` now points at the workspace. Not verified: the build MCP server was not connected this session.
 
 ### F0-T5 — CI
 
 **Acceptance Criteria:**
-- [ ] Shared repo: both test lanes, `Strings.swift` in sync with the catalog
-- [ ] Shared repo: builds both apps against the candidate commit
-- [ ] SleepGuard `tests.yml` fetches the shared repo; its `strings-sync` job is removed
+- [x] Shared repo `tests.yml`: SleepCore on macOS, SleepStrings on a simulator, `Strings.swift` in sync
+- [x] Shared repo: builds SleepGuard's dev workspace against the candidate commit
+- [ ] … and SleepGuardUIKitWay, once it has code
+- [x] SleepGuard: packages resolve the public release (no workflow change needed); `strings-sync` removed from `quality.yml`
+
+**Notes:**
+- Not run on GitHub yet: nothing has been pushed since the workflow was written.
+- The shared CI's SleepGuard job builds SleepGuard `main`, which only has the workspace after the shared-repo branch is merged. Until then it fails on `main`; run it by hand with `sleepguard_ref` set to the feature branch.
