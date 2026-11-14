@@ -37,6 +37,20 @@ struct MainTabCoordinatorTests {
     #expect(navigation.navigationBar.tintColor == UIColor(theme.palette.accent))
   }
 
+  @Test func navigationTitlesUseTheThemesTypeDesign() throws {
+    var theme = Theme.sleepGuard
+    theme.typography = Typography(design: .rounded)
+    let coordinator = MainTabCoordinator(container: container(TestBrand(theme: theme, tabs: [.statistics])))
+    let navigation = try #require(coordinator.tabBarController.viewControllers?.first as? UINavigationController)
+
+    let largeTitle = try #require(navigation.navigationBar.standardAppearance.largeTitleTextAttributes[.font] as? UIFont)
+    let title = try #require(navigation.navigationBar.standardAppearance.titleTextAttributes[.font] as? UIFont)
+    // System fonts carry their design in the name (e.g. ".SFUIRounded-Bold").
+    #expect(largeTitle.fontName.localizedCaseInsensitiveContains("rounded"), "\(largeTitle.fontName)")
+    #expect(title.fontName.localizedCaseInsensitiveContains("rounded"), "\(title.fontName)")
+    #expect(Appearance.font(.sleepGuard, style: .headline, weight: .semibold).fontName.localizedCaseInsensitiveContains("rounded") == false)
+  }
+
   private func container(_ brand: TestBrand) -> Container {
     let container = Container()
     container.brand.register { brand }

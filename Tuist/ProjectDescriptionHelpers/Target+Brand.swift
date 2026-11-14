@@ -37,7 +37,7 @@ public extension Target {
       dependencies: [
         .package(product: "AppShell"),
         .package(product: "SleepGuardDesignKit"),
-      ],
+      ] + (brand.usesHealthKit ? [.package(product: "SleepHealth")] : []),
       settings: .settings(base: [
         "SWIFT_VERSION": "6.0",
         "SWIFT_STRICT_CONCURRENCY": "complete",
@@ -50,11 +50,12 @@ public extension Target {
 }
 
 public extension Target {
-  /// Tests that must run inside an app: anything that needs a window scene,
-  /// such as presenting a view controller. Hosted by one brand's app.
+  /// Tests that must run inside an app: anything that needs a window scene
+  /// (presenting a view controller) or the brand the app actually started with.
+  /// One target per brand, all with the same sources.
   static func hostedTests(in brand: Brand) -> Target {
     .target(
-      name: "AppHostedTests",
+      name: "\(brand.name)HostedTests",
       destinations: [.iPhone],
       product: .unitTests,
       bundleId: "\(brand.bundleId).hostedtests",

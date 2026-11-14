@@ -1,8 +1,8 @@
 import AppShell
 import SleepGuardDesignKit
 
-/// This target's brand: what the shell needs that differs from other brands.
-/// The shared scene delegate reads `appBrand`, the target's one brand entry point.
+/// SleepGuard: the full product in the original look. The shared scene
+/// delegate reads `appBrand`, this target's one brand entry point.
 nonisolated struct SleepGuardBrand: BrandComposition {
   let configuration = BrandConfiguration(
     theme: .sleepGuard,
