@@ -13,11 +13,13 @@ Both apps consume one package from a separate repo, `../SleepGuardShared`:
 
 | Product | Contents | State |
 |---|---|---|
-| `SleepCore` | Score formula and config, detection state machine and actor, stored value types | Extracted from SleepGuard, tests and replay goldens moved with it |
+| `SleepCore` | Night entities (`Night`, `NightEvent`, `NightEpisode`, `NightSummary`) and rules (episodes, snoring duration, stage stats, score inputs, summary); score formula and config; detection state machine and actor; stored value types | Extracted from SleepGuard (0.1.0); night entities and rules moved from this app's `SleepDomain` in F0-T6 (0.4.0) |
 | `SleepStrings` | String catalog and generated `Strings` | Extracted from SleepGuard |
 | `SleepGuardDesignKit` | `Theme` value, environment key, components with no domain types | To build in F1 |
 
-Not shared: entities, ports, use cases, adapters, navigation, DI. Those are where the two apps intentionally differ.
+Not shared: ports, use cases, adapters, navigation, DI. Those are where the two apps intentionally differ: SleepGuard has no ports or use cases (its views use SwiftData and services directly).
+
+**F0-T6 (revision).** The night entities and rules first lived in this app's `SleepDomain`, ported from SleepGuard's model properties, so the rules existed twice. They moved to `SleepCore` so a change to how a night adds up is made once. SleepGuard maps its `@Model` classes to `Night` and calls the same rules; its episode, stats and score tests pass unchanged, which proves the numbers didn't move. Names start with `Night` because SleepGuard's stored classes are `SleepSession` and `SnoreEvent`, and it has its own `SnoringEpisode` struct (kept, now wrapping `NightEpisode`).
 
 In this app a file that uses a `SleepCore` type imports `SleepCore` explicitly. Strings are the one re-export: `SleepGuardDesignKit` re-exports `SleepStrings`, matching SleepGuard's `DesignSystem`, so view files need one import for tokens, components and strings. The owner chose this over an explicit `import SleepStrings` in every file; the cost is that a file's imports don't name where `Strings` comes from.
 

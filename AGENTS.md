@@ -24,7 +24,7 @@ Brand app targets (SleepGuard | SleepGuardLite | Nocturne)
 Features (SwiftUI)  ScreenKit      Adapters (SleepPersistence, SleepAudio, SleepHealth)
   │   └─ SleepGuardDesignKit, SleepStrings (shared repo)      │
   └──────────► SleepDomain ◄──────────────────────────────────┘
-                   └─ SleepCore (shared repo)
+                   └─ SleepCore (shared repo: Night entities, night rules, score, detection)
 ```
 
 **The dependency rule:** everything points at `SleepDomain`. Nothing in `SleepDomain` knows about UI, persistence, DI, or brands.
@@ -45,7 +45,7 @@ Enforced by package manifests, **but only when a package builds on its own**: in
 - **Entities and values** are `Sendable` structs. **Policies** are pure functions or structs (no ports, no clock unless passed in). **Ports** are `Sendable` protocols with `async` methods, named for their role (`SessionRepository`, `SleepStagePort`).
 - **A use case exists only when it applies a policy or coordinates two or more ports** (`CommitSession`, `DeleteSession`, `LoadSessionDetail`). For a plain read, the screen's `Dependencies` holds the port. Never write a use case whose body is one forwarded call.
 - A use case is a `Sendable` struct with one `callAsFunction`. Collaborators come through `init`. A use case never calls another use case.
-- Score, detection and the stored value types come from `SleepCore` in the shared repo. Don't re-implement them here.
+- **The night itself is shared.** Entities (`Night`, `NightEvent`, `NightEpisode`, `NightSummary`) and the rules over them (episodes, snoring duration, stage stats, score inputs, score, summary), plus the score formula and detection, live in `SleepCore` in the shared repo, used by SleepGuard too. `SleepDomain` holds what is specific to this app's architecture: ports, use cases (and their output types such as `SessionDetail`), and fakes. A change to how a night is computed goes into `SleepCore`, never here.
 - **No brand, no feature flag, no localized text in the domain.** If a rule differs per brand, the brand supplies a value or a policy; the domain never asks which brand it is.
 
 ## Adapters

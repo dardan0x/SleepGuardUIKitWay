@@ -4,13 +4,13 @@
 
 | Field | Value |
 |-------|-------|
-| **Status** | Backlog |
+| **Status** | Done |
 | **Priority** | P0 |
 | **Milestone** | M1 |
-| **Blocked By** | F1 |
-| **Started** | — |
-| **Completed** | — |
-| **Feature Doc** | — |
+| **Blocked By** | — |
+| **Started** | 2026-11-14 |
+| **Completed** | 2026-11-14 |
+| **Feature Doc** | [f2-domain-persistence](../features/f2-domain-persistence.md) |
 
 ## Summary
 
@@ -20,13 +20,53 @@ The domain model of a night exists as plain values with its rules tested on macO
 
 | ID | Task | Type | Status | Depends On | Module | Acceptance (short) |
 |----|------|------|--------|------------|--------|--------------------|
-| F2-T1 | Entities and values: `SleepSession`, `SnoreEvent`, `SessionSummary`, `SnoringEpisode` | Domain | Backlog | F1-T3 | SleepDomain | `Sendable` structs; no framework imports |
-| F2-T2 | Policies: episode merging, snoring duration, score inputs, minimum save duration | Domain | Backlog | F2-T1 | SleepDomain (or `SleepCore` if SleepGuard adopts them) | Same results as SleepGuard's `SessionStatsTests` / `SnoringEpisodeTests` cases |
-| F2-T3 | Ports and use cases: `SessionRepository`, `SessionFileStore`, `DeleteSession`, `LoadSessionDetail`; fakes | Domain | Backlog | F2-T1 | SleepDomain, TestSupport | Use-case tests with fakes on macOS |
-| F2-T4 | SwiftData adapter: records, `@ModelActor` store, mappers, `observeSummaries()` | Adapter | Backlog | F2-T3 | SleepPersistence | Round-trip and observation tests against an in-memory store; records never leave the actor |
-| F2-T5 | Debug sample-night seeder | Tooling | Backlog | F2-T4 | SleepPersistence, AppShell | Each brand launches with seeded nights in Debug |
+| F2-T1 | Entities and values: `SleepSession`, `SnoreEvent`, `SessionSummary`, `SnoringEpisode` | Domain | Done | F1-T3 | SleepDomain | `Sendable` structs; no framework imports |
+| F2-T2 | Policies: episode merging, snoring duration, score inputs, minimum save duration | Domain | Done | F2-T1 | SleepDomain (or `SleepCore` if SleepGuard adopts them) | Same results as SleepGuard's `SessionStatsTests` / `SnoringEpisodeTests` cases |
+| F2-T3 | Ports and use cases: `SessionRepository`, `SessionFileStore`, `DeleteSession`, `LoadSessionDetail`; fakes | Domain | Done | F2-T1 | SleepDomain, TestSupport | Use-case tests with fakes on macOS |
+| F2-T4 | SwiftData adapter: records, `@ModelActor` store, mappers, `observeSummaries()` | Adapter | Done | F2-T3 | SleepPersistence | Round-trip and observation tests against an in-memory store; records never leave the actor |
+| F2-T5 | Debug sample-night seeder | Tooling | Done | F2-T4 | SleepPersistence, AppShell | Each brand launches with seeded nights in Debug |
+
+## Task Details
+
+### F2-T1 — Entities (done 2026-11-14)
+- [x] `SleepSession` (finished night: events, gaps, stages, `EndReason`), `SnoreEvent` (span, bursts, `measuredDuration`, clip file name), `SessionSummary` (list row), `SnoringEpisode` (sorted events, aggregates)
+- [x] `Sendable`, `Equatable`, `Identifiable`; Foundation + `SleepCore` only
+- [x] Needs `SleepGuardShared` 0.3.0: `RecordingGap` and `SleepStageSegment` became `Equatable` there (additive; SleepGuard unaffected, checked for clashing extensions)
+- Notes: spectral fields (dominant frequency, centroid, low-frequency ratio) left out until a screen needs them.
+
+### F2-T2 — Policies (done 2026-11-14)
+- [x] `SnoringEpisodes`: 5-minute merge, 3 s display filter, playback events for a row
+- [x] `SleepSession` metrics: `snoringDuration` (with SleepGuard's gap rule), sleep talking, `eventCount`, `stageStats`, `scoreInputs`, `score(using:)`, `summary(using:)`
+- [x] SleepGuard's `SnoringEpisodeTests`, `SessionStatsTests` and `SleepScoreTests` cases ported with the same numbers: 42 domain tests pass on macOS
+- Moved out: minimum save duration → F7 (saving a night); timeline segments → F3-T5 (the timeline).
+
+### F2-T3 — Ports and use cases (done 2026-11-14)
+- [x] Ports: `SessionRepository` (save with summary, load, delete, `observeSummaries()`), `SessionFileStore`, `SleepStagePort`; `SessionError.notFound`
+- [x] `DeleteSession`: record first, then clips (a failed delete keeps the clips)
+- [x] `LoadSessionDetail`: adds missing stages and re-saves with the new score; a failing stage source still opens the night
+- [x] Fakes (actors) in `SleepDomainTestSupport`: `FakeSessionRepository` (with observation), `FakeSessionFileStore`, `FakeSleepStagePort`
+- [x] Use-case tests with fakes on macOS: 52 domain tests pass
+- Notes: `SleepStagePort` added here because loading a night needs it (no adapter until F8; brands without HealthKit get a port that returns none). `observeSummaries()` is `async` so actor-based stores can implement it.
+
+### F2-T4 — SwiftData adapter (done 2026-11-14)
+- [x] `SessionRecord` / `EventRecord` (internal), versioned schema V1 + migration plan from the start
+- [x] `SwiftDataSessionStore` as a `@ModelActor`: records never leave it; save is insert-or-update by id; events replaced wholesale; cascade delete
+- [x] Mappers both ways; events returned in time order (now part of the port's contract); unknown stored enum values read as `.other` / `.quiet` / `.stopped`
+- [x] `observeSummaries()`: current list, then the new list after each write, newest first
+- [x] `FileSessionStore`: removes named files, ignores missing ones, refuses names that leave its directory
+- [x] Public surface: `SleepPersistence.makeSessionRepository(storeURL:)`, `makeSessionFileStore(directory:)`
+- [x] 9 tests against real SwiftData (in memory, and on disk for reopening), run standalone on the simulator
+- Notes: no `@Attribute(.unique)` on ids (keeps CloudKit possible; the actor serializes saves). Not wired into `AppShell` yet: the first consumer is the seeder (T5) and the History screen (F3).
+
+### F2-T5 — Store wiring and sample nights (done 2026-11-14)
+- [x] `StorageLocation`: the brand's app group container (id from Info.plist), Application Support as fallback; `Nights.store` and `Clips/`
+- [x] Container: `storageLocation`, `sessionRepository` (a store that can't open falls back to memory for that launch and logs a fault; the file is never deleted), `sessionFileStore`
+- [x] `SampleNights` (Debug only): 14 deterministic nights (fixed seed, ids included), varied snoring, sleep talking, gaps, stages, one low-battery night; seeded only into an empty store, by `AppCoordinator` at launch
+- [x] Tests: 6 shell tests (sample nights valid, varied, deterministic; seeding only when empty; storage fallback) and, in each brand's app, registrations resolve and the Debug launch has sample nights
+- [x] Each brand launches with seeded nights in Debug: confirmed in each brand's app group on the simulator
+- Notes: `DeleteSession` / `LoadSessionDetail` are not registered yet; their first consumer is F3.
 
 ## Notes
 
-- Decide in F2-T2 whether the episode and duration rules go straight into `SleepCore` so SleepGuard can call them too. That edits SleepGuard and needs its goldens and tests green.
+- **Decision (F2-T2):** the episode and duration rules live in `SleepDomain`, not `SleepCore`. They operate on this app's entities; moving them to `SleepCore` would mean a shared event value type and SleepGuard mapping its `@Model` classes to it, a refactor of the working app with no feature gained today. The cost is duplication: the rules exist in both apps, kept identical by the ported tests. Revisit if they need to change.
 - Fresh store: no migration from SleepGuard's data.

@@ -6,14 +6,14 @@ Vertical slices: the architecture and all three brands first, then one complete 
 
 | # | Feature | Status | Tasks | Notes |
 |---|---------|--------|-------|-------|
-| F0 | Shared repo | In Progress | 5/5 | Extracted, released as 0.1.0, consumed by SleepGuard by version with a dev-workspace override, CI written. This app's side follows in F1 |
+| F0 | Shared repo | In Progress | 6/6 | Extracted (0.1.0); versioned with a dev-workspace override; CI; design kit (0.2.0); night entities and rules shared by both apps (F0-T6, 0.4.0) |
 
 ## M1 — Architecture and brands
 
 | # | Feature | Status | Tasks | Notes |
 |---|---------|--------|-------|-------|
 | F1 | Foundation | Done | 8/8 | Tuist project, package skeletons, design kit, `ScreenKit`, `AppShell`, three brands launching into a themed tab shell, CI |
-| F2 | Domain and persistence | Backlog | 0/5 | Entities, ports, use cases on `SleepCore`; SwiftData behind a `@ModelActor`; sample-night seeder |
+| F2 | Domain and persistence | Done | 5/5 | Entities, ports, use cases on `SleepCore`; SwiftData behind a `@ModelActor`; sample-night seeder |
 
 ## M2 — First slices
 

@@ -13,7 +13,7 @@ import ProjectDescriptionHelpers
 let useReleasedShared = Environment.sharedRelease.getBoolean(default: false)
 
 /// Must match the `exact:` version in the package manifests.
-let sharedVersion: Version = "0.2.0"
+let sharedVersion: Version = "0.4.0"
 
 let project = Project(
   name: "SleepGuardUIKitWay",

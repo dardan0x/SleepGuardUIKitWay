@@ -4,7 +4,7 @@
 
 | Field | Value |
 |-------|-------|
-| **Status** | In Progress (UIKitWay side of T4/T5 waits for F1) |
+| **Status** | In Progress |
 | **Priority** | P0 |
 | **Milestone** | M0 |
 | **Blocked By** | — |
@@ -25,6 +25,7 @@ Code that both apps need lives once, in `../SleepGuardShared`, and both apps con
 | F0-T3 | Remote for `SleepGuardShared`; push | Infra | Done | F0-T1 | Shared | 2026-11-14 | 2026-11-14 |
 | F0-T4 | Versioned URL dependency in SleepGuard, dev workspace as local override, `bump-shared.sh` | Infra | Done | F0-T3 | SleepGuard | 2026-11-14 | 2026-11-14 |
 | F0-T5 | Shared-repo CI (tests, strings in sync, builds SleepGuard); SleepGuard CI fetches the shared repo | CI | Done | F0-T3 | Shared, SleepGuard | 2026-11-14 | 2026-11-14 |
+| F0-T6 | Night entities and rules move to `SleepCore`; both apps use them | Refactor | Done | F2 | Shared, both apps | 2026-11-14 | 2026-11-14 |
 
 ## Task Details
 
@@ -81,3 +82,16 @@ Code that both apps need lives once, in `../SleepGuardShared`, and both apps con
 **Notes:**
 - Not run on GitHub yet: nothing has been pushed since the workflow was written.
 - The shared CI's SleepGuard job builds SleepGuard `main`, which only has the workspace after the shared-repo branch is merged. Until then it fails on `main`; run it by hand with `sleepguard_ref` set to the feature branch.
+
+### F0-T6 — Shared night entities and rules
+
+**Acceptance Criteria:**
+- [x] `SleepCore` holds `Night`, `NightEvent`, `NightEpisode`, `NightSummary`, `SnoringEpisodes` and the `Night` metrics, with the 42 tests moved from this app (72 `SleepCoreTests` pass)
+- [x] SleepGuardUIKitWay: `SleepDomain` keeps ports, use cases, fakes; persistence and sample nights use the shared types; all lanes pass (domain 10, adapters 9, ScreenKit 11, shell 13, hosted 5 × 3 brands)
+- [x] SleepGuard: `SleepSession` / `SnoringEpisode` delegate to the shared rules through a mapping (`SleepSession+Night.swift`); all 8 package suites pass with **no test changed**; app builds; schema untouched
+- [ ] Released as shared `0.4.0` and both apps bumped (needs the owner's merge and tag)
+
+**Notes:**
+- Names start with `Night` (owner's choice, option A). `SnoringEpisode` became `NightEpisode` in the shared repo because SleepGuard already has a `SnoringEpisode` struct, which now wraps the shared one.
+- SleepGuard keeps two behaviours on purpose: an unfinished session maps to a zero-length night (scores 100), and score inputs use the cached snoring duration when present.
+- Not moved: ports and use cases (SleepGuard has none), timeline segments (F3-T5).
