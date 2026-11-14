@@ -22,7 +22,7 @@ Three branded apps build from one codebase and launch into an empty, themed tab 
 |----|------|------|--------|------------|--------|---------|-----------|
 | F1-T1 | Repo docs and agent setup | Docs | Done | — | — | 2026-11-14 | 2026-11-14 |
 | F1-T2 | Tuist project; three brand app targets that launch | Infra | Done | — | Apps, Tuist | 2026-11-14 | 2026-11-14 |
-| F1-T3 | Package skeletons with Swift 6 settings | Infra | Backlog | F1-T2 | Packages | — | — |
+| F1-T3 | Package skeletons with Swift 6 settings | Infra | Done | F1-T2 | Packages | 2026-11-14 | 2026-11-14 |
 | F1-T4 | `SleepGuardDesignKit`: `Theme`, environment key, primitive components | UI | Backlog | — | Shared repo | — | — |
 | F1-T5 | `ScreenKit`: `HostingScreen`, `ScreenChrome`, `Navigator` | UI | Backlog | F1-T3, F1-T4 | ScreenKit | — | — |
 | F1-T6 | `AppShell`: `BrandComposition`, bootstrap, container, `AppCoordinator`, tab shell | Shell | Backlog | F1-T5 | AppShell | — | — |
@@ -67,11 +67,18 @@ Three branded apps build from one codebase and launch into an empty, themed tab 
 | Arch Ref | `modules.md`, `concurrency.md` |
 
 **Acceptance Criteria:**
-- [ ] `Core`, `Adapters`, `Presentation`, `Features`, `AppShell` packages with the products in `modules.md`
-- [ ] Manifests express the import table (a forbidden import fails to compile)
-- [ ] Swift 6 mode everywhere; `MainActor` default isolation only in features, `ScreenKit`, `AppShell`
-- [ ] `SleepDomain` builds and tests on macOS with `swift test`
-- [ ] Each package depends on `SleepGuardShared` only where the table allows
+- [x] `Core`, `Adapters`, `Presentation`, `AppShell` packages with the products in `modules.md`; `Features` deferred to F3-T1 (no screen to put in it yet)
+- [x] Manifests express the import table. A forbidden import fails to compile **when the package builds standalone** (`import ScreenKit` in `SleepDomain`; `import FactoryKit` in `SleepPersistence`), but the second one **compiled inside the app workspace**. Standalone package builds and an import check move into F1-T8.
+- [x] Swift 6 mode everywhere; `MainActor` default isolation only in `ScreenKit` and `AppShell`
+- [x] `SleepDomain` builds and tests on macOS with `swift test` (1 wiring test against `SleepCore` 0.1.0)
+- [x] `SleepGuardShared` only in `Core` and `Adapters`; Factory only in `AppShell`
+- [x] Dev override: `tuist generate` resolves `../SleepGuardShared` locally; `TUIST_SHARED_RELEASE=1` resolves GitHub 0.1.0 (both checked)
+- [x] All three brands build and launch with the root screen served by `AppShell`
+
+**Notes:**
+- Placeholder sources (one comment-only file per module) say which task fills them.
+- `exact:` versions for `SleepGuardShared` and Factory: the generated workspace's lockfile isn't committed, so the manifests are the pins.
+- `PlaceholderViewController` moved from the app target into `AppShell`; still deleted in F1-T6.
 
 ### F1-T4 — Design kit
 
@@ -132,9 +139,9 @@ Three branded apps build from one codebase and launch into an empty, themed tab 
 | Arch Ref | `testing.md`, `rules.md` |
 
 **Acceptance Criteria:**
-- [ ] `scripts/run-tests.sh` runs both lanes
+- [ ] `scripts/run-tests.sh` runs both lanes and builds every package standalone (the app workspace hides undeclared imports; see F1-T3)
 - [ ] `scripts/check-layering.py`: forbidden imports, Factory outside `AppShell`, `.shared`, concurrency escape hatches, SwiftUI navigation APIs in features, `print(`
 - [ ] `scripts/check-view-size.py`: 200-line limit with an allowlist that can only shrink
 - [ ] Hardcoded-string check
-- [ ] GitHub Actions on pull request: generate, build three schemes, tests, checks, SwiftFormat lint
+- [ ] GitHub Actions on pull request: `TUIST_SHARED_RELEASE=1 tuist generate`, build three schemes, tests, checks, SwiftFormat lint
 - [ ] Each check is shown failing on a deliberate violation, then passing
