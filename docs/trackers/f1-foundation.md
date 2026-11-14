@@ -24,7 +24,7 @@ Three branded apps build from one codebase and launch into an empty, themed tab 
 | F1-T2 | Tuist project; three brand app targets that launch | Infra | Done | — | Apps, Tuist | 2026-11-14 | 2026-11-14 |
 | F1-T3 | Package skeletons with Swift 6 settings | Infra | Done | F1-T2 | Packages | 2026-11-14 | 2026-11-14 |
 | F1-T4 | `SleepGuardDesignKit`: `Theme`, environment key, primitive components | UI | Done | — | Shared repo | 2026-11-14 | 2026-11-14 |
-| F1-T5 | `ScreenKit`: `HostingScreen`, `ScreenChrome`, `Navigator` | UI | Backlog | F1-T3, F1-T4 | ScreenKit | — | — |
+| F1-T5 | `ScreenKit`: `HostingScreen`, `ScreenChrome`, `Navigator` | UI | Done | F1-T3, F1-T4 | ScreenKit | 2026-11-14 | 2026-11-14 |
 | F1-T6 | `AppShell`: `BrandComposition`, bootstrap, container, `AppCoordinator`, tab shell | Shell | Backlog | F1-T5 | AppShell | — | — |
 | F1-T7 | Three brands: configuration, theme, capabilities, assets; bootstrap test | Brand | Backlog | F1-T6 | Apps, AppShell | — | — |
 | F1-T8 | Scripts and CI: test runner, layering, view size, format, PR workflow | CI | Backlog | F1-T3 | scripts, .github | — | — |
@@ -108,10 +108,17 @@ Three branded apps build from one codebase and launch into an empty, themed tab 
 | Arch Ref | `composition.md`, `navigation.md` |
 
 **Acceptance Criteria:**
-- [ ] `HostingScreen<Content>` injects the theme and applies `ScreenChrome`
-- [ ] `Navigator` protocol with a `UINavigationController` implementation, including presentation-in-flight guards
-- [ ] Child-containment helper for embedding a SwiftUI view
-- [ ] Tests: chrome is applied; navigator calls reach UIKit
+- [x] `HostingScreen<Content>` injects the theme into the SwiftUI environment, paints the theme background, applies `ScreenChrome` (title, large title, hidden bar, trailing icon items with required accessibility labels)
+- [x] `Navigator` protocol with `NavigationControllerNavigator`: every operation waits for a running transition to finish instead of being dropped
+- [ ] Child-containment helper: **deferred**, no planned screen embeds SwiftUI inside UIKit content; add it with the first one
+- [x] Tests (11, simulator): chrome on the navigation item, theme reaches SwiftUI content (probe view), background, hidden bar; set root / push / pop / pop to root; sheet and full-screen configuration; dismiss with nothing presented
+- [ ] Real present/dismiss (incl. the in-flight wait) checked inside the app in F1-T6
+
+**Notes:**
+- Packages now use shared `0.2.0` (`Core`, `Adapters`, `Presentation`); domain test passes against it.
+- **Package tests can't present.** They run without a host app, so a `UIWindow` has no scene and UIKit never finishes a presentation; two such tests hung the run (stopped). They were replaced by tests of the presentation configuration; actual presenting is verified in the app (F1-T6), where there is a scene.
+- Test runs now use xcodebuild's per-test time limit, so a hang fails fast instead of blocking.
+- `.package.resolved` (Tuist's root copy of the workspace lockfile) is git-ignored: it changes with the generate mode.
 
 ### F1-T6 — AppShell
 
@@ -125,6 +132,7 @@ Three branded apps build from one codebase and launch into an empty, themed tab 
 - [ ] `AppCoordinator` and `MainTabCoordinator` build tabs from `BrandConfiguration.tabs` with placeholder screens
 - [ ] Theme applied to navigation and tab bar appearance
 - [ ] `AppShellTestSupport`: `NavigatorSpy`, `TestBrand`
+- [ ] In the running app: present and dismiss a sheet through `NavigationControllerNavigator`, including one issued during another transition (carried over from F1-T5)
 - [ ] Tests: tabs match the configuration; a route closure produces the expected navigator call
 
 ### F1-T7 — Three brands
@@ -147,7 +155,7 @@ Three branded apps build from one codebase and launch into an empty, themed tab 
 | Arch Ref | `testing.md`, `rules.md` |
 
 **Acceptance Criteria:**
-- [ ] `scripts/run-tests.sh` runs both lanes and builds every package standalone (the app workspace hides undeclared imports; see F1-T3)
+- [ ] `scripts/run-tests.sh` runs both lanes with xcodebuild's per-test time limit (`-test-timeouts-enabled YES`) and builds every package standalone (the app workspace hides undeclared imports; see F1-T3)
 - [ ] `scripts/check-layering.py`: forbidden imports, Factory outside `AppShell`, `.shared`, concurrency escape hatches, SwiftUI navigation APIs in features, `print(`
 - [ ] `scripts/check-view-size.py`: 200-line limit with an allowlist that can only shrink
 - [ ] Hardcoded-string check
