@@ -1,4 +1,5 @@
 import FactoryKit
+import SleepDomain
 import Testing
 import UIKit
 @testable import AppShell
@@ -15,6 +16,18 @@ struct BrandBootstrapTests {
     let configuration = container.brand().configuration
     #expect(!configuration.tabs.isEmpty)
     #expect(container.theme() == configuration.theme)
+    _ = container.sessionRepository()
+    _ = container.sessionFileStore()
+    #expect(FileManager.default.fileExists(atPath: container.storageLocation().clipsDirectory.path))
+  }
+
+  /// Debug launches seed an empty store; waits on the store's own stream.
+  @Test func debugLaunchHasSampleNights() async {
+    let repository = Container.shared.sessionRepository()
+    for await nights in await repository.observeSummaries() where !nights.isEmpty {
+      #expect(nights.count >= 14)
+      return
+    }
   }
 
   @Test func theTabBarShowsTheBrandsTabsInOrder() throws {
