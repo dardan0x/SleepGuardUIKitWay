@@ -4,11 +4,11 @@
 
 | Field | Value |
 |-------|-------|
-| **Status** | Backlog |
+| **Status** | In Progress |
 | **Priority** | P1 |
 | **Milestone** | M2 |
 | **Blocked By** | F2 |
-| **Started** | — |
+| **Started** | 2026-11-14 |
 | **Completed** | — |
 | **Feature Doc** | — |
 
@@ -20,7 +20,30 @@ The user sees last night's summary and a seven-night chart on the dashboard, and
 
 | ID | Task | Type | Status | Depends On | Module | Acceptance (short) |
 |----|------|------|--------|------------|--------|--------------------|
-| F4-T1 | `BuildDashboard` policy/use case and week-over-week trend, ported from `DashboardState.make` | Domain | Backlog | F2 | SleepDomain | Same outputs as SleepGuard's Statistics tests |
-| F4-T2 | Dashboard screen | UI | Backlog | F4-T1 | StatisticsFeature | `ViewState` with empty state; matches the design |
-| F4-T3 | Trends, calendar, last 7 nights screens | UI | Backlog | F4-T1 | StatisticsFeature | Swift Charts; computed values come from policies, not views |
-| F4-T4 | Composers and `StatisticsFlow`; "start recording" intent goes to `AppCoordinator` | Shell | Backlog | F4-T2, F4-T3 | AppShell | Flow tests with `NavigatorSpy` |
+| F4-T1 | Statistics rules in `SleepCore` (shared 0.7.0): dashboard, day summaries, week-over-week trend, period stats, calendar month; `NightSummary.loudestIntensity` | Domain | Done | F2 | Shared repo | SleepGuard's test cases pass with the same numbers |
+| F4-T2 | SleepGuard's Statistics uses the shared rules; its in-view copies removed | Refactor | Done | F4-T1 | SleepGuard | All SleepGuard tests pass; no visual change |
+| F4-T3 | Dashboard screen (the store's loudest-intensity column landed in F4-T1) | UI | Backlog | F4-T1 | SleepPersistence, StatisticsFeature | `ViewState` with empty state; matches SleepGuard |
+| F4-T4 | Trends, calendar, last 7 nights screens | UI | Backlog | F4-T3 | StatisticsFeature | Swift Charts; every number comes from the shared rules |
+| F4-T5 | Composers and `StatisticsFlow`; "start recording" intent goes to `AppCoordinator` | Shell | Backlog | F4-T3, F4-T4 | AppShell | Flow tests with `NavigatorSpy` |
+
+## Notes
+
+- 2026-11-14: the statistics rules go to the shared repo (decided with the user), so SleepGuard and SleepGuardUIKitWay compute every number the same way. They work on `NightSummary` values (no events), plus a new `loudestIntensity` (loudest of any event; `nil` when the night has none), which the calendar colours, trend bars, last-7-nights rows and "loud nights" need.
+
+## Task Details
+
+### F4-T1 — Statistics rules in the shared repo (done 2026-11-14; shared 0.7.0)
+- [x] `SleepCore/Statistics`: `NightDashboard` (latest night, its day's score and count, 7 most recent, "last night"), `NightDay` / `NightDayStats` (nights per start day, totals, last 7 recorded days, best/worst), `ScoreTrend.weekOverWeek`, `NightPeriod` (last week/month, averages, best/worst), `CalendarMonth` (month nights, average, loud nights, 42-day grid, day lookup)
+- [x] `NightSummary.loudestIntensity` (any event's loudest; `nil` without events); `SnoreIntensity` is `Comparable`
+- [x] 25 tests: SleepGuard's 13 dashboard and week-over-week cases with the same numbers, plus days, last 7, period, calendar, loudest intensity
+- Ported exactly, including integer averages, grouping by start day (a night across midnight belongs to the day it started), ties (best = last max, worst = first min), and "last night" judged by start.
+
+### F4-T2 — SleepGuard uses the shared rules (done 2026-11-14; SleepGuard branch `feature/shared/f4-t2-shared-statistics`)
+- [x] Dashboard, week-over-week, Last 7 Nights, Trends, calendar and mini chart call the shared rules; the views keep their types and layout
+- [x] Two mappings on `SleepSession`: `summaryWithoutEvents` (cached fields, no faulting) chooses nights; `nightSummary` (reads events) only for the nights shown. The dashboard and trend stay event-free; Last 7 Nights now reads fewer events than before
+- [x] All 8 SleepGuard suites pass with no existing test changed (Statistics 18, Models 80 with 3 new); app builds; AGENTS.md/CLAUDE.md, ADR 0004, overview updated
+- Not checked on screen with real data (Trends, calendar and Last 7 Nights had no tests before).
+
+### Store column (landed with F4-T1)
+- [x] `SessionRecord.loudestIntensity` (optional, additive) written and read with the summary; unknown values read as `.quiet`. Found by the store's observe test failing on 0.7.0 (the stored summary dropped the new field).
+- Simulator stores seeded before this have `nil` for existing nights (no events colour) until re-seeded; the app isn't in production.

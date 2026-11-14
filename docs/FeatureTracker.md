@@ -16,13 +16,13 @@ Last updated: 2026-11-14
 | Backlog | 6 |
 | Blocked | 0 |
 | — | — |
-| Total Tasks | 51 |
-| Tasks Done | 24 |
+| Total Tasks | 52 |
+| Tasks Done | 26 |
 | Tasks In Progress | 0 |
 | Tasks Blocked | 0 |
-| Tasks Backlog | 27 |
+| Tasks Backlog | 26 |
 | — | — |
-| **Progress** | **47%** |
+| **Progress** | **50%** |
 
 ## Features
 
@@ -32,7 +32,7 @@ Last updated: 2026-11-14
 | F1 | Foundation | P0 | Done | 8/8 | ██████████ 100% | [tracker](trackers/f1-foundation.md) |
 | F2 | Domain and persistence | P0 | Done | 5/5 | ██████████ 100% | [tracker](trackers/f2-domain-persistence.md) |
 | F3 | History → Session Detail | P0 | Done | 5/5 | ██████████ 100% | [tracker](trackers/f3-history-session-detail.md) |
-| F4 | Statistics | P1 | Backlog | 0/4 | ░░░░░░░░░░ 0% | [tracker](trackers/f4-statistics.md) |
+| F4 | Statistics | P1 | In Progress | 2/5 | ████░░░░░░ 40% | [tracker](trackers/f4-statistics.md) |
 | F5 | Clip playback | P1 | Backlog | 0/3 | ░░░░░░░░░░ 0% | [tracker](trackers/f5-clip-playback.md) |
 | F6 | Design kit adoption in SleepGuard | P2 | Backlog | 0/4 | ░░░░░░░░░░ 0% | [tracker](trackers/f6-design-kit-adoption.md) |
 | F7 | Recording and detection | P1 | Backlog | 0/6 | ░░░░░░░░░░ 0% | [tracker](trackers/f7-recording-detection.md) |
@@ -41,7 +41,7 @@ Last updated: 2026-11-14
 
 ## Currently Active
 
-- **F4** — Statistics.
+- **F4-T3** — Dashboard screen.
 
 ## Up Next
 
@@ -64,6 +64,7 @@ Last updated: 2026-11-14
 | 2026-11-14 | F0-T3 | Completed | Owner created and pushed both repos; `SleepGuardShared` made public; tag `0.1.0` |
 | 2026-11-14 | F0-T4 | Completed | SleepGuard depends on `SleepGuardShared` 0.1.0 by URL; `SleepGuard.xcworkspace` overrides it with the local checkout; `bump-shared.sh` |
 | 2026-11-14 | F0-T5 | Completed | Shared-repo CI (tests, strings sync, SleepGuard build); SleepGuard's `strings-sync` removed. Not yet run on GitHub |
+| 2026-11-14 | F4-T1, F4-T2 | Completed | Statistics rules moved to `SleepCore` (shared 0.7.0) with SleepGuard's test cases; SleepGuard's Statistics uses them (its branch `feature/shared/f4-t2-shared-statistics`). Branch `feature/f4/t1-shared-statistics` |
 | 2026-11-14 | F3-T5 | Completed | Detail components moved to the shared kit (0.6.0): stats grid, timeline, banners, event row/card, score badge, night row; UIKitWay's copies removed; timeline and banners on the detail. F3 done. Branch `feature/f3/t5-detail-components` |
 | 2026-11-14 | F3-T4 | Completed | Events sheet: card grid for the current filter, UIKit sheet (medium/large) from `HistoryFlow`, close dismisses. Branch `feature/f3/t4-events-sheet` |
 | 2026-11-14 | F6 | Planned | Design kit adoption detailed (4 tasks) and mirrored in SleepGuard as F24; no longer waits for F4. F3-T5 widened: event row, score badge, night row also move to the kit. Rule: values-only views go in the kit |
