@@ -44,7 +44,7 @@ title: Tuist project with three brands; package skeletons on the shared release
 `F1-T3 — Package skeletons with Swift 6 settings`
 
 ### Next Session
-- F1-T4: `SleepGuardDesignKit` in the shared repo (release 0.2.0), then F1-T5 `ScreenKit`.
+- F1-T4 (done in the same sitting, see `2026-11-14-f1-t4-design-kit.md`).
 
 ### Open Questions
 - None. (`docs/architecture/` and `docs/CODING_WORKFLOW.md` are local-only by the owner's `.gitignore`, like SleepGuard's.)
