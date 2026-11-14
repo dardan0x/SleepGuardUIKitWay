@@ -15,9 +15,10 @@ public struct HistoryDependencies: Sendable {
 }
 
 public struct HistoryRoutes {
-  public var openNight: @MainActor (Night.ID) -> Void
+  /// The row's summary, so the next screen can show the night's date at once.
+  public var openNight: @MainActor (NightSummary) -> Void
 
-  public init(openNight: @escaping @MainActor (Night.ID) -> Void) {
+  public init(openNight: @escaping @MainActor (NightSummary) -> Void) {
     self.openNight = openNight
   }
 }
@@ -26,13 +27,12 @@ public struct HistoryRoutes {
 /// deleted; re-subscribing when the screen reappears yields the current list
 /// at once, so returning from a night never shows the loading state.
 public struct HistoryScreen: View {
-  private let dependencies: HistoryDependencies
-  private let routes: HistoryRoutes
+  let dependencies: HistoryDependencies
+  let routes: HistoryRoutes
   @State private var viewState: ViewState = .loading
   @State private var pendingDelete: HistoryDay?
   @State private var deleteFailed = false
   @Environment(\.calendar) private var calendar
-  @Environment(\.theme) private var theme
 
   public init(dependencies: HistoryDependencies, routes: HistoryRoutes) {
     self.dependencies = dependencies
@@ -50,7 +50,6 @@ public struct HistoryScreen: View {
         HistoryLoadedView(months: months, onOpen: routes.openNight, onDelete: { pendingDelete = $0 })
       }
     }
-    .background(theme.palette.bgPrimary.ignoresSafeArea())
     .task {
       for await summaries in await dependencies.nights.observeSummaries() {
         viewState = summaries.isEmpty ? .empty : .loaded(HistorySections.make(from: summaries, calendar: calendar))

@@ -22,7 +22,7 @@ The user sees their nights grouped by month, opens one, reads its score, timelin
 |----|------|------|--------|------------|--------|--------------------|
 | F3-T1 | `HistoryFeature`: screen, state views, month grouping, swipe to delete | UI | Done | F2 | HistoryFeature | Live updates from `observeSummaries()`; no refetch on pop |
 | F3-T2 | `SessionDetailFeature`: header, timeline, stats grid, event list with category filter | UI | Done | F2 | SessionDetailFeature | Matches the design; loads through `LoadSessionDetail` |
-| F3-T3 | Composers and `HistoryFlow`: push detail, delete then pop | Shell | Backlog | F3-T1, F3-T2 | AppShell | Flow tests with `NavigatorSpy` |
+| F3-T3 | Composers and `HistoryFlow`: push detail, delete then pop | Shell | Done | F3-T1, F3-T2 | AppShell | Flow tests with `NavigatorSpy` |
 | F3-T4 | Events sheet as a UIKit sheet presented by the flow | Shell | Backlog | F3-T3 | AppShell, SessionDetailFeature | Detents work; dismissal returns to detail |
 | F3-T5 | Timeline, stats grid and legend in the design kit, fed by view-data structs | UI | Backlog | F1-T4 | Shared repo | No domain types in the kit |
 
@@ -47,6 +47,16 @@ The user sees their nights grouped by month, opens one, reads its score, timelin
 - [x] `SessionDetail` got a public initializer (previews and tests)
 - Not here: navigation bar title and delete (F3-T3), events sheet (F3-T4), timeline and the gap / low-battery banners (F3-T5), play and share (F5).
 - Note: the segmented filter is UIKit-backed and doesn't appear in `ImageRenderer` renders; checked in the app in F3-T3.
+
+### F3-T3 — Composers and History flow (done 2026-11-14; needs shared 0.5.0)
+- [x] `HistoryScreenComposer`, `SessionDetailComposer` (date title, delete in the bar), `HistoryFlow` (list → push detail → delete then pop), `TabFlow` protocol; Sessions tab uses `HistoryFlow`
+- [x] Container: `sleepStagePort` (`NoSleepStages` until F8), `deleteSession`, `loadSessionDetail`
+- [x] `HistoryRoutes.openNight` passes the `NightSummary` (title without waiting for the load)
+- [x] Tests: 19 shell tests (flow: root, push detail with title and delete item, delete asks first, delete then pop, failed delete stays, no leak); ScreenKit 12 (alert style); in-app test in each brand drives the real Sessions tab and checks the pushed detail
+- [x] On screen (simulator screenshots): list, detail, filter, ring, stat cards correct in SleepGuard and Nocturne
+- [x] Large title: investigated (time-boxed). UIKit never creates the large-title view over the hosted `List` (bar at large height, only the inline label present); resizing the bar, a `List` placeholder and bar appearances ruled out. The list uses an inline title (decided 2026-11-14).
+- [x] Delete from the detail asks first: `UIAlertController` ("Delete This Night?", Cancel / Delete) presented through the navigator (new `PresentationStyle.alert`); only Delete deletes. Two new strings in shared (`session.delete.confirmTitle`, `session.delete.confirmMessage`).
+- Notes: screenshots taken by the app itself (`drawHierarchy`) showed a half-drawn ring and clipped cards that the simulator's own screenshots didn't: use `simctl io screenshot` for visual checks. Screens no longer paint their own background (the hosting controller does). Delete from the detail confirms first (unlike SleepGuard, decided 2026-11-14).
 
 ## Notes
 

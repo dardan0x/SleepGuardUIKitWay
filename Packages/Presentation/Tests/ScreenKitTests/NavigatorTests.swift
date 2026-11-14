@@ -51,6 +51,13 @@ struct NavigatorTests {
     #expect(second.modalPresentationStyle == .fullScreen)
   }
 
+  @Test func anAlertKeepsItsOwnStyle() {
+    let navigator = NavigationControllerNavigator(animated: false)
+    let alert = UIAlertController(title: nil, message: nil, preferredStyle: .alert)
+    navigator.configure(alert, for: .alert)
+    #expect(alert.modalPresentationStyle == .custom)
+  }
+
   @Test func dismissWithNothingPresentedLeavesTheStackAlone() {
     let navigator = NavigationControllerNavigator(animated: false)
     navigator.setRoot(first)
