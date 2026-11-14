@@ -25,7 +25,7 @@ Three branded apps build from one codebase and launch into an empty, themed tab 
 | F1-T3 | Package skeletons with Swift 6 settings | Infra | Done | F1-T2 | Packages | 2026-11-14 | 2026-11-14 |
 | F1-T4 | `SleepGuardDesignKit`: `Theme`, environment key, primitive components | UI | Done | — | Shared repo | 2026-11-14 | 2026-11-14 |
 | F1-T5 | `ScreenKit`: `HostingScreen`, `ScreenChrome`, `Navigator` | UI | Done | F1-T3, F1-T4 | ScreenKit | 2026-11-14 | 2026-11-14 |
-| F1-T6 | `AppShell`: `BrandComposition`, bootstrap, container, `AppCoordinator`, tab shell | Shell | Backlog | F1-T5 | AppShell | — | — |
+| F1-T6 | `AppShell`: `BrandComposition`, bootstrap, container, `AppCoordinator`, tab shell | Shell | Done | F1-T5 | AppShell | 2026-11-14 | 2026-11-14 |
 | F1-T7 | Three brands: configuration, theme, capabilities, assets; bootstrap test | Brand | Backlog | F1-T6 | Apps, AppShell | — | — |
 | F1-T8 | Scripts and CI: test runner, layering, view size, format, PR workflow | CI | Backlog | F1-T3 | scripts, .github | — | — |
 
@@ -127,13 +127,22 @@ Three branded apps build from one codebase and launch into an empty, themed tab 
 | Arch Ref | `dependencies.md`, `navigation.md` |
 
 **Acceptance Criteria:**
-- [ ] `BrandComposition`, `BrandConfiguration`, `Capabilities`
-- [ ] `AppShell.bootstrap(brand:)` registers the brand; container factories derive from it
-- [ ] `AppCoordinator` and `MainTabCoordinator` build tabs from `BrandConfiguration.tabs` with placeholder screens
-- [ ] Theme applied to navigation and tab bar appearance
-- [ ] `AppShellTestSupport`: `NavigatorSpy`, `TestBrand`
-- [ ] In the running app: present and dismiss a sheet through `NavigationControllerNavigator`, including one issued during another transition (carried over from F1-T5)
-- [ ] Tests: tabs match the configuration; a route closure produces the expected navigator call
+- [x] `BrandComposition` and `BrandConfiguration` (theme, tabs). `Capabilities` **deferred** to F3: nothing reads a capability yet
+- [x] `AppShell.bootstrap(brand:)` registers the brand; `theme` derives from it
+- [x] `AppCoordinator` and `MainTabCoordinator` build tabs from `BrandConfiguration.tabs` (order kept), each with a placeholder flow and screen
+- [x] Theme applied per instance to navigation and tab bar appearance (no global `UIAppearance`)
+- [x] `AppShellTestSupport`: `NavigatorSpy`, `TestBrand`
+- [x] In the running app: present and dismiss a sheet through `NavigationControllerNavigator`, including one issued during another transition (`AppHostedTests`, 2 tests, hosted by the SleepGuard app)
+- [x] Tests (6, package): tabs follow the brand's list and order; each tab starts on its own hosted screen with its title; bars use the theme; start sets the root; a route closure presents a sheet and close dismisses it; the flow isn't retained by its screens
+
+**Notes:**
+- Each brand has `Apps/<Brand>/Sources/Brand.swift`: its own type plus `let appBrand = …Brand()`, read by the shared scene delegate. All three are identical until F1-T7.
+- Identity (display name, URL scheme, app group) is left out of `BrandConfiguration`: it is set once in the Tuist brand list and read from Info.plist when needed.
+- The brand types are `nonisolated`: `AppShell` defaults to `MainActor`, Factory resolves outside it.
+- Coordinators take a `Container`, so tests build their own instead of using `Container.shared`.
+- Placeholder flow and screen are temporary, written like real ones (`Routes` closures, composer, theme from the environment); removed when each tab gets its feature.
+- `Project.swift` declares the shared package in release mode too (`.remote`, `exact`), because brand targets import the design kit. The shared version now appears in 5 places (4 manifests + `Project.swift`); a bump script belongs in F1-T8.
+- Visual check: SleepGuard brand launches into the themed tab shell (Statistics, Sessions, Settings, Learn).
 
 ### F1-T7 — Three brands
 
@@ -155,7 +164,8 @@ Three branded apps build from one codebase and launch into an empty, themed tab 
 | Arch Ref | `testing.md`, `rules.md` |
 
 **Acceptance Criteria:**
-- [ ] `scripts/run-tests.sh` runs both lanes with xcodebuild's per-test time limit (`-test-timeouts-enabled YES`) and builds every package standalone (the app workspace hides undeclared imports; see F1-T3)
+- [ ] `scripts/run-tests.sh` runs both lanes plus `AppHostedTests`, with xcodebuild's per-test time limit (`-test-timeouts-enabled YES`)
+- [ ] `scripts/bump-shared.sh <version>` updates the shared version in every manifest and `Project.swift` and builds every package standalone (the app workspace hides undeclared imports; see F1-T3)
 - [ ] `scripts/check-layering.py`: forbidden imports, Factory outside `AppShell`, `.shared`, concurrency escape hatches, SwiftUI navigation APIs in features, `print(`
 - [ ] `scripts/check-view-size.py`: 200-line limit with an allowlist that can only shrink
 - [ ] Hardcoded-string check

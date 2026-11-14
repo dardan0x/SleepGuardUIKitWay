@@ -17,6 +17,7 @@ let package = Package(
     .package(path: "../Core"),
     .package(path: "../Adapters"),
     .package(path: "../Presentation"),
+    .package(url: "https://github.com/dardan0x/SleepGuardShared.git", exact: "0.2.0"),
     .package(url: "https://github.com/hmlongco/Factory", exact: "3.5.2"),
   ],
   targets: [
@@ -27,6 +28,7 @@ let package = Package(
         .product(name: "SleepPersistence", package: "Adapters"),
         .product(name: "SleepAudio", package: "Adapters"),
         .product(name: "ScreenKit", package: "Presentation"),
+        .product(name: "SleepGuardDesignKit", package: "SleepGuardShared"),
         .product(name: "FactoryKit", package: "Factory"),
       ],
       swiftSettings: [
@@ -35,7 +37,24 @@ let package = Package(
       ]),
     .target(
       name: "AppShellTestSupport",
-      dependencies: ["AppShell"],
+      dependencies: [
+        "AppShell",
+        .product(name: "ScreenKit", package: "Presentation"),
+        .product(name: "SleepGuardDesignKit", package: "SleepGuardShared"),
+      ],
+      swiftSettings: [
+        .swiftLanguageMode(.v6),
+        .defaultIsolation(MainActor.self),
+      ]),
+    .testTarget(
+      name: "AppShellTests",
+      dependencies: [
+        "AppShell",
+        "AppShellTestSupport",
+        .product(name: "ScreenKit", package: "Presentation"),
+        .product(name: "SleepGuardDesignKit", package: "SleepGuardShared"),
+        .product(name: "FactoryKit", package: "Factory"),
+      ],
       swiftSettings: [
         .swiftLanguageMode(.v6),
         .defaultIsolation(MainActor.self),

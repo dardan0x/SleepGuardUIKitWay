@@ -1,8 +1,13 @@
+import FactoryKit
 import UIKit
 
-/// Entry point the app targets call. Becomes `bootstrap(brand:)` in F1-T6.
+/// The app targets' entry point into the shell.
 public enum AppShell {
-  public static func makeRootViewController() -> UIViewController {
-    PlaceholderViewController()
+  /// Registers the brand and returns the coordinator that owns the app's UI.
+  /// Call once, from the scene delegate.
+  public static func bootstrap(brand: some BrandComposition) -> AppCoordinator {
+    let container = Container.shared
+    container.brand.register { brand }
+    return AppCoordinator(container: container)
   }
 }

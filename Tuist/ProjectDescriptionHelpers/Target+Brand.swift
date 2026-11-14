@@ -31,10 +31,13 @@ public extension Target {
         ]],
         "SGAppGroup": .string(brand.appGroup),
       ]),
-      sources: ["Apps/Shared/Sources/**"],
+      sources: ["Apps/Shared/Sources/**", "Apps/\(brand.name)/Sources/**"],
       resources: ["Apps/\(brand.name)/Resources/**"],
       entitlements: .file(path: "Apps/\(brand.name)/\(brand.name).entitlements"),
-      dependencies: [.package(product: "AppShell")],
+      dependencies: [
+        .package(product: "AppShell"),
+        .package(product: "SleepGuardDesignKit"),
+      ],
       settings: .settings(base: [
         "SWIFT_VERSION": "6.0",
         "SWIFT_STRICT_CONCURRENCY": "complete",
@@ -42,6 +45,26 @@ public extension Target {
         "ASSETCATALOG_COMPILER_APPICON_NAME": "AppIcon",
         "ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME": "BrandAccent",
         "TARGETED_DEVICE_FAMILY": "1",
+      ]))
+  }
+}
+
+public extension Target {
+  /// Tests that must run inside an app: anything that needs a window scene,
+  /// such as presenting a view controller. Hosted by one brand's app.
+  static func hostedTests(in brand: Brand) -> Target {
+    .target(
+      name: "AppHostedTests",
+      destinations: [.iPhone],
+      product: .unitTests,
+      bundleId: "\(brand.bundleId).hostedtests",
+      deploymentTargets: .iOS("17.0"),
+      sources: ["Apps/HostedTests/**"],
+      dependencies: [.target(name: brand.name)],
+      settings: .settings(base: [
+        "SWIFT_VERSION": "6.0",
+        "SWIFT_STRICT_CONCURRENCY": "complete",
+        "SWIFT_DEFAULT_ACTOR_ISOLATION": "MainActor",
       ]))
   }
 }
