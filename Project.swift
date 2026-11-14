@@ -13,7 +13,7 @@ import ProjectDescriptionHelpers
 let useReleasedShared = Environment.sharedRelease.getBoolean(default: false)
 
 /// Must match the `exact:` version in the package manifests.
-let sharedVersion: Version = "0.4.0"
+let sharedVersion: Version = "0.6.0"
 
 let project = Project(
   name: "SleepGuardUIKitWay",
@@ -24,6 +24,7 @@ let project = Project(
     .local(path: "Packages/Core"),
     .local(path: "Packages/Adapters"),
     .local(path: "Packages/Presentation"),
+    .local(path: "Packages/Features"),
     .local(path: "Packages/AppShell"),
     useReleasedShared
       ? .remote(url: "https://github.com/dardan0x/SleepGuardShared.git", requirement: .exact(sharedVersion))

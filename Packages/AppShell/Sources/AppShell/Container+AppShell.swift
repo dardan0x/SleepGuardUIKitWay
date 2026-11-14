@@ -40,4 +40,16 @@ extension Container {
   var sessionFileStore: Factory<any SessionFileStore> {
     self { SleepPersistence.makeSessionFileStore(directory: self.storageLocation().clipsDirectory) }.singleton
   }
+
+  var sleepStagePort: Factory<any SleepStagePort> {
+    self { NoSleepStages() }.singleton
+  }
+
+  var deleteSession: Factory<DeleteSession> {
+    self { DeleteSession(sessions: self.sessionRepository(), files: self.sessionFileStore()) }
+  }
+
+  var loadSessionDetail: Factory<LoadSessionDetail> {
+    self { LoadSessionDetail(sessions: self.sessionRepository(), sleepStages: self.sleepStagePort()) }
+  }
 }

@@ -14,6 +14,8 @@ struct MainTabCoordinatorTests {
     let items = coordinator.tabBarController.viewControllers?.compactMap(\.tabBarItem)
     #expect(items?.map(\.title) == [Strings.tabSessions, Strings.tabStatistics, Strings.tabSettings])
     #expect(coordinator.flows.map(\.tab) == [.history, .statistics, .settings])
+    #expect(coordinator.flows.first is HistoryFlow)
+    #expect(coordinator.flows.dropFirst().allSatisfy { $0 is PlaceholderFlow })
   }
 
   @Test func everyTabStartsOnItsOwnHostedScreenWithItsTitle() throws {
@@ -52,9 +54,7 @@ struct MainTabCoordinatorTests {
   }
 
   private func container(_ brand: TestBrand) -> Container {
-    let container = Container()
-    container.brand.register { brand }
-    return container
+    Container.test(brand: brand)
   }
 }
 

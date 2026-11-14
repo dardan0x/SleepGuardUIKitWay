@@ -20,7 +20,7 @@ struct PlaceholderScreenComposer {
 
 /// One tab's flow until its feature exists. "Continue" presents a sheet; inside
 /// a sheet it presents another above it; "Close" dismisses the top one.
-final class PlaceholderFlow {
+final class PlaceholderFlow: TabFlow {
   let tab: AppTab
   let navigator: any Navigator
   private let composer: PlaceholderScreenComposer

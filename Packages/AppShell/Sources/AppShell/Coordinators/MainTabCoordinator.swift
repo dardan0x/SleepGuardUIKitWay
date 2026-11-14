@@ -3,11 +3,17 @@ import ScreenKit
 import SleepGuardDesignKit
 import UIKit
 
+/// One tab's flow: it owns that tab's navigation.
+protocol TabFlow: AnyObject {
+  var tab: AppTab { get }
+  func start()
+}
+
 /// The tab bar. Builds one flow per tab in the brand's `tabs`, in that order.
-/// Every tab is a placeholder flow until its feature exists (F3, F4, F8).
+/// Tabs without their feature yet get a placeholder flow (F4, F8).
 final class MainTabCoordinator {
   let tabBarController = UITabBarController()
-  private(set) var flows: [PlaceholderFlow] = []
+  private(set) var flows: [any TabFlow] = []
 
   init(container: Container) {
     let theme = container.theme()
@@ -20,7 +26,10 @@ final class MainTabCoordinator {
       navigation.navigationBar.prefersLargeTitles = true
       Appearance.apply(theme, to: navigation.navigationBar)
 
-      let flow = PlaceholderFlow(tab: tab, navigator: navigator, composer: composer)
+      let flow: any TabFlow = switch tab {
+      case .history: HistoryFlow(navigator: navigator, container: container)
+      case .statistics, .settings, .learn: PlaceholderFlow(tab: tab, navigator: navigator, composer: composer)
+      }
       flow.start()
       flows.append(flow)
       return navigation
