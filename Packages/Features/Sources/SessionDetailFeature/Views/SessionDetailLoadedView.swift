@@ -29,6 +29,7 @@ struct SessionDetailContent: View {
 
     VStack(spacing: 24) {
       SessionDetailHeader(detail: detail)
+      SessionDetailTimeline(detail: detail)
 
       if !filters.isEmpty {
         Picker(Strings.filterAll, selection: $filter) {
@@ -44,7 +45,9 @@ struct SessionDetailContent: View {
           .tracking(1)
 
         VStack(spacing: 8) {
-          ForEach(rows.prefix(Self.visibleRows)) { DetailEventRowView(row: $0) }
+          ForEach(rows.prefix(Self.visibleRows)) { row in
+            EventRow(start: row.start, duration: row.duration, category: row.category, intensity: row.intensity)
+          }
         }
 
         if rows.count > Self.visibleRows {

@@ -26,7 +26,9 @@ struct EventCardGrid: View {
 
   var body: some View {
     LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 12), count: 3), spacing: 12) {
-      ForEach(rows) { EventCardView(row: $0) }
+      ForEach(rows) { row in
+        EventCard(start: row.start, duration: row.duration, category: row.category, intensity: row.intensity)
+      }
     }
   }
 }
