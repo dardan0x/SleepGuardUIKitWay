@@ -48,7 +48,7 @@ The user sees their nights grouped by month, opens one, reads its score, timelin
 - Not here: navigation bar title and delete (F3-T3), events sheet (F3-T4), timeline and the gap / low-battery banners (F3-T5), play and share (F5).
 - Note: the segmented filter is UIKit-backed and doesn't appear in `ImageRenderer` renders; checked in the app in F3-T3.
 
-### F3-T3 — Composers and History flow (done 2026-11-14; needs shared 0.5.0)
+### F3-T3 — Composers and History flow (done 2026-11-14; shared 0.5.0)
 - [x] `HistoryScreenComposer`, `SessionDetailComposer` (date title, delete in the bar), `HistoryFlow` (list → push detail → delete then pop), `TabFlow` protocol; Sessions tab uses `HistoryFlow`
 - [x] Container: `sleepStagePort` (`NoSleepStages` until F8), `deleteSession`, `loadSessionDetail`
 - [x] `HistoryRoutes.openNight` passes the `NightSummary` (title without waiting for the load)

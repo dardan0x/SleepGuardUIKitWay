@@ -8,11 +8,11 @@
 - Screens' `routes` / `dependencies` are internal (not private) so flow tests can trigger a route.
 - Large title over a hosted SwiftUI `List`: UIKit never creates the large-title view (bar at large height, only the inline label exists). Ruled out: bar resizing, a `List` loading placeholder, bar appearances. The list uses an inline title.
 - Visual checks: `drawHierarchy` screenshots were misleading (ring, cards); simulator screenshots (`simctl io screenshot`) are the reference.
-- Shared: two new strings (`session.delete.confirmTitle`, `session.delete.confirmMessage`) on shared branch `feature/session-delete-confirm-strings`; this branch needs shared 0.5.0.
+- Shared: two new strings (`session.delete.confirmTitle`, `session.delete.confirmMessage`) released in shared 0.5.0; this branch is bumped to it (`bump-shared.sh 0.5.0`).
 
 ### Build Status
-- Against the local shared checkout: Adapters 9, ScreenKit 12, Features 9, shell 19 pass; shared tests pass; checks and format pass; Nocturne list checked on the simulator (inline title).
-- Against the pinned 0.4.0 the shell doesn't compile (new strings) until the bump.
+- Against shared 0.5.0 (release, as CI builds): Adapters 9, ScreenKit 12, Features 9, shell 19; in-app tests pass in SleepGuard, SleepGuardLite and Nocturne; checks and format pass.
+- Nocturne list checked on the simulator (inline title).
 
 ### Next Session
-- Release shared 0.5.0, bump, then F3-T4 (events sheet).
+- F3-T4: events sheet.
