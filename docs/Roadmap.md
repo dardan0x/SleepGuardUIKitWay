@@ -6,13 +6,13 @@ Vertical slices: the architecture and all three brands first, then one complete 
 
 | # | Feature | Status | Tasks | Notes |
 |---|---------|--------|-------|-------|
-| F0 | Shared repo | In Progress | 2/5 | `SleepCore` and `SleepStrings` extracted from SleepGuard; remote, versioned dependency and CI still open |
+| F0 | Shared repo | In Progress | 5/5 | Extracted, released as 0.1.0, consumed by SleepGuard by version with a dev-workspace override, CI written. This app's side follows in F1 |
 
 ## M1 — Architecture and brands
 
 | # | Feature | Status | Tasks | Notes |
 |---|---------|--------|-------|-------|
-| F1 | Foundation | In Progress | 1/8 | Tuist project, package skeletons, design kit, `ScreenKit`, `AppShell`, three brands launching into a themed tab shell, CI |
+| F1 | Foundation | In Progress | 2/8 | Tuist project, package skeletons, design kit, `ScreenKit`, `AppShell`, three brands launching into a themed tab shell, CI |
 | F2 | Domain and persistence | Backlog | 0/5 | Entities, ports, use cases on `SleepCore`; SwiftData behind a `@ModelActor`; sample-night seeder |
 
 ## M2 — First slices
@@ -50,4 +50,4 @@ Widgets, Apple Watch, Firebase (replaced by a static per-brand configuration ada
 
 ## Known issues
 
-- `SleepGuardShared` has no remote yet, so both apps depend on it by sibling path and SleepGuard's CI cannot fetch it (F0-T3).
+- None yet.

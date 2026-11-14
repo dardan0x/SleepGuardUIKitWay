@@ -25,7 +25,7 @@ For a new iOS 17 app, `NavigationStack` is less code. This project uses a UIKit 
 ## Layout (target)
 
 ```
-Apps/          one folder per brand: Brand.swift, assets, xcconfig, entitlements
+Apps/          one folder per brand: Brand.swift, assets, entitlements
 Packages/      Core, Adapters, Presentation, Features, AppShell (local Swift packages)
 Project.swift  Tuist: generates the three app targets from one brand list
 ../SleepGuardShared   SleepCore, SleepStrings, SleepGuardDesignKit (shared with SleepGuard)
