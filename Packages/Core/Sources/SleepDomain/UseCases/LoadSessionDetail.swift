@@ -7,6 +7,12 @@ public struct SessionDetail: Sendable, Equatable {
   public let summary: NightSummary
   /// Displayable snoring episodes, in time order.
   public let episodes: [NightEpisode]
+
+  public init(session: Night, summary: NightSummary, episodes: [NightEpisode]) {
+    self.session = session
+    self.summary = summary
+    self.episodes = episodes
+  }
 }
 
 /// Opens a night for the detail screen.

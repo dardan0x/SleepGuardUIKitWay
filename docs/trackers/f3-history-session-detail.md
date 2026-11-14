@@ -21,7 +21,7 @@ The user sees their nights grouped by month, opens one, reads its score, timelin
 | ID | Task | Type | Status | Depends On | Module | Acceptance (short) |
 |----|------|------|--------|------------|--------|--------------------|
 | F3-T1 | `HistoryFeature`: screen, state views, month grouping, swipe to delete | UI | Done | F2 | HistoryFeature | Live updates from `observeSummaries()`; no refetch on pop |
-| F3-T2 | `SessionDetailFeature`: header, timeline, stats grid, event list with category filter | UI | Backlog | F2 | SessionDetailFeature | Matches the design; loads through `LoadSessionDetail` |
+| F3-T2 | `SessionDetailFeature`: header, timeline, stats grid, event list with category filter | UI | Done | F2 | SessionDetailFeature | Matches the design; loads through `LoadSessionDetail` |
 | F3-T3 | Composers and `HistoryFlow`: push detail, delete then pop | Shell | Backlog | F3-T1, F3-T2 | AppShell | Flow tests with `NavigatorSpy` |
 | F3-T4 | Events sheet as a UIKit sheet presented by the flow | Shell | Backlog | F3-T3 | AppShell, SessionDetailFeature | Detents work; dismissal returns to detail |
 | F3-T5 | Timeline, stats grid and legend in the design kit, fed by view-data structs | UI | Backlog | F1-T4 | Shared repo | No domain types in the kit |
@@ -36,6 +36,17 @@ The user sees their nights grouped by month, opens one, reads its score, timelin
 - [x] Swipe to delete a day, confirmed by alert; deletes go through `DeleteSession`
 - [x] Tests: 3 grouping tests, 1 render test (rows and empty state in two themes, renders differ); renders reviewed by eye
 - Notes: dates and durations use system formatting (`7h 30m`), so no new strings. "1 events" comes from the shared string, which isn't plural-aware (SleepGuard shows the same); fix in the catalog separately. The full `List` can't be drawn outside a window; its layout is checked in the app in F3-T3.
+
+### F3-T2 — Session detail screen (done 2026-11-14)
+- [x] `SessionDetailFeature`: `SessionDetailScreen` + `SessionDetailDependencies` (night id, `LoadSessionDetail`) + `SessionDetailRoutes` (`showAllEvents`)
+- [x] `ViewState`: loading (placeholder shapes), loaded, error with "Try again" (re-runs the load)
+- [x] Header: score gauge, duration / snoring % / snore time / events, disturbances card when there are non-snoring events
+- [x] Event filter (All / Snoring / Sleep talking / Noise), offered only when the night has more than one kind
+- [x] Event rows: one per displayable snoring episode (its representative event, the episode's summed time), every other event alone; first 4, then "Show all"
+- [x] Tests: 4 for filters and rows, 1 render in two themes (renders differ; reviewed by eye)
+- [x] `SessionDetail` got a public initializer (previews and tests)
+- Not here: navigation bar title and delete (F3-T3), events sheet (F3-T4), timeline and the gap / low-battery banners (F3-T5), play and share (F5).
+- Note: the segmented filter is UIKit-backed and doesn't appear in `ImageRenderer` renders; checked in the app in F3-T3.
 
 ## Notes
 
