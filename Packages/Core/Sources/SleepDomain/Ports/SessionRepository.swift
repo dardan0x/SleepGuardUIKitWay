@@ -8,7 +8,8 @@ public protocol SessionRepository: Sendable {
   /// it so lists never load events.
   func save(_ session: SleepSession, summary: SessionSummary) async throws
 
-  /// The whole night, events included. Throws `SessionError.notFound`.
+  /// The whole night, events included and in time order. Throws
+  /// `SessionError.notFound`.
   func session(id: SleepSession.ID) async throws -> SleepSession
 
   /// Removes the night and its events. Throws `SessionError.notFound`.
