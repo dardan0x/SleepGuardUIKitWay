@@ -23,7 +23,7 @@ The user sees their nights grouped by month, opens one, reads its score, timelin
 | F3-T1 | `HistoryFeature`: screen, state views, month grouping, swipe to delete | UI | Done | F2 | HistoryFeature | Live updates from `observeSummaries()`; no refetch on pop |
 | F3-T2 | `SessionDetailFeature`: header, timeline, stats grid, event list with category filter | UI | Done | F2 | SessionDetailFeature | Matches the design; loads through `LoadSessionDetail` |
 | F3-T3 | Composers and `HistoryFlow`: push detail, delete then pop | Shell | Done | F3-T1, F3-T2 | AppShell | Flow tests with `NavigatorSpy` |
-| F3-T4 | Events sheet as a UIKit sheet presented by the flow | Shell | Backlog | F3-T3 | AppShell, SessionDetailFeature | Detents work; dismissal returns to detail |
+| F3-T4 | Events sheet as a UIKit sheet presented by the flow | Shell | Done | F3-T3 | AppShell, SessionDetailFeature | Detents work; dismissal returns to detail |
 | F3-T5 | Timeline, stats grid, legends, event row, score badge and night row in the design kit, fed by view-data structs; UIKitWay's own copies removed | UI | Backlog | F1-T4 | Shared repo | No domain types in the kit; a view change is made once |
 
 ## Task Details
@@ -57,6 +57,14 @@ The user sees their nights grouped by month, opens one, reads its score, timelin
 - [x] Large title: investigated (time-boxed). UIKit never creates the large-title view over the hosted `List` (bar at large height, only the inline label present); resizing the bar, a `List` placeholder and bar appearances ruled out. The list uses an inline title (decided 2026-11-14).
 - [x] Delete from the detail asks first: `UIAlertController` ("Delete This Night?", Cancel / Delete) presented through the navigator (new `PresentationStyle.alert`); only Delete deletes. Two new strings in shared (`session.delete.confirmTitle`, `session.delete.confirmMessage`).
 - Notes: screenshots taken by the app itself (`drawHierarchy`) showed a half-drawn ring and clipped cards that the simulator's own screenshots didn't: use `simctl io screenshot` for visual checks. Screens no longer paint their own background (the hosting controller does). Delete from the detail confirms first (unlike SleepGuard, decided 2026-11-14).
+
+### F3-T4 — Events sheet (done 2026-11-14)
+- [x] `EventsSheetScreen` (public, `SessionDetailFeature`): every row under the detail's current filter as a 3-column grid of `EventCardView` (start time, length in the event's colour)
+- [x] `SessionDetailRoutes.showAllEvents` passes the rows on screen; `DetailEventRow` is public (init stays internal)
+- [x] `HistoryFlow` presents it in its own navigation controller (title "Events", close button) at medium and large detents; close dismisses
+- [x] One colour rule for rows and cards (`DetailEventRow.color(in:)`)
+- [x] Tests: flow (present with detents, rows passed through, close dismisses); card render in two themes (reviewed); in-app in each brand: real sheet, detents, close returns to the detail
+- Not here: Play on each card (F5). Card start-time line shrinks to fit (SleepGuard only shrinks the time), since three cards share 390 pt.
 
 ## Notes
 

@@ -31,7 +31,7 @@ struct DetailEventRowView: View {
   private var indicator: some View {
     switch row.category {
     case .snoring:
-      Circle().fill(intensityColor).frame(width: 10, height: 10).accessibilityHidden(true)
+      Circle().fill(row.color(in: theme.palette)).frame(width: 10, height: 10).accessibilityHidden(true)
     case .sleepTalking:
       Image(systemName: "bubble.left.fill")
         .font(.system(size: 11, weight: .semibold))
@@ -46,13 +46,21 @@ struct DetailEventRowView: View {
         .accessibilityHidden(true)
     }
   }
+}
 
-  private var intensityColor: Color {
-    switch row.intensity {
-    case .quiet: theme.palette.snoreQuiet
-    case .light: theme.palette.snoreLight
-    case .loud: theme.palette.snoreLoud
-    case .epic: theme.palette.snoreEpic
+extension DetailEventRow {
+  /// Snoring by intensity; sleep talking and noise by their category colour.
+  func color(in palette: Palette) -> Color {
+    switch category {
+    case .snoring:
+      switch intensity {
+      case .quiet: palette.snoreQuiet
+      case .light: palette.snoreLight
+      case .loud: palette.snoreLoud
+      case .epic: palette.snoreEpic
+      }
+    case .sleepTalking: palette.sleepTalking
+    case .noise, .coughing, .other: palette.noise
     }
   }
 }

@@ -15,10 +15,10 @@ public struct SessionDetailDependencies: Sendable {
 }
 
 public struct SessionDetailRoutes {
-  /// "Show all": the full event list (a sheet, F3-T4).
-  public var showAllEvents: @MainActor () -> Void
+  /// "Show all": every row under the current filter, for the events sheet.
+  public var showAllEvents: @MainActor ([DetailEventRow]) -> Void
 
-  public init(showAllEvents: @escaping @MainActor () -> Void) {
+  public init(showAllEvents: @escaping @MainActor ([DetailEventRow]) -> Void) {
     self.showAllEvents = showAllEvents
   }
 }

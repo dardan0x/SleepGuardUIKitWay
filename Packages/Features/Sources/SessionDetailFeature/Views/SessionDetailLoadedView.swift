@@ -5,7 +5,7 @@ import SwiftUI
 
 struct SessionDetailLoadedView: View {
   let detail: SessionDetail
-  let onShowAll: () -> Void
+  let onShowAll: ([DetailEventRow]) -> Void
 
   var body: some View {
     ScrollView {
@@ -17,7 +17,7 @@ struct SessionDetailLoadedView: View {
 /// The scrolling content, separate so it can be rendered in tests.
 struct SessionDetailContent: View {
   let detail: SessionDetail
-  let onShowAll: () -> Void
+  let onShowAll: ([DetailEventRow]) -> Void
   @State private var filter: EventFilter = .all
   @Environment(\.theme) private var theme
 
@@ -48,7 +48,7 @@ struct SessionDetailContent: View {
         }
 
         if rows.count > Self.visibleRows {
-          Button(String(format: Strings.recordingsDetailShowAllFormat, rows.count), action: onShowAll)
+          Button(String(format: Strings.recordingsDetailShowAllFormat, rows.count)) { onShowAll(rows) }
             .font(theme.typography.font(size: 15, weight: .medium))
             .foregroundStyle(theme.palette.accent)
             .frame(maxWidth: .infinity)
