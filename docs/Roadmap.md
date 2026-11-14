@@ -12,7 +12,7 @@ Vertical slices: the architecture and all three brands first, then one complete 
 
 | # | Feature | Status | Tasks | Notes |
 |---|---------|--------|-------|-------|
-| F1 | Foundation | In Progress | 7/8 | Tuist project, package skeletons, design kit, `ScreenKit`, `AppShell`, three brands launching into a themed tab shell, CI |
+| F1 | Foundation | Done | 8/8 | Tuist project, package skeletons, design kit, `ScreenKit`, `AppShell`, three brands launching into a themed tab shell, CI |
 | F2 | Domain and persistence | Backlog | 0/5 | Entities, ports, use cases on `SleepCore`; SwiftData behind a `@ModelActor`; sample-night seeder |
 
 ## M2 — First slices

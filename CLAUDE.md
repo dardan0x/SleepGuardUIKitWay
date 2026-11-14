@@ -38,7 +38,7 @@ Features (SwiftUI)  ScreenKit      Adapters (SleepPersistence, SleepAudio, Sleep
 | `AppShell` | everything except `SleepHealth` | — |
 | Brand targets | `AppShell`, the adapters that brand links | — |
 
-Enforced by package manifests, **but only when a package builds on its own**: inside the app workspace Xcode lets any module it has already built be imported, declared or not (verified in F1-T3). So CI builds every package standalone, and `scripts/check-layering.py` checks imports (both F1-T8). Full notes: `docs/architecture/modules.md`.
+Enforced by package manifests, **but only when a package builds on its own**: inside the app workspace Xcode lets any module it has already built be imported, declared or not (verified in F1-T3). So `scripts/run-tests.sh` builds every package standalone, and `scripts/check-layering.py` checks every module's imports against this table (`ALLOWED_IMPORTS`; a new module must be added there). Full notes: `docs/architecture/modules.md`.
 
 ## Domain
 
@@ -168,9 +168,15 @@ tuist generate --no-open                          # uses ../SleepGuardShared (lo
 TUIST_SHARED_RELEASE=1 tuist generate --no-open   # uses the pinned release (what CI builds)
 xcodebuild build -workspace SleepGuardUIKitWay.xcworkspace -scheme <SleepGuard|SleepGuardLite|Nocturne> \
   -destination 'platform=iOS Simulator,id=BD630AD5-5A05-4663-8F1B-A17283EBCBF5'
-sh scripts/run-tests.sh            # added in F1-T8
-python3 scripts/check-layering.py  # added in F1-T8
+sh scripts/run-tests.sh [macos|packages|hosted]   # all lanes by default; per-test time limits
+python3 scripts/check-layering.py                # imports per module, escape hatches, print, .shared, feature bans
+python3 scripts/check-view-size.py               # 200 lines per view file, 100 per *Screen.swift
+python3 scripts/check-hardcoded-strings.py       # user-facing literals, String(localized:)
+swiftformat Packages Apps Project.swift Tuist --lint
+sh scripts/bump-shared.sh <version>              # move to a new SleepGuardShared release
 ```
+
+Tools are pinned in `mise.toml` (`mise install`). CI (`.github/workflows/ci.yml`) runs the checks, builds all three brands and runs `run-tests.sh` on every pull request, against the pinned shared release.
 
 After every task: all three schemes build with zero errors, tests pass, checks pass. A change that builds for one brand is not done.
 

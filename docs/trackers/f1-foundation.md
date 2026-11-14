@@ -4,13 +4,13 @@
 
 | Field | Value |
 |-------|-------|
-| **Status** | In Progress |
+| **Status** | Done |
 | **Priority** | P0 |
 | **Milestone** | M1 |
 | **Blocked By** | — |
 | **Started** | 2026-11-14 |
-| **Completed** | — |
-| **Feature Doc** | — |
+| **Completed** | 2026-11-14 |
+| **Feature Doc** | [f1-foundation](../features/f1-foundation.md) |
 
 ## Summary
 
@@ -27,7 +27,7 @@ Three branded apps build from one codebase and launch into an empty, themed tab 
 | F1-T5 | `ScreenKit`: `HostingScreen`, `ScreenChrome`, `Navigator` | UI | Done | F1-T3, F1-T4 | ScreenKit | 2026-11-14 | 2026-11-14 |
 | F1-T6 | `AppShell`: `BrandComposition`, bootstrap, container, `AppCoordinator`, tab shell | Shell | Done | F1-T5 | AppShell | 2026-11-14 | 2026-11-14 |
 | F1-T7 | Three brands: configuration, theme, capabilities, assets; bootstrap test | Brand | Done | F1-T6 | Apps, AppShell | 2026-11-14 | 2026-11-14 |
-| F1-T8 | Scripts and CI: test runner, layering, view size, format, PR workflow | CI | Backlog | F1-T3 | scripts, .github | — | — |
+| F1-T8 | Scripts and CI: test runner, layering, view size, format, PR workflow | CI | Done | F1-T3 | scripts, .github | 2026-11-14 | 2026-11-14 |
 
 ## Task Details
 
@@ -170,10 +170,16 @@ Three branded apps build from one codebase and launch into an empty, themed tab 
 | Arch Ref | `testing.md`, `rules.md` |
 
 **Acceptance Criteria:**
-- [ ] `scripts/run-tests.sh` runs both lanes plus `AppHostedTests`, with xcodebuild's per-test time limit (`-test-timeouts-enabled YES`)
-- [ ] `scripts/bump-shared.sh <version>` updates the shared version in every manifest and `Project.swift` and builds every package standalone (the app workspace hides undeclared imports; see F1-T3)
-- [ ] `scripts/check-layering.py`: forbidden imports, Factory outside `AppShell`, `.shared`, concurrency escape hatches, SwiftUI navigation APIs in features, `print(`
-- [ ] `scripts/check-view-size.py`: 200-line limit with an allowlist that can only shrink
-- [ ] Hardcoded-string check
-- [ ] GitHub Actions on pull request: `TUIST_SHARED_RELEASE=1 tuist generate`, build three schemes, tests, checks, SwiftFormat lint
-- [ ] Each check is shown failing on a deliberate violation, then passing
+- [x] `scripts/run-tests.sh` runs three lanes (macOS domain tests; every package built standalone, with its tests; each brand's hosted tests), with xcodebuild's per-test time limit
+- [x] `scripts/check-layering.py`: imports per module against the AGENTS.md table, Factory outside `AppShell`, `.shared`, concurrency escape hatches, SwiftUI navigation/persistence/DI APIs in features, `print(`
+- [x] `scripts/check-view-size.py`: 200 lines per view file, 100 per `*Screen.swift`, allowlist that can only shrink (empty)
+- [x] `scripts/check-hardcoded-strings.py`: full scan of sources (no legacy code to exempt)
+- [x] `scripts/bump-shared.sh <version>`: checks the tag, updates the 4 manifests and `Project.swift`, re-resolves lockfiles
+- [x] GitHub Actions on pull request (`.github/workflows/ci.yml`): checks + SwiftFormat lint; Release build of all three brands; `run-tests.sh`; all with `TUIST_SHARED_RELEASE=1`; Tuist pinned in `mise.toml`
+- [x] Each check shown failing on a deliberate violation, then passing
+
+**Notes:**
+- Probes: layering caught 6 kinds (undeclared import, escape hatch, `print`, `.shared`, UIKit in a feature, `.sheet` in a feature); view size caught a 107-line screen; strings caught `Text("Hello world")`.
+- **The standalone lane first missed the probe.** Packages shared one derived-data folder, so Factory (built for `AppShell`) was importable from `Adapters`. Each package now builds in its own derived data; the probe then failed as intended.
+- Full run locally: all lanes pass (Core 1, Presentation 11, AppShell 7, hosted 4 × 3 brands).
+- Not verified: the workflow on GitHub (runs when this branch's PR is opened).
