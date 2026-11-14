@@ -90,6 +90,7 @@ struct SwiftDataSessionStoreTests {
     var updates = await store.observeSummaries().makeAsyncIterator()
 
     #expect(await updates.next() == [older.summary()])
+    #expect(older.summary().loudestIntensity != nil) // the stored summary keeps it
 
     let newer = night(startOffset: 86400)
     try await store.save(newer, summary: newer.summary())

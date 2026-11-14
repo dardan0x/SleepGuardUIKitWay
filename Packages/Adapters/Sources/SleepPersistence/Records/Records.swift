@@ -26,6 +26,8 @@ final class SessionRecord {
   var score = 0
   var snoringDuration: TimeInterval = 0
   var eventCount = 0
+  /// `SnoreIntensity` raw value; `nil` for a night without events.
+  var loudestIntensity: String?
 
   @Relationship(deleteRule: .cascade, inverse: \EventRecord.session)
   var events: [EventRecord] = []
