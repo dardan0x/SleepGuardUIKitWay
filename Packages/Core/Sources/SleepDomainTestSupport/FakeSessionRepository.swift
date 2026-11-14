@@ -1,17 +1,18 @@
 import Foundation
+import SleepCore
 import SleepDomain
 
 /// In-memory `SessionRepository` for tests and previews. Records what was
 /// saved and deleted; `failNextCall` makes the next call throw.
 public actor FakeSessionRepository: SessionRepository {
-  public private(set) var sessions: [SleepSession.ID: SleepSession] = [:]
-  public private(set) var summaries: [SleepSession.ID: SessionSummary] = [:]
-  public private(set) var savedIDs: [SleepSession.ID] = []
-  public private(set) var deletedIDs: [SleepSession.ID] = []
+  public private(set) var sessions: [Night.ID: Night] = [:]
+  public private(set) var summaries: [Night.ID: NightSummary] = [:]
+  public private(set) var savedIDs: [Night.ID] = []
+  public private(set) var deletedIDs: [Night.ID] = []
   private var failure: (any Error)?
-  private var observers: [UUID: AsyncStream<[SessionSummary]>.Continuation] = [:]
+  private var observers: [UUID: AsyncStream<[NightSummary]>.Continuation] = [:]
 
-  public init(_ sessions: [SleepSession] = []) {
+  public init(_ sessions: [Night] = []) {
     for session in sessions {
       self.sessions[session.id] = session
       summaries[session.id] = session.summary()
@@ -22,7 +23,7 @@ public actor FakeSessionRepository: SessionRepository {
     failure = error
   }
 
-  public func save(_ session: SleepSession, summary: SessionSummary) async throws {
+  public func save(_ session: Night, summary: NightSummary) async throws {
     try throwIfFailing()
     sessions[session.id] = session
     summaries[session.id] = summary
@@ -30,13 +31,13 @@ public actor FakeSessionRepository: SessionRepository {
     publish()
   }
 
-  public func session(id: SleepSession.ID) async throws -> SleepSession {
+  public func session(id: Night.ID) async throws -> Night {
     try throwIfFailing()
     guard let session = sessions[id] else { throw SessionError.notFound(id) }
     return session
   }
 
-  public func delete(id: SleepSession.ID) async throws {
+  public func delete(id: Night.ID) async throws {
     try throwIfFailing()
     guard sessions.removeValue(forKey: id) != nil else { throw SessionError.notFound(id) }
     summaries[id] = nil
@@ -44,8 +45,8 @@ public actor FakeSessionRepository: SessionRepository {
     publish()
   }
 
-  public func observeSummaries() async -> AsyncStream<[SessionSummary]> {
-    let (stream, continuation) = AsyncStream.makeStream(of: [SessionSummary].self)
+  public func observeSummaries() async -> AsyncStream<[NightSummary]> {
+    let (stream, continuation) = AsyncStream.makeStream(of: [NightSummary].self)
     let key = UUID()
     observers[key] = continuation
     continuation.onTermination = { [weak self] _ in
@@ -55,7 +56,7 @@ public actor FakeSessionRepository: SessionRepository {
     return stream
   }
 
-  private var sortedSummaries: [SessionSummary] {
+  private var sortedSummaries: [NightSummary] {
     summaries.values.sorted { $0.start > $1.start }
   }
 

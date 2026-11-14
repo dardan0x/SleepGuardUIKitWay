@@ -3,10 +3,10 @@ import SleepCore
 
 /// Everything the session detail screen shows.
 public struct SessionDetail: Sendable, Equatable {
-  public let session: SleepSession
-  public let summary: SessionSummary
+  public let session: Night
+  public let summary: NightSummary
   /// Displayable snoring episodes, in time order.
-  public let episodes: [SnoringEpisode]
+  public let episodes: [NightEpisode]
 }
 
 /// Opens a night for the detail screen.
@@ -26,7 +26,7 @@ public struct LoadSessionDetail: Sendable {
     self.scoreConfig = scoreConfig
   }
 
-  public func callAsFunction(_ id: SleepSession.ID) async throws -> SessionDetail {
+  public func callAsFunction(_ id: Night.ID) async throws -> SessionDetail {
     var session = try await sessions.session(id: id)
 
     // Stages are optional extra data: if the source fails, the night still

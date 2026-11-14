@@ -1,4 +1,5 @@
 import Foundation
+import SleepCore
 
 /// Deletes a night: its record, then its audio clips.
 ///
@@ -14,7 +15,7 @@ public struct DeleteSession: Sendable {
     self.files = files
   }
 
-  public func callAsFunction(_ id: SleepSession.ID) async throws {
+  public func callAsFunction(_ id: Night.ID) async throws {
     let clips = try await sessions.session(id: id).events.compactMap(\.clipFileName)
     try await sessions.delete(id: id)
     await files.removeFiles(named: clips)

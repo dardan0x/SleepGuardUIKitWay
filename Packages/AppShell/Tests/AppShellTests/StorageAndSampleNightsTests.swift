@@ -45,7 +45,7 @@ struct SampleNightsTests {
   }
 
   @Test func leavesAStoreWithNightsAlone() async throws {
-    let existing = SleepSession(start: today.addingTimeInterval(-30000), end: today.addingTimeInterval(-3000))
+    let existing = Night(start: today.addingTimeInterval(-30000), end: today.addingTimeInterval(-3000))
     let repository = FakeSessionRepository([existing])
     try await SampleNights.seedIfEmpty(repository, before: today)
     #expect(await repository.sessions.keys.sorted() == [existing.id])
