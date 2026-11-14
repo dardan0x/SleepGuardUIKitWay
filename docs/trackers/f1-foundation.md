@@ -26,7 +26,7 @@ Three branded apps build from one codebase and launch into an empty, themed tab 
 | F1-T4 | `SleepGuardDesignKit`: `Theme`, environment key, primitive components | UI | Done | — | Shared repo | 2026-11-14 | 2026-11-14 |
 | F1-T5 | `ScreenKit`: `HostingScreen`, `ScreenChrome`, `Navigator` | UI | Done | F1-T3, F1-T4 | ScreenKit | 2026-11-14 | 2026-11-14 |
 | F1-T6 | `AppShell`: `BrandComposition`, bootstrap, container, `AppCoordinator`, tab shell | Shell | Done | F1-T5 | AppShell | 2026-11-14 | 2026-11-14 |
-| F1-T7 | Three brands: configuration, theme, capabilities, assets; bootstrap test | Brand | Backlog | F1-T6 | Apps, AppShell | — | — |
+| F1-T7 | Three brands: configuration, theme, capabilities, assets; bootstrap test | Brand | Done | F1-T6 | Apps, AppShell | 2026-11-14 | 2026-11-14 |
 | F1-T8 | Scripts and CI: test runner, layering, view size, format, PR workflow | CI | Backlog | F1-T3 | scripts, .github | — | — |
 
 ## Task Details
@@ -151,11 +151,17 @@ Three branded apps build from one codebase and launch into an empty, themed tab 
 | Arch Ref | `brands.md` |
 
 **Acceptance Criteria:**
-- [ ] Each brand's `Brand.swift` implements `BrandComposition`
-- [ ] SleepGuard Lite: three tabs, no sleep stages, no Snore Interrupter, no Learn; does not link `SleepHealth`
-- [ ] Nocturne: its own palette and typography, History tab first
-- [ ] Test: every brand bootstraps and resolves every registration
-- [ ] Run all three; palette and tab set visibly differ
+- [x] Each brand's `Brand.swift` implements `BrandComposition` with its own theme and tabs
+- [x] SleepGuard Lite: teal theme, three tabs (no Learn), does not link `SleepHealth` (checked in the generated project). "No sleep stages / no Snore Interrupter" become capabilities with those features (F3, F8)
+- [x] Nocturne: own palette (violet, amber recording), rounded type, larger radii, Sessions tab first
+- [x] Test: every brand bootstraps and resolves every registration (`<Brand>HostedTests`, one per brand, run inside that brand's app; also checks the tab bar matches the brand)
+- [x] All three launched: palette and tab set visibly differ
+
+**Notes:**
+- `Brand.usesHealthKit` in the Tuist list decides whether a target links `SleepHealth`; it has to agree with the brand's entitlements file (documented on the property).
+- Brand themes start from `Theme.sleepGuard` and override tokens; their background and accent repeat the `LaunchBackground` / `BrandAccent` asset colours (the launch screen can only use assets).
+- Navigation bar titles now follow the theme's type design too (`Appearance.font`), so Nocturne's bar title is rounded like its content. Covered by a test.
+- Hosted tests: 4 per brand (2 navigator, 2 bootstrap), all pass.
 
 ### F1-T8 — Scripts and CI
 

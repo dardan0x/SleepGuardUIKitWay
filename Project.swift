@@ -29,4 +29,4 @@ let project = Project(
       ? .remote(url: "https://github.com/dardan0x/SleepGuardShared.git", requirement: .exact(sharedVersion))
       : .local(path: "../SleepGuardShared"),
   ],
-  targets: Brand.all.map(Target.app) + [.hostedTests(in: .sleepGuard)])
+  targets: Brand.all.map(Target.app) + Brand.all.map(Target.hostedTests(in:)))
