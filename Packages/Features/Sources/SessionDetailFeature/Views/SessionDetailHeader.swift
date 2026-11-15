@@ -11,14 +11,13 @@ struct SessionDetailHeader: View {
   var body: some View {
     let night = detail.session
     let disturbances = night.events.filter { $0.category != .snoring }.count
-    let snoringShare = night.duration > 0 ? detail.summary.snoringDuration / night.duration : 0
 
     VStack(spacing: 12) {
       HStack(spacing: 16) {
         SleepScoreGauge(score: detail.summary.score, size: 120)
 
         SessionStatsGrid(
-          duration: night.duration, snoringShare: snoringShare,
+          duration: night.duration, snoringShare: detail.summary.snoringShare,
           snoreTime: detail.summary.snoringDuration, eventCount: detail.summary.eventCount)
       }
 

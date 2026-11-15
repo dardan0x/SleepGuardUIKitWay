@@ -42,4 +42,5 @@ nonisolated struct StorageLocation {
 
 nonisolated enum Log {
   static let storage = Logger(subsystem: Bundle.main.bundleIdentifier ?? "SleepGuardUIKitWay", category: "storage")
+  static let app = Logger(subsystem: Bundle.main.bundleIdentifier ?? "SleepGuardUIKitWay", category: "app")
 }

@@ -15,6 +15,7 @@ extension SessionRecord {
     score = summary.score
     snoringDuration = summary.snoringDuration
     eventCount = summary.eventCount
+    loudestIntensity = summary.loudestIntensity?.rawValue
   }
 
   /// Events come back in time order: SwiftData doesn't keep relationship order.
@@ -27,7 +28,10 @@ extension SessionRecord {
   }
 
   var summary: NightSummary {
-    NightSummary(id: id, start: start, end: end, score: score, snoringDuration: snoringDuration, eventCount: eventCount)
+    NightSummary(
+      id: id, start: start, end: end, score: score, snoringDuration: snoringDuration, eventCount: eventCount,
+      // An intensity this version doesn't know (written by a newer one) reads as quiet, like events do.
+      loudestIntensity: loudestIntensity.map { SnoreIntensity(rawValue: $0) ?? .quiet })
   }
 }
 
