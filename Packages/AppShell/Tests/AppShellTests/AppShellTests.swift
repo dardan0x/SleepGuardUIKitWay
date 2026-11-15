@@ -15,7 +15,8 @@ struct MainTabCoordinatorTests {
     #expect(items?.map(\.title) == [Strings.tabSessions, Strings.tabStatistics, Strings.tabSettings])
     #expect(coordinator.flows.map(\.tab) == [.history, .statistics, .settings])
     #expect(coordinator.flows.first is HistoryFlow)
-    #expect(coordinator.flows.dropFirst().allSatisfy { $0 is PlaceholderFlow })
+    #expect(coordinator.flows[1] is StatisticsFlow)
+    #expect(coordinator.flows[2] is PlaceholderFlow)
   }
 
   @Test func everyTabStartsOnItsOwnHostedScreenWithItsTitle() throws {
