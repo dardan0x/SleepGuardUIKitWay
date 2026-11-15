@@ -14,7 +14,7 @@ let package = Package(
   ],
   dependencies: [
     .package(path: "../Core"),
-    .package(url: "https://github.com/dardan0x/SleepGuardShared.git", exact: "0.9.0"),
+    .package(url: "https://github.com/dardan0x/SleepGuardShared.git", exact: "0.10.0"),
   ],
   targets: [
     // SwiftData, files, UserDefaults.
