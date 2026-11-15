@@ -32,3 +32,4 @@ The original SwiftUI app draws its tokens and primitive components from the shar
 - If the kit starts fighting SleepGuard's design rules, stop and fork instead; record why.
 - 2026-11-15: F6-T1 done in SleepGuard (F24-T1, branch `feature/f24/t1-theme-from-kit`): `AppTheme` starts from the kit, the kit theme is in the environment. Open: `bg-card` against the design file.
 - 2026-11-15: F6-T2 done in SleepGuard (F24-T2, branch `feature/f24/t2-kit-primitives`): nine basic components from the kit, SleepGuard's copies deleted. Not yet seen on screen.
+- 2026-11-15: F6-T2b split into three steps in SleepGuard (F24-T3a detail, T3b Statistics, T3c player). T3a done (branch `feature/f24/t3a-detail-components`); needs shared 0.12.0 (timeline `showsTitle`).
