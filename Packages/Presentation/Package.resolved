@@ -1,13 +1,13 @@
 {
-  "originHash" : "b0e9e31c29ae74d954b1e9f017773613455ee583ba002c37b27a1ed3a032dc99",
+  "originHash" : "3725b3d8537c5e526c15694581b1a2752e53947b9fe70b7b95cb36374d5b5603",
   "pins" : [
     {
       "identity" : "sleepguardshared",
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/dardan0x/SleepGuardShared.git",
       "state" : {
-        "revision" : "a3b45bffe067845b85cd4d393135ff79dac7a74e",
-        "version" : "0.7.0"
+        "revision" : "35ca314fe22b41543f1b80c51cc1fd897f8ec3e3",
+        "version" : "0.8.0"
       }
     }
   ],
