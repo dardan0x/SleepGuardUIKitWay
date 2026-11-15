@@ -11,10 +11,11 @@ let package = Package(
   products: [
     .library(name: "HistoryFeature", targets: ["HistoryFeature"]),
     .library(name: "SessionDetailFeature", targets: ["SessionDetailFeature"]),
+    .library(name: "StatisticsFeature", targets: ["StatisticsFeature"]),
   ],
   dependencies: [
     .package(path: "../Core"),
-    .package(url: "https://github.com/dardan0x/SleepGuardShared.git", exact: "0.7.0"),
+    .package(url: "https://github.com/dardan0x/SleepGuardShared.git", exact: "0.8.0"),
   ],
   targets: [
     .target(
@@ -43,6 +44,30 @@ let package = Package(
       name: "SessionDetailFeatureTests",
       dependencies: [
         "SessionDetailFeature",
+        .product(name: "SleepDomain", package: "Core"),
+        .product(name: "SleepDomainTestSupport", package: "Core"),
+        .product(name: "SleepCore", package: "SleepGuardShared"),
+        .product(name: "SleepGuardDesignKit", package: "SleepGuardShared"),
+      ],
+      swiftSettings: [
+        .swiftLanguageMode(.v6),
+        .defaultIsolation(MainActor.self),
+      ]),
+    .target(
+      name: "StatisticsFeature",
+      dependencies: [
+        .product(name: "SleepDomain", package: "Core"),
+        .product(name: "SleepCore", package: "SleepGuardShared"),
+        .product(name: "SleepGuardDesignKit", package: "SleepGuardShared"),
+      ],
+      swiftSettings: [
+        .swiftLanguageMode(.v6),
+        .defaultIsolation(MainActor.self),
+      ]),
+    .testTarget(
+      name: "StatisticsFeatureTests",
+      dependencies: [
+        "StatisticsFeature",
         .product(name: "SleepDomain", package: "Core"),
         .product(name: "SleepDomainTestSupport", package: "Core"),
         .product(name: "SleepCore", package: "SleepGuardShared"),
