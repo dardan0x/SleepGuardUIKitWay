@@ -16,13 +16,13 @@ Last updated: 2026-11-14
 | Backlog | 6 |
 | Blocked | 0 |
 | — | — |
-| Total Tasks | 52 |
-| Tasks Done | 29 |
+| Total Tasks | 54 |
+| Tasks Done | 31 |
 | Tasks In Progress | 0 |
 | Tasks Blocked | 0 |
 | Tasks Backlog | 23 |
 | — | — |
-| **Progress** | **56%** |
+| **Progress** | **57%** |
 
 ## Features
 
@@ -33,7 +33,7 @@ Last updated: 2026-11-14
 | F2 | Domain and persistence | P0 | Done | 5/5 | ██████████ 100% | [tracker](trackers/f2-domain-persistence.md) |
 | F3 | History → Session Detail | P0 | Done | 5/5 | ██████████ 100% | [tracker](trackers/f3-history-session-detail.md) |
 | F4 | Statistics | P1 | Done | 5/5 | ██████████ 100% | [tracker](trackers/f4-statistics.md) |
-| F5 | Clip playback | P1 | Backlog | 0/3 | ░░░░░░░░░░ 0% | [tracker](trackers/f5-clip-playback.md) |
+| F5 | Clip playback | P1 | In Progress | 2/5 | ████░░░░░░ 40% | [tracker](trackers/f5-clip-playback.md) |
 | F6 | Design kit adoption in SleepGuard | P2 | Backlog | 0/4 | ░░░░░░░░░░ 0% | [tracker](trackers/f6-design-kit-adoption.md) |
 | F7 | Recording and detection | P1 | Backlog | 0/6 | ░░░░░░░░░░ 0% | [tracker](trackers/f7-recording-detection.md) |
 | F8 | Remaining features | P2 | Backlog | 0/6 | ░░░░░░░░░░ 0% | [tracker](trackers/f8-remaining-features.md) |
@@ -41,7 +41,7 @@ Last updated: 2026-11-14
 
 ## Currently Active
 
-- **F5** — Clip playback.
+- **F5-T3** — `ClipPlayer` port and the playback state owner.
 
 ## Up Next
 
@@ -64,6 +64,7 @@ Last updated: 2026-11-14
 | 2026-11-14 | F0-T3 | Completed | Owner created and pushed both repos; `SleepGuardShared` made public; tag `0.1.0` |
 | 2026-11-14 | F0-T4 | Completed | SleepGuard depends on `SleepGuardShared` 0.1.0 by URL; `SleepGuard.xcworkspace` overrides it with the local checkout; `bump-shared.sh` |
 | 2026-11-14 | F0-T5 | Completed | Shared-repo CI (tests, strings sync, SleepGuard build); SleepGuard's `strings-sync` removed. Not yet run on GitHub |
+| 2026-11-15 | F5-T1, F5-T2 | Completed | Playback rules (`ClipPlaylist`, `PlaybackGain`, `PlaybackEnhancement`) in `SleepCore` (shared 0.10.0); SleepGuard's controller uses them. Branch `feature/f5/t1-shared-playlist` |
 | 2026-11-15 | F4-T5 | Completed | Statistics tab live: `StatisticsFlow`, composers, `NightDetailNavigation` shared with Sessions, start recording to `AppCoordinator`. F4 done. Branch `feature/f4/t5-statistics-flow` |
 | 2026-11-15 | F4-T4 | Completed | Trends, Last 7 Nights, Calendar screens from new kit components (shared 0.9.0). Branch `feature/f4/t4-trends-calendar-last7` |
 | 2026-11-14 | F4-T3 | Completed | `StatisticsFeature` dashboard (live, empty state); week-strip rule and snoring level moved to shared (0.8.0), SleepGuard uses them. Branch `feature/f4/t3-dashboard` |
