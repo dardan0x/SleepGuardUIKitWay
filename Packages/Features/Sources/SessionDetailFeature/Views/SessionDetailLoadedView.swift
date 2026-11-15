@@ -5,11 +5,11 @@ import SwiftUI
 
 struct SessionDetailLoadedView: View {
   let detail: SessionDetail
-  let onShowAll: ([DetailEventRow]) -> Void
+  let routes: SessionDetailRoutes
 
   var body: some View {
     ScrollView {
-      SessionDetailContent(detail: detail, onShowAll: onShowAll)
+      SessionDetailContent(detail: detail, routes: routes)
     }
   }
 }
@@ -17,7 +17,7 @@ struct SessionDetailLoadedView: View {
 /// The scrolling content, separate so it can be rendered in tests.
 struct SessionDetailContent: View {
   let detail: SessionDetail
-  let onShowAll: ([DetailEventRow]) -> Void
+  let routes: SessionDetailRoutes
   @State private var filter: EventFilter = .all
   @Environment(\.theme) private var theme
 
@@ -46,12 +46,14 @@ struct SessionDetailContent: View {
 
         VStack(spacing: 8) {
           ForEach(rows.prefix(Self.visibleRows)) { row in
-            EventRow(start: row.start, duration: row.duration, category: row.category, intensity: row.intensity)
+            EventRow(start: row.start, duration: row.duration, category: row.category, intensity: row.intensity) {
+              routes.playEvents(row.playback(in: detail.session.events), row.id)
+            }
           }
         }
 
         if rows.count > Self.visibleRows {
-          Button(String(format: Strings.recordingsDetailShowAllFormat, rows.count)) { onShowAll(rows) }
+          Button(String(format: Strings.recordingsDetailShowAllFormat, rows.count)) { routes.showAllEvents(rows, detail.session.events) }
             .font(theme.typography.font(size: 15, weight: .medium))
             .foregroundStyle(theme.palette.accent)
             .frame(maxWidth: .infinity)

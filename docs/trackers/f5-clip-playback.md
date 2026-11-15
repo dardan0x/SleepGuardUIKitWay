@@ -4,13 +4,13 @@
 
 | Field | Value |
 |-------|-------|
-| **Status** | In Progress |
+| **Status** | Done |
 | **Priority** | P1 |
 | **Milestone** | M2 |
 | **Blocked By** | F3 |
 | **Started** | 2026-11-15 |
-| **Completed** | — |
-| **Feature Doc** | — |
+| **Completed** | 2026-11-15 |
+| **Feature Doc** | [f5-clip-playback.md](../features/f5-clip-playback.md) |
 
 ## Summary
 
@@ -24,7 +24,7 @@ The user plays the recorded clips of a night in sequence from the session detail
 | F5-T2 | SleepGuard's `ClipPlaybackController` uses them; its AVAudioEngine code unchanged | Refactor | Done | F5-T1 | SleepGuard | Tests pass; play, seek, next/previous, auto-advance checked by ear |
 | F5-T3 | `ClipPlayer` port, clip URLs from `SessionFileStore`, `@Observable` playback state owner | Domain / UI | Done | F5-T1 | SleepDomain, SessionDetailFeature | State owner tested with a fake player |
 | F5-T4 | AVAudioEngine adapter (filter chain, gain, interruption, session) | Adapter | Done | F5-T3 | SleepAudio | Plays a generated clip; finish and interruption reported |
-| F5-T5 | Player sheet, Play on rows and cards, presented by the flow; Debug sample clips | UI / Shell | Backlog | F5-T3, F5-T4 | SessionDetailFeature, AppShell | Engine released when the sheet closes; heard on the simulator |
+| F5-T5 | Player sheet, Play on rows and cards, presented by the flow; Debug sample clips | UI / Shell | Done | F5-T3, F5-T4 | SessionDetailFeature, AppShell | Engine released when the sheet closes; heard on the simulator |
 
 ## Notes
 
@@ -57,3 +57,15 @@ The user plays the recorded clips of a night in sequence from the session detail
 - [x] Plays a span with `.dataPlayedBack` (the end isn't cut), a token drops completions of paused or replaced spans; position from the start time; `.playback` session; interruptions reported once while playing; `stop()` releases engine, file and observer
 - [x] 5 tests on the simulator with generated tones: length and boost, plays a span to its end, pause keeps the position and never finishes, interruption, silent clip gets no boost
 - Same chain and numbers as SleepGuard's controller.
+
+### F5-T5 — Player sheet (done 2026-11-15; shared 0.11.0)
+- [x] Kit (shared 0.11.0): `PlayerHeader`, `PlayerProgress` (seek bar), `PlayerControls` (back 15 s, play/pause, forward 15 s), `PlayerEventRow`, `EnhancedAudioToggle`, `NoAudioCard`, `EventIntensityLegend`; player gallery rendered in two themes
+- [x] `PlayerScreen` on `ClipPlaybackModel`: starts on appear, releases the player on disappear; no-audio card when the clip's file is missing
+- [x] Play on detail rows and events-sheet cards: a snoring row plays its episode, anything else alone (`DetailEventRow.playback(in:)`, SleepCore's rule); `SessionDetailRoutes.playEvents`; "Show all" passes the night's events
+- [x] `NightDetailNavigation` presents the player (title by kind of event, close button) at 580 pt and large, over the events sheet when it's open; `.height` sheet detent in ScreenKit; `makeClipPlayer` in the container (a main-actor maker)
+- [x] Debug: sample snoring events have clips; seeding writes snore-like AAC clips (at most 15 s, so longer events show the "file shorter than the event" path) off the main actor before saving the nights
+- [x] Tests: flow (Play presents the player, title, close dismisses), row playback rule, sheet height; in-app per brand on fresh installs: the player plays, advances to the episode's next clip once the first is heard, stops on close
+- [x] Seen on the simulator: the player over a night's detail, playing (SleepGuard)
+- Seen once (2026-11-15, Lite, on the 0.11.0 release run): `debugLaunchHasSampleNights` and the player test both timed out waiting for the store's nights; the rerun passed (8/8). Cause unknown; watch for it.
+- Fixed on the way: `debugLaunchHasSampleNights` took the first update of the store; on a fresh install that's one night. It now waits for all 14.
+- Differences from SleepGuard: a seek bar instead of the waveform (waveform out of F5); "Event 1 / 3" (SleepGuard hardcodes "of"); loudness in the event list from the localised labels (SleepGuard prints the raw value); enhanced audio isn't remembered yet (Settings, F8).
