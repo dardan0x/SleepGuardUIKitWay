@@ -23,7 +23,7 @@ The user plays the recorded clips of a night in sequence from the session detail
 | F5-T1 | Playback rules in `SleepCore` (shared 0.10.0): `ClipPlaylist` (joined timeline, seek, select, after-clip), `PlaybackGain`, `PlaybackEnhancement` | Domain | Done | F3 | Shared repo | Same behaviour as SleepGuard's controller; tested |
 | F5-T2 | SleepGuard's `ClipPlaybackController` uses them; its AVAudioEngine code unchanged | Refactor | Done | F5-T1 | SleepGuard | Tests pass; play, seek, next/previous, auto-advance checked by ear |
 | F5-T3 | `ClipPlayer` port, clip URLs from `SessionFileStore`, `@Observable` playback state owner | Domain / UI | Done | F5-T1 | SleepDomain, SessionDetailFeature | State owner tested with a fake player |
-| F5-T4 | AVAudioEngine adapter (filter chain, gain, interruption, session) | Adapter | Backlog | F5-T3 | SleepAudio | Plays a generated clip; finish and interruption reported |
+| F5-T4 | AVAudioEngine adapter (filter chain, gain, interruption, session) | Adapter | Done | F5-T3 | SleepAudio | Plays a generated clip; finish and interruption reported |
 | F5-T5 | Player sheet, Play on rows and cards, presented by the flow; Debug sample clips | UI / Shell | Backlog | F5-T3, F5-T4 | SessionDetailFeature, AppShell | Engine released when the sheet closes; heard on the simulator |
 
 ## Notes
@@ -51,3 +51,9 @@ The user plays the recorded clips of a night in sequence from the session detail
 - [x] `ClipPlaybackModel` (`@Observable` state owner in `SessionDetailFeature`): SleepGuard's controller behaviour on `ClipPlaylist` and the port: starting clip, a clip plays for the shorter of its event and its file, auto-advance then stop at the start, pause/resume from the player's position, seek across and within clips (keeps playing), past-the-end parking, missing files, interruptions, enhanced toggle, close releases the player; progress polled every 0.1 s
 - [x] 13 tests against the fake
 - Note: seeking to a clip's end while playing moves to the next clip (nothing left to play), as SleepGuard does.
+
+### F5-T4 — AVAudioEngine adapter (done 2026-11-15)
+- [x] `EngineClipPlayer` (internal, `SleepAudio.makeClipPlayer()`): player → 2-band EQ → mixer, reconnected only when the format changes; band-pass from `PlaybackEnhancement`, per-file boost from `PlaybackGain` (bypassed when enhanced audio is off)
+- [x] Plays a span with `.dataPlayedBack` (the end isn't cut), a token drops completions of paused or replaced spans; position from the start time; `.playback` session; interruptions reported once while playing; `stop()` releases engine, file and observer
+- [x] 5 tests on the simulator with generated tones: length and boost, plays a span to its end, pause keeps the position and never finishes, interruption, silent clip gets no boost
+- Same chain and numbers as SleepGuard's controller.

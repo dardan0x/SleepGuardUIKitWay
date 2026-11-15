@@ -41,6 +41,13 @@ let package = Package(
         .product(name: "SleepCore", package: "SleepGuardShared"),
       ],
       swiftSettings: [.swiftLanguageMode(.v6)]),
+    .testTarget(
+      name: "SleepAudioTests",
+      dependencies: [
+        "SleepAudio",
+        .product(name: "SleepCore", package: "SleepGuardShared"),
+      ],
+      swiftSettings: [.swiftLanguageMode(.v6)]),
     // HealthKit.
     .target(
       name: "SleepHealth",
