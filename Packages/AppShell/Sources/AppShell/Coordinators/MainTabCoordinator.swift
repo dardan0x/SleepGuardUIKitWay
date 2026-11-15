@@ -10,12 +10,13 @@ protocol TabFlow: AnyObject {
 }
 
 /// The tab bar. Builds one flow per tab in the brand's `tabs`, in that order.
-/// Tabs without their feature yet get a placeholder flow (F4, F8).
+/// Tabs without their feature yet get a placeholder flow (F8).
 final class MainTabCoordinator {
   let tabBarController = UITabBarController()
   private(set) var flows: [any TabFlow] = []
 
-  init(container: Container) {
+  /// `onStartRecording`: the recording flow is the app coordinator's, not a tab's.
+  init(container: Container, onStartRecording: @escaping @MainActor () -> Void = {}) {
     let theme = container.theme()
     let composer = PlaceholderScreenComposer(theme: theme)
 
@@ -28,7 +29,8 @@ final class MainTabCoordinator {
 
       let flow: any TabFlow = switch tab {
       case .history: HistoryFlow(navigator: navigator, container: container)
-      case .statistics, .settings, .learn: PlaceholderFlow(tab: tab, navigator: navigator, composer: composer)
+      case .statistics: StatisticsFlow(navigator: navigator, container: container, onStartRecording: onStartRecording)
+      case .settings, .learn: PlaceholderFlow(tab: tab, navigator: navigator, composer: composer)
       }
       flow.start()
       flows.append(flow)

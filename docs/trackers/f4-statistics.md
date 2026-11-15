@@ -4,13 +4,13 @@
 
 | Field | Value |
 |-------|-------|
-| **Status** | In Progress |
+| **Status** | Done |
 | **Priority** | P1 |
 | **Milestone** | M2 |
 | **Blocked By** | F2 |
 | **Started** | 2026-11-14 |
-| **Completed** | — |
-| **Feature Doc** | — |
+| **Completed** | 2026-11-15 |
+| **Feature Doc** | [f4-statistics.md](../features/f4-statistics.md) |
 
 ## Summary
 
@@ -24,7 +24,7 @@ The user sees last night's summary and a seven-night chart on the dashboard, and
 | F4-T2 | SleepGuard's Statistics uses the shared rules; its in-view copies removed | Refactor | Done | F4-T1 | SleepGuard | All SleepGuard tests pass; no visual change |
 | F4-T3 | Dashboard screen (the store's loudest-intensity column landed in F4-T1) | UI | Done | F4-T1 | SleepPersistence, StatisticsFeature | `ViewState` with empty state; matches SleepGuard |
 | F4-T4 | Trends, calendar, last 7 nights screens | UI | Done | F4-T3 | StatisticsFeature | Swift Charts; every number comes from the shared rules |
-| F4-T5 | Composers and `StatisticsFlow`; "start recording" intent goes to `AppCoordinator` | Shell | Backlog | F4-T3, F4-T4 | AppShell | Flow tests with `NavigatorSpy` |
+| F4-T5 | Composers and `StatisticsFlow`; "start recording" intent goes to `AppCoordinator` | Shell | Done | F4-T3, F4-T4 | AppShell | Flow tests with `NavigatorSpy` |
 
 ## Notes
 
@@ -65,3 +65,11 @@ The user sees last night's summary and a seven-night chart on the dashboard, and
 - [x] Built straight from new kit components (shared 0.9.0): `SnoringLegend`, `StatTile`, `CenteredStatTile`, `PillPicker`, `SnoringBarChart`, `SnoringDayBars`, `DayRow`, `NightCard`, `MonthHeader`, `CalendarMonthGrid`; `DurationText` public. No rules found in these views (formatting and layout only).
 - [x] Renders of all three in two themes (one reviewed per screen); tests for the loudness label and the best/worst text
 - Differences from SleepGuard: "Today" sits in the month header (UIKit owns the bar, and a bar button can't reach the screen's state); the selected night reads "Quiet · 40 out of 100" (SleepGuard hardcodes the English word "score"); Trends bars stack nights with the same label, as SleepGuard's do.
+
+### F4-T5 — Composers and Statistics flow (done 2026-11-15)
+- [x] `StatisticsComposer` (dashboard with large title and calendar bar button, Trends, Last 7 Nights, Calendar) and `StatisticsFlow` (pushes, open a night); the Statistics tab uses it
+- [x] Opening a night (detail, events sheet, delete confirmation) moved out of `HistoryFlow` into `NightDetailNavigation`, used by both tabs; `HistoryFlow`'s tests pass unchanged
+- [x] "Start recording" goes up to `AppCoordinator.startRecording()` (logs until the recording flow, F7); the tab pushes nothing
+- [x] Tests: 6 flow tests (root and bar button, pushes and titles, open a night from Last 7 Nights and the calendar, start recording, no leak); in-app test per brand (real tab, calendar from the bar); shell 26
+- [x] On screen (simulator, SleepGuard): dashboard with large title, calendar button, week strip, score, stats, Start Recording. The large title works over the dashboard's `ScrollView` (only the Sessions `List` lacked it).
+- Not captured on screen: the pushed calendar (the screenshot loop missed it; the test confirms the push, F4-T4 renders cover its content).

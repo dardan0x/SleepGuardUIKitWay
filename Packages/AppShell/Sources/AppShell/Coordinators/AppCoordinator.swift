@@ -19,12 +19,18 @@ public final class AppCoordinator {
   }
 
   public func start(in window: UIWindow) {
-    let mainTabs = MainTabCoordinator(container: container)
+    let mainTabs = MainTabCoordinator(container: container, onStartRecording: { [weak self] in self?.startRecording() })
     window.rootViewController = mainTabs.tabBarController
     window.tintColor = UIColor(container.theme().palette.accent)
     window.makeKeyAndVisible()
     self.mainTabs = mainTabs
     seedSampleNightsInDebug()
+  }
+
+  /// "Start recording" from any screen. The recording flow arrives in F7;
+  /// until then the request is only logged.
+  func startRecording() {
+    Log.app.info("Start recording requested (recording flow arrives in F7)")
   }
 
   private func seedSampleNightsInDebug() {
