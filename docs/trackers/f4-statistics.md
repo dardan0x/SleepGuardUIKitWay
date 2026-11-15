@@ -23,7 +23,7 @@ The user sees last night's summary and a seven-night chart on the dashboard, and
 | F4-T1 | Statistics rules in `SleepCore` (shared 0.7.0): dashboard, day summaries, week-over-week trend, period stats, calendar month; `NightSummary.loudestIntensity` | Domain | Done | F2 | Shared repo | SleepGuard's test cases pass with the same numbers |
 | F4-T2 | SleepGuard's Statistics uses the shared rules; its in-view copies removed | Refactor | Done | F4-T1 | SleepGuard | All SleepGuard tests pass; no visual change |
 | F4-T3 | Dashboard screen (the store's loudest-intensity column landed in F4-T1) | UI | Done | F4-T1 | SleepPersistence, StatisticsFeature | `ViewState` with empty state; matches SleepGuard |
-| F4-T4 | Trends, calendar, last 7 nights screens | UI | Backlog | F4-T3 | StatisticsFeature | Swift Charts; every number comes from the shared rules |
+| F4-T4 | Trends, calendar, last 7 nights screens | UI | Done | F4-T3 | StatisticsFeature | Swift Charts; every number comes from the shared rules |
 | F4-T5 | Composers and `StatisticsFlow`; "start recording" intent goes to `AppCoordinator` | Shell | Backlog | F4-T3, F4-T4 | AppShell | Flow tests with `NavigatorSpy` |
 
 ## Notes
@@ -56,3 +56,12 @@ The user sees last night's summary and a seven-night chart on the dashboard, and
 - [x] Detail header uses `NightSummary.snoringShare` instead of its own division
 - [x] Renders of the dashboard (two themes) and the empty state, reviewed
 - Not here: title and calendar button in the navigation bar (F4-T5, UIKit owns the bar; SleepGuard draws its own header with a "Calendar" capsule), sleep-stage breakdown (F8).
+
+### F4-T4 — Trends, Calendar, Last 7 Nights (done 2026-11-15; shared 0.9.0)
+- [x] `TrendsScreen`: week/month picker, average snoring, a bar per night (loudest colour), legend, average/best/worst/total events (`NightPeriod`)
+- [x] `LastSevenNightsScreen`: date range, average score and week-over-week trend, snoring per day, best/worst day, every day as a row that opens its first night (`NightDayStats`, `ScoreTrend`)
+- [x] `CalendarScreen`: month header, 6-week grid with a dot per night with events, month stats, selected night card that opens it (`CalendarMonth`)
+- [x] `NightListRoutes.openNight` for Last 7 Nights and the calendar; live from `observeSummaries()`
+- [x] Built straight from new kit components (shared 0.9.0): `SnoringLegend`, `StatTile`, `CenteredStatTile`, `PillPicker`, `SnoringBarChart`, `SnoringDayBars`, `DayRow`, `NightCard`, `MonthHeader`, `CalendarMonthGrid`; `DurationText` public. No rules found in these views (formatting and layout only).
+- [x] Renders of all three in two themes (one reviewed per screen); tests for the loudness label and the best/worst text
+- Differences from SleepGuard: "Today" sits in the month header (UIKit owns the bar, and a bar button can't reach the screen's state); the selected night reads "Quiet · 40 out of 100" (SleepGuard hardcodes the English word "score"); Trends bars stack nights with the same label, as SleepGuard's do.
