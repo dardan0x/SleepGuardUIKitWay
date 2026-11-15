@@ -36,7 +36,7 @@ struct SessionsTabInAppTests {
     // "Show all": the events sheet at medium and large; close returns to the detail.
     let loaded = try await Container.shared.loadSessionDetail()(#require(nights.first).id)
     let rows = DetailEventRow.make(episodes: loaded.episodes, events: loaded.session.events, filter: .all)
-    detail.rootView.content.routes.showAllEvents(rows)
+    detail.rootView.content.routes.showAllEvents(rows, loaded.session.events)
     let sheet = try #require(await until { navigation.presentedViewController as? UINavigationController })
     #expect(sheet.sheetPresentationController?.detents.map(\.identifier) == [.medium, .large])
     let events = try #require(sheet.viewControllers.first as? HostingScreen<EventsSheetScreen>)

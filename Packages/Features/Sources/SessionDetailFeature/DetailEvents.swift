@@ -49,4 +49,10 @@ public struct DetailEventRow: Identifiable, Equatable, Sendable {
     }
     return (snoring + others).filter { filter.includes($0.category) }.sorted { $0.start < $1.start }
   }
+
+  /// What Play plays: a snoring row's whole episode in order, anything else alone.
+  public func playback(in events: [NightEvent]) -> [NightEvent] {
+    guard let event = events.first(where: { $0.id == id }) else { return [] }
+    return SnoringEpisodes.playbackEvents(for: event, in: events)
+  }
 }

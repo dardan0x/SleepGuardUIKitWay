@@ -21,13 +21,15 @@ struct BrandBootstrapTests {
     #expect(FileManager.default.fileExists(atPath: container.storageLocation().clipsDirectory.path))
   }
 
-  /// Debug launches seed an empty store; waits on the store's own stream.
+  /// Debug launches seed an empty store; waits on the store's own stream until
+  /// all 14 are there (seeding saves them one by one, after writing their
+  /// clips). The test time limit fails it if they never arrive.
   @Test func debugLaunchHasSampleNights() async {
     let repository = Container.shared.sessionRepository()
-    for await nights in await repository.observeSummaries() where !nights.isEmpty {
-      #expect(nights.count >= 14)
+    for await nights in await repository.observeSummaries() where nights.count >= 14 {
       return
     }
+    Issue.record("The store's stream ended before 14 sample nights arrived")
   }
 
   @Test func theTabBarShowsTheBrandsTabsInOrder() throws {

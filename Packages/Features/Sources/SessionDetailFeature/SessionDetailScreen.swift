@@ -15,11 +15,18 @@ public struct SessionDetailDependencies: Sendable {
 }
 
 public struct SessionDetailRoutes {
-  /// "Show all": every row under the current filter, for the events sheet.
-  public var showAllEvents: @MainActor ([DetailEventRow]) -> Void
+  /// "Show all": every row under the current filter, and the night's events
+  /// (the sheet's Play needs them to find an episode's clips).
+  public var showAllEvents: @MainActor ([DetailEventRow], [NightEvent]) -> Void
+  /// Play: the events to play in order, starting with the given one.
+  public var playEvents: @MainActor ([NightEvent], NightEvent.ID) -> Void
 
-  public init(showAllEvents: @escaping @MainActor ([DetailEventRow]) -> Void) {
+  public init(
+    showAllEvents: @escaping @MainActor ([DetailEventRow], [NightEvent]) -> Void,
+    playEvents: @escaping @MainActor ([NightEvent], NightEvent.ID) -> Void)
+  {
     self.showAllEvents = showAllEvents
+    self.playEvents = playEvents
   }
 }
 
@@ -41,7 +48,7 @@ public struct SessionDetailScreen: View {
       case .loading:
         SessionDetailLoadingView()
       case let .loaded(detail):
-        SessionDetailLoadedView(detail: detail, onShowAll: routes.showAllEvents)
+        SessionDetailLoadedView(detail: detail, routes: routes)
       case .error:
         SessionDetailErrorView { viewState = .loading }
       }

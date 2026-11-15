@@ -22,6 +22,8 @@ public enum PresentationStyle: Equatable {
 public enum SheetDetent: Equatable {
   case medium
   case large
+  /// A fixed height in points.
+  case height(CGFloat)
 }
 
 /// `Navigator` over one `UINavigationController` (one per tab or flow).
@@ -85,7 +87,13 @@ public final class NavigationControllerNavigator: Navigator {
     case let .sheet(detents):
       controller.modalPresentationStyle = .pageSheet
       if let sheet = controller.sheetPresentationController {
-        sheet.detents = detents.map { $0 == .medium ? .medium() : .large() }
+        sheet.detents = detents.map { detent in
+          switch detent {
+          case .medium: .medium()
+          case .large: .large()
+          case let .height(points): .custom { _ in points }
+          }
+        }
         sheet.prefersGrabberVisible = detents.count > 1
       }
     case .fullScreen:
