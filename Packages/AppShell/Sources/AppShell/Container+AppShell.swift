@@ -54,8 +54,20 @@ extension Container {
     self { LoadSessionDetail(sessions: self.sessionRepository(), sleepStages: self.sleepStagePort()) }
   }
 
+  var checkpointStore: Factory<any RecordingCheckpointStore> {
+    self { SleepPersistence.makeCheckpointStore(url: self.storageLocation().checkpointURL) }.singleton
+  }
+
   var commitSession: Factory<CommitSession> {
-    self { CommitSession(sessions: self.sessionRepository()) }
+    self { CommitSession(sessions: self.sessionRepository(), checkpoints: self.checkpointStore()) }
+  }
+
+  var discardRecording: Factory<DiscardRecording> {
+    self { DiscardRecording(checkpoints: self.checkpointStore(), files: self.sessionFileStore()) }
+  }
+
+  var recoverInterruptedSession: Factory<RecoverInterruptedSession> {
+    self { RecoverInterruptedSession(checkpoints: self.checkpointStore(), files: self.sessionFileStore()) }
   }
 
   /// Makes the microphone capture for one night, writing clips beside the

@@ -28,9 +28,13 @@ public actor RecordingSession {
 
   /// Snapshots go out at most this often (5 Hz), by sample time.
   static let snapshotInterval: TimeInterval = 0.2
+  /// A checkpoint at least this often (sample time), besides one per event,
+  /// so a quiet night survives a crash too (SleepGuard: about 2 minutes).
+  static let checkpointInterval: TimeInterval = 120
 
   public private(set) var draft: RecordingDraft
   private let capture: any AudioCapturePort
+  private let checkpoints: (any RecordingCheckpointStore)?
   private let snoreClassifier: SnoreClassifier
   private let speechClassifier = SpeechClassifier()
   private let engine: DetectionEngine
@@ -41,9 +45,18 @@ public actor RecordingSession {
   private var compressions: [Task<Void, Never>] = []
   private var snapshots: AsyncStream<LiveSnapshot>.Continuation?
   private var lastSnapshot: Date?
+  private var lastCheckpoint: Date?
+  private var lastSampleTime: Date?
 
-  public init(capture: any AudioCapturePort, settings: Settings = Settings(), start: Date = Date()) {
+  /// `checkpoints`: where the night in progress is kept while recording.
+  public init(
+    capture: any AudioCapturePort,
+    settings: Settings = Settings(),
+    checkpoints: (any RecordingCheckpointStore)? = nil,
+    start: Date = Date())
+  {
     self.capture = capture
+    self.checkpoints = checkpoints
     draft = RecordingDraft(start: start)
     let classifier = SnoreClassifier.preset(settings.sensitivity)
     snoreClassifier = classifier
@@ -70,15 +83,16 @@ public actor RecordingSession {
     }
     samplesTask = Task {
       for await sample in samples {
-        ingest(sample)
+        await receive(sample)
       }
     }
     return stream
   }
 
   /// Stops listening, handles the samples still queued, finalizes an open
-  /// event at `end`, waits for its clips to compress, and returns the draft.
-  public func stop(at end: Date = Date()) async -> RecordingDraft {
+  /// event at `end`, waits for its clips to compress, checkpoints the whole
+  /// night (kept until it is saved or discarded) and returns the draft.
+  public func stop(at end: Date = Date(), endReason: Night.EndReason = .stopped) async -> RecordingDraft {
     await capture.stop()
     await samplesTask?.value
     input.yield(.finalize(at: end))
@@ -88,15 +102,25 @@ public actor RecordingSession {
       await compression.value
     }
     compressions = []
+    await checkpoints?.save(draft.night(end: end, endReason: endReason))
     snapshots?.finish()
     return draft
   }
 
   // MARK: - Samples
 
+  /// One sample from the capture: ingested, then a checkpoint when one is due.
+  func receive(_ sample: CaptureSample) async {
+    ingest(sample)
+    if lastCheckpoint.map({ sample.time.timeIntervalSince($0) >= Self.checkpointInterval }) ?? true {
+      await checkpoint(at: sample.time)
+    }
+  }
+
   /// Classifies one sample and sends it to the engine. Internal so tests can
   /// script samples at exact times.
   func ingest(_ sample: CaptureSample) {
+    lastSampleTime = sample.time
     draft.add(level: sample.db)
     // Loudness from the peak: snoring is impulsive, and one buffer's RMS
     // under-reports it. The spectral score stays out of the verdict, as in
@@ -151,7 +175,17 @@ public actor RecordingSession {
         break
       }
     }
+    if batch.outputs.contains(where: \.savesAnEvent) {
+      await checkpoint(at: batch.time)
+    }
     return []
+  }
+
+  /// Keeps the night so far, ending at `time`.
+  private func checkpoint(at time: Date) async {
+    guard let checkpoints else { return }
+    lastCheckpoint = time
+    await checkpoints.save(draft.night(end: time))
   }
 
   /// Compresses the clip beside detection and points the event at the result.
@@ -161,7 +195,17 @@ public actor RecordingSession {
       let compressed = await capture.compressClip(named: clip)
       if let index = draft.events.firstIndex(where: { $0.id == eventID }) {
         draft.events[index].clipFileName = compressed
+        await checkpoint(at: lastSampleTime ?? draft.start)
       }
     })
+  }
+}
+
+private extension DetectionOutput {
+  var savesAnEvent: Bool {
+    switch self {
+    case .snoreEventFinalized, .speechEventFinalized: true
+    default: false
+    }
   }
 }

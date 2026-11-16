@@ -30,7 +30,8 @@ struct RecordingComposer {
   func makeModel() -> LiveRecordingModel {
     LiveRecordingModel(
       capture: container.makeAudioCapture()(),
-      settings: RecordingSession.Settings(sensitivity: .medium, detectSleepTalking: false))
+      settings: RecordingSession.Settings(sensitivity: .medium, detectSleepTalking: false),
+      checkpoints: container.checkpointStore())
   }
 
   func makeBedside(model: LiveRecordingModel, routes: BedsideClockRoutes) -> UIViewController {

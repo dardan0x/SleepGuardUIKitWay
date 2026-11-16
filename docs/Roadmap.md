@@ -28,7 +28,7 @@ Vertical slices: the architecture and all three brands first, then one complete 
 
 | # | Feature | Status | Tasks | Notes |
 |---|---------|--------|-------|-------|
-| F7 | Recording and detection | In Progress | 6/7 | Capture adapter, recording actor, `RecordingFlow`, commit, summary, crash recovery |
+| F7 | Recording and detection | Done (device check open) | 7/7 | Capture adapter, recording actor, `RecordingFlow`, commit, summary, crash recovery |
 
 ## M4 — Parity and polish
 

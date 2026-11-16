@@ -186,6 +186,39 @@ struct RecordingSessionTests {
     #expect(zip(seen, seen.dropFirst()).allSatisfy { $1.time.timeIntervalSince($0.time) >= 0.2 - 1e-9 })
   }
 
+  // MARK: - Checkpoints
+
+  @Test func aSavedEventIsCheckpointedAtOnce() async throws {
+    let checkpoints = FakeRecordingCheckpointStore()
+    let harness = try await Harness(checkpoints: checkpoints)
+    await harness.snore(3, db: -35, confidence: 0.6)
+    await harness.silence(11)
+    let night = try #require(await checkpoints.night)
+    #expect(night.events.count == 1)
+    #expect(night.start == Sample.start)
+  }
+
+  /// A quiet night is kept too: the first sample, then every 2 minutes.
+  @Test func aQuietNightIsCheckpointedEveryTwoMinutes() async throws {
+    let checkpoints = FakeRecordingCheckpointStore()
+    let session = RecordingSession(capture: FakeAudioCapture(), checkpoints: checkpoints, start: Sample.start)
+    _ = try await session.start()
+    for second in 0...250 {
+      await session.receive(Harness.sample(at: Double(second), db: -60, snore: 0, speech: 0))
+    }
+    #expect(await checkpoints.saved.map { $0.end.timeIntervalSince(Sample.start) } == [0, 120, 240])
+  }
+
+  @Test func stopCheckpointsTheWholeNightWithItsReason() async throws {
+    let checkpoints = FakeRecordingCheckpointStore()
+    let harness = try await Harness(checkpoints: checkpoints)
+    await harness.snore(4, db: -35, confidence: 0.6)
+    _ = await harness.session.stop(at: Sample.at(600), endReason: .lowBattery)
+    let night = try #require(await checkpoints.night)
+    #expect(night.duration == 600 && night.endReason == .lowBattery)
+    #expect(night.events.first?.clipFileName?.hasSuffix(".m4a") == true)
+  }
+
   @Test func aStartFailureIsThrown() async throws {
     let capture = FakeAudioCapture()
     capture.startError = .noMicrophone
@@ -206,9 +239,14 @@ final class Harness {
   private var tick = 0
   private var stopped: RecordingDraft?
 
-  init(sensitivity: DetectionSensitivity = .medium, sleepTalking: Bool = false) async throws {
+  init(
+    sensitivity: DetectionSensitivity = .medium,
+    sleepTalking: Bool = false,
+    checkpoints: FakeRecordingCheckpointStore? = nil) async throws
+  {
     session = RecordingSession(
-      capture: capture, settings: .init(sensitivity: sensitivity, detectSleepTalking: sleepTalking), start: Sample.start)
+      capture: capture, settings: .init(sensitivity: sensitivity, detectSleepTalking: sleepTalking),
+      checkpoints: checkpoints, start: Sample.start)
     _ = try await session.start()
   }
 

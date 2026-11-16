@@ -13,6 +13,8 @@ public final class AppCoordinator {
   private(set) var recording: RecordingFlow?
   /// Debug only: fills an empty store with sample nights.
   private var seeding: Task<Void, Never>?
+  /// Looks for a night the app didn't get to finish; internal for tests.
+  private(set) var recovery: Task<Void, Never>?
 
   init(container: Container) {
     self.container = container
@@ -20,6 +22,7 @@ public final class AppCoordinator {
 
   deinit {
     seeding?.cancel()
+    recovery?.cancel()
   }
 
   public func start(in window: UIWindow) {
@@ -28,12 +31,28 @@ public final class AppCoordinator {
     window.tintColor = UIColor(container.theme().palette.accent)
     window.makeKeyAndVisible()
     self.mainTabs = mainTabs
+    offerInterruptedNight()
     seedSampleNightsInDebug()
   }
 
   /// "Start recording" from any screen: the recording flow, full screen over
   /// the tabs. One at a time.
   func startRecording() {
+    presentRecording { $0.start() }
+  }
+
+  /// A night interrupted by a crash, a kill or a dead battery comes back as
+  /// its summary, for Save or Discard (SleepGuard does the same at launch).
+  private func offerInterruptedNight() {
+    let recover = container.recoverInterruptedSession()
+    recovery = Task { [weak self] in
+      guard let night = await recover() else { return }
+      Log.app.notice("Offering a night interrupted before it was saved")
+      self?.presentRecording { $0.start(recovering: night) }
+    }
+  }
+
+  private func presentRecording(_ begin: (RecordingFlow) -> Void) {
     guard recording == nil, let tabs = mainTabs?.tabBarController else { return }
     let navigator = NavigationControllerNavigator()
     let height = tabs.view.window?.windowScene?.screen.bounds.height ?? 0
@@ -41,7 +60,7 @@ public final class AppCoordinator {
       self?.recording = nil
       tabs.dismiss(animated: true)
     }
-    flow.start()
+    begin(flow)
     recording = flow
     navigator.navigationController.modalPresentationStyle = .fullScreen
     tabs.present(navigator.navigationController, animated: true)
