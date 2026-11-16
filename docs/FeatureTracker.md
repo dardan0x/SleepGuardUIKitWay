@@ -17,12 +17,12 @@ Last updated: 2026-11-14
 | Blocked | 0 |
 | — | — |
 | Total Tasks | 62 |
-| Tasks Done | 49 |
+| Tasks Done | 50 |
 | Tasks In Progress | 0 |
 | Tasks Blocked | 0 |
-| Tasks Backlog | 13 |
+| Tasks Backlog | 12 |
 | — | — |
-| **Progress** | **79%** |
+| **Progress** | **81%** |
 
 ## Features
 
@@ -36,13 +36,13 @@ Last updated: 2026-11-14
 | F5 | Clip playback | P1 | Done | 5/5 | ██████████ 100% | [tracker](trackers/f5-clip-playback.md) |
 | F6 | Design kit adoption in SleepGuard | P2 | Done (bg-card open) | 4/4 | ██████████ 100% | [tracker](trackers/f6-design-kit-adoption.md) |
 | F7 | Recording and detection | P1 | Done (device check open) | 7/7 | ██████████ 100% | [tracker](trackers/f7-recording-detection.md) |
-| F10 | Shared screen content | P1 | In Progress | 4/7 | ██████░░░░ 57% | [tracker](trackers/f10-shared-screen-content.md) |
+| F10 | Shared screen content | P1 | In Progress | 5/7 | ███████░░░ 71% | [tracker](trackers/f10-shared-screen-content.md) |
 | F8 | Remaining features | P2 | Backlog | 0/6 | ░░░░░░░░░░ 0% | [tracker](trackers/f8-remaining-features.md) |
 | F9 | Showcase polish | P2 | Backlog | 0/4 | ░░░░░░░░░░ 0% | [tracker](trackers/f9-showcase-polish.md) |
 
 ## Currently Active
 
-- **F10-T4b** — Player: shared card and event list, waveform ported here.
+- **F10-T5** — Recording screens' content (prestart, bedside clock, summary).
 - **F7 device check** — one short night on a phone (Debug saves after 2 min): microphone, locked screen, clips, recovery after a kill.
 
 ## Up Next
@@ -61,6 +61,7 @@ Last updated: 2026-11-14
 
 | Date | Task | Event | Notes |
 |------|------|-------|-------|
+| 2026-11-16 | F10-T4b | Completed | Player content and `ClipWaveform` shared, `WaveformAccumulator` in SleepCore (shared 0.20.0); the waveform reaches this app (`ClipWaveformSource` port + `FileWaveformSource`). Branch `feature/f10/t4b-player` |
 | 2026-11-16 | F10-T4a | Completed | Night detail and events grid content, SleepCore's `EventFilter` / `EventListRow` (shared 0.19.0); both apps host it. T4 split: the player and its waveform are T4b. Branch `feature/f10/t4a-night-detail` |
 | 2026-11-16 | F10-T3 | Completed | Nights list content and SleepCore's `NightMonth` (shared 0.18.0); both apps host it; `HistorySections` and the History views removed. Branch `feature/f10/t3-nights-list` |
 | 2026-11-16 | F10-T2 | Completed | `SleepGuardContentKit` (shared 0.17.0) with the Statistics screens' content; both apps host it; this app's 5 content views and their render tests removed. Branch `feature/f10/t2-statistics-content` |
