@@ -22,7 +22,7 @@ The user starts a night, the app listens and detects snoring and sleep talking, 
 |----|------|------|--------|------------|--------|--------------------|
 | F7-T1 | Per-sample detection rules in `SleepCore` (shared 0.14.0): `SnoreClassifier` + sensitivity presets, `SpeechClassifier`, `DetectionSensitivity` | Domain | Done | F2 | Shared repo | SleepGuard's `SnoreDetectorTests` / `DetectionSensitivityTests` cases pass |
 | F7-T2 | SleepGuard's detectors and tracker use them | Refactor | Done | F7-T1 | SleepGuard | Its tests and the replay goldens pass unchanged |
-| F7-T3 | Capture adapter: tap off the main thread, levels, FFT score, sound classifier, event clip writer and compressor | Adapter | Backlog | F7-T1 | SleepAudio | Realtime tap isolated in one allow-listed file; simulator tests on generated audio |
+| F7-T3 | Capture adapter: tap off the main thread, levels, FFT score, sound classifier, event clip writer and compressor | Adapter | Done | F7-T1 | SleepAudio | Realtime tap isolated in one allow-listed file; simulator tests on generated audio |
 | F7-T4 | Recording actor: samples into the shared `DetectionEngine`, `RecordingDraft`, `AsyncStream<LiveSnapshot>` | Domain / Adapter | Backlog | F7-T3 | SleepDomain, SleepAudio | Characterization tests ported from SleepGuard's tracker tests |
 | F7-T5 | `RecordingFeature`: prestart, countdown, bedside clock, summary | UI | Backlog | F7-T4 | RecordingFeature | Matches SleepGuard |
 | F7-T6 | `RecordingFlow`, `CommitSession`, discard; full-screen modal owned by `AppCoordinator` | Shell | Backlog | F7-T5 | AppShell, SleepDomain | Works with any tab set; flow tests |
@@ -33,3 +33,19 @@ The user starts a night, the app listens and detects snoring and sleep talking, 
 - The detection state machine and its goldens are already shared (`SleepCore`). Do not copy them.
 - Needs a real device for a meaningful end-to-end check; say so in the session log when only the simulator was used.
 - 2026-11-16: decided with the user: the per-sample detection rules go to the shared repo and SleepGuard uses them (T1, T2); F7 covers the core night only. Left for F8: Snore Interrupter and melodies, start delay, sensitivity setting UI, storage limits, raw sample log.
+
+## Task Details
+
+### F7-T3 — Capture (done 2026-11-16)
+**T3a — detection inputs shared (done 2026-11-16; shared 0.15.0)**
+- [x] `SleepCore/Audio`: `AudioLevels` (RMS / peak dBFS), `SpectralFeatures` (from a magnitude spectrum: low-band ratio, centroid, dominant frequency, snore score; spectrum bars), `SoundClassLabels` (snore and speech classes → confidences); 12 tests, the FFT ones SleepGuard's `FFTAnalyzerTests` on a plain DFT of the same signals
+- [x] SleepGuard's `TapProcessor`, `FFTAnalyzer`, `SoundAnalysisDetector` use them (branch `feature/shared/f7-t3-shared-capture-rules`); its tests pass unchanged
+
+**T3b — capture adapter (done 2026-11-16)**
+- [x] `AudioCapturePort` (SleepDomain, main-actor): `start()` returns an `AsyncStream<CaptureSample>` (time, RMS / peak dB, spectral score, snore / speech confidence), one per buffer; `startClip(id:)`, `finishClip()` (→ file name), `discardClip()`, `stop()`. `FakeAudioCapture` in test support
+- [x] `EngineAudioCapture` (SleepAudio): direct input tap, no output path; `.playAndRecord` + `.measurement` (no automatic gain, full band); a new engine at every start; resumes after an interruption that allows it, an engine configuration change, or a device arriving / leaving
+- [x] `CaptureProcessor`: the tap's work behind one lock (levels via `AudioLevels`, vDSP transform → `SpectralFeatures`, SoundAnalysis frames, clip writes); the one escape hatch, now matched by the layering check (`uncheckedState`, `withLockUnchecked`) and allow-listed
+- [x] `SoundClassifier`: SoundAnalysis observer, confidences via `SoundClassLabels` behind a checked lock
+- [x] `ClipCompressor`: mono HE-AAC ~12 kbps (AAC-LC 24 kbps fallback), rate from the codec's list, as SleepGuard; written as one synchronous read → convert → encode loop with `AVAudioFile` / `AVAudioConverter` instead of an asset writer on a dispatch queue (no queue, no `Sendable` warnings). A failed compression keeps the raw `.caf`, which still plays
+- [x] 7 simulator tests on generated audio: levels, silence, spectral score, classifier attached, clip holds only the buffers written while open, compression (size and length), clip needs listening
+- Not checked: the engine on a microphone. The simulator's input can't be driven from a test; a device check is due with T5 (first screen that starts it). Not ported: the warm-up engine for a delayed start (F8), the melody pause / resume (F8), `didBecomeActive` resume (SleepAudio doesn't import UIKit; add it in the shell if a device night shows the need)

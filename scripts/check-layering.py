@@ -47,9 +47,13 @@ ALLOWED_IMPORTS = {
 # Every module under Packages/Features/ (they don't exist yet; F3 adds the first).
 FEATURE_IMPORTS = {"SwiftUI", "Charts", "SleepDomain", "SleepCore", "SleepGuardDesignKit", "SleepStrings"}
 
-ESCAPE_HATCH = re.compile(r"@unchecked\s+Sendable|nonisolated\(unsafe\)|@preconcurrency")
-# Paths allowed an escape hatch, with the reason. Keep it empty if you can.
-ESCAPE_HATCH_ALLOWLIST: dict[str, str] = {}
+ESCAPE_HATCH = re.compile(
+    r"@unchecked\s+Sendable|nonisolated\(unsafe\)|@preconcurrency|uncheckedState|withLockUnchecked")
+# Paths allowed an escape hatch, with the reason. Keep it as short as you can.
+ESCAPE_HATCH_ALLOWLIST: dict[str, str] = {
+    "Packages/Adapters/Sources/SleepAudio/Capture/CaptureProcessor.swift":
+        "the audio tap's thread can't await; a lock guards the non-Sendable AVFoundation objects it uses",
+}
 
 PRINT_CALL = re.compile(r"(?<![\w.])print\(")
 SHARED = re.compile(r"\b([A-Z]\w*)\.shared\b")
