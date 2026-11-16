@@ -24,7 +24,7 @@ The user starts a night, the app listens and detects snoring and sleep talking, 
 | F7-T2 | SleepGuard's detectors and tracker use them | Refactor | Done | F7-T1 | SleepGuard | Its tests and the replay goldens pass unchanged |
 | F7-T3 | Capture adapter: tap off the main thread, levels, FFT score, sound classifier, event clip writer and compressor | Adapter | Done | F7-T1 | SleepAudio | Realtime tap isolated in one allow-listed file; simulator tests on generated audio |
 | F7-T4 | Recording actor: samples into the shared `DetectionEngine`, `RecordingDraft`, `AsyncStream<LiveSnapshot>` | Domain / Adapter | Done | F7-T3 | SleepDomain, SleepAudio | Characterization tests ported from SleepGuard's tracker tests |
-| F7-T5 | `RecordingFeature`: prestart, countdown, bedside clock, summary | UI | Backlog | F7-T4 | RecordingFeature | Matches SleepGuard |
+| F7-T5 | `RecordingFeature`: prestart, bedside clock, summary (countdown → F8, with the start delay) | UI | Done | F7-T4 | RecordingFeature | Matches SleepGuard |
 | F7-T6 | `RecordingFlow`, `CommitSession`, discard; full-screen modal owned by `AppCoordinator` | Shell | Backlog | F7-T5 | AppShell, SleepDomain | Works with any tab set; flow tests |
 | F7-T7 | Checkpointing and `RecoverInterruptedSession` at launch; low-battery save | Domain / Shell | Backlog | F7-T6 | SleepDomain, SleepPersistence, AppShell | Kill the app mid-night; the night is offered at next launch |
 
@@ -35,6 +35,21 @@ The user starts a night, the app listens and detects snoring and sleep talking, 
 - 2026-11-16: decided with the user: the per-sample detection rules go to the shared repo and SleepGuard uses them (T1, T2); F7 covers the core night only. Left for F8: Snore Interrupter and melodies, start delay, sensitivity setting UI, storage limits, raw sample log.
 
 ## Task Details
+
+### F7-T5 — Recording screens (done 2026-11-16)
+**T5a — shared (0.16.0)**
+- [x] Kit `RecordingViews.swift`: `PrestartHeader`, `PrestartTipsCard`, `BedsideEventsBadge`, `BedsideClockFace`, `BedsideRecordingStatus`, `BedsideSnoreStatus`, `SessionSummaryHeader`, `SessionSummaryActions`; `NightTimeline(night:)`; `RecordingGallery` and render tests in both themes (one fix on the way: the prestart title can wrap)
+- [x] `Night.minimumSaveDuration` in SleepCore (120 s Debug, 30 min Release), from SleepGuard's `SleepSession`
+- [x] SleepGuard (branch `feature/shared/f7-t5-recording-components`): its prestart, bedside and summary views draw with the kit; 9 view files deleted (approved); `SleepSession.minimumSaveDuration` forwards to SleepCore
+
+**T5b — `RecordingFeature`**
+- [x] `RecordingPrestartScreen`: header, tips, Start (microphone, then charger: alerts for each, as SleepGuard), Cancel. No delay or Snore Interrupter rows (F8)
+- [x] `LiveRecordingModel` (state owner: owns the `RecordingSession`): phase, latest snapshot, `run()` from `.task`, `isTooShort(at:)`, `stop(at:) -> Night`
+- [x] `BedsideClockScreen`: badge, clock, recording status and meter, snore tier, Stop (with SleepGuard's early-stop alert → discard); a failed start alerts and leaves. Ticks with `TimelineView`, not a sleep loop
+- [x] `SessionSummaryScreen`: header from the night's summary, gap and low-battery banners, timeline, Save (too-short alert) / Discard
+- [x] Routes and dependencies only as closures and values: the shell (T6) supplies permission, charging, settings, idle timer, and commits
+- [x] 4 tests (`LiveRecordingModelTests`), run 3× clean against the local shared checkout
+- Not checked on screen yet: the shell shows these from T6. The renders of every kit piece were checked in both themes.
 
 ### F7-T4 — Recording actor (done 2026-11-16)
 - [x] `RecordingSession` (SleepDomain, actor): `start()` starts the capture and the shared `DetectionEngine`, returns `AsyncStream<LiveSnapshot>` (5 Hz by sample time, newest only); `stop(at:)` stops the capture, drains the queued samples, finalizes, waits for compressions and returns the `RecordingDraft`
