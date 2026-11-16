@@ -38,7 +38,7 @@ struct SessionDetailRenderTests {
 
   @Test func contentFollowsTheTheme() throws {
     let render = { (theme: Theme) throws -> Data in
-      let view = SessionDetailContent(detail: detail(), onShowAll: { _ in })
+      let view = SessionDetailContent(detail: detail(), routes: SessionDetailRoutes(showAllEvents: { _, _ in }, playEvents: { _, _ in }))
         .frame(width: 390)
         .background(theme.palette.bgPrimary)
         .environment(\.theme, theme)

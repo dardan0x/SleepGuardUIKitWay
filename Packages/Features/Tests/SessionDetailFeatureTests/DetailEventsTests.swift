@@ -47,4 +47,16 @@ struct DetailEventsTests {
     #expect(EventFilter.available(for: [event(at: 0), event(at: 600, category: .other)]) == [.all, .snoring, .noise])
     #expect(EventFilter.available(for: [event(at: 0), event(at: 10, category: .sleepTalking), event(at: 20, category: .noise)]) == [.all, .snoring, .sleepTalking, .noise])
   }
+
+  @Test func playPlaysASnoringRowsEpisodeAndOtherEventsAlone() throws {
+    let first = event(at: 0, duration: 30)
+    let longest = event(at: 100, duration: 120) // same episode, its representative
+    let talking = event(at: 3600, duration: 12, category: .sleepTalking)
+    let night = Night(start: start, end: start.addingTimeInterval(8 * 3600), events: [first, longest, talking])
+    let rows = DetailEventRow.make(episodes: night.displayableEpisodes, events: night.events, filter: .all)
+    let snoring = try #require(rows.first { $0.category == .snoring })
+    #expect(snoring.playback(in: night.events).map(\.id) == [first.id, longest.id])
+    let talkingRow = try #require(rows.first { $0.category == .sleepTalking })
+    #expect(talkingRow.playback(in: night.events).map(\.id) == [talking.id])
+  }
 }

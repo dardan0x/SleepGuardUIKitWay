@@ -14,7 +14,7 @@ let package = Package(
   ],
   dependencies: [
     .package(path: "../Core"),
-    .package(url: "https://github.com/dardan0x/SleepGuardShared.git", exact: "0.9.0"),
+    .package(url: "https://github.com/dardan0x/SleepGuardShared.git", exact: "0.11.0"),
   ],
   targets: [
     // SwiftData, files, UserDefaults.
@@ -38,6 +38,13 @@ let package = Package(
       dependencies: [
         "SleepPersistence",
         .product(name: "SleepDomain", package: "Core"),
+        .product(name: "SleepCore", package: "SleepGuardShared"),
+      ],
+      swiftSettings: [.swiftLanguageMode(.v6)]),
+    .testTarget(
+      name: "SleepAudioTests",
+      dependencies: [
+        "SleepAudio",
         .product(name: "SleepCore", package: "SleepGuardShared"),
       ],
       swiftSettings: [.swiftLanguageMode(.v6)]),

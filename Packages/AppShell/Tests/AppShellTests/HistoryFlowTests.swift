@@ -96,7 +96,7 @@ struct HistoryFlowTests {
     }
     let detail = try #require(pushed as? HostingScreen<SessionDetailScreen>)
 
-    detail.rootView.content.routes.showAllEvents(rows)
+    detail.rootView.content.routes.showAllEvents(rows, noisy.events)
 
     guard case let .present(presented, style) = spy.calls.last else {
       Issue.record("expected present, got \(spy.calls)")
@@ -112,6 +112,40 @@ struct HistoryFlowTests {
 
     close.primaryAction?.performWithSender(nil, target: nil)
     #expect(spy.calls.last == .dismiss)
+  }
+
+  /// Play presents the player over the detail; close dismisses it.
+  @Test func playPresentsThePlayerSheet() throws {
+    let start = night.start
+    let snore = NightEvent(start: start.addingTimeInterval(600), duration: 60, category: .snoring, intensity: .loud, clipFileName: "a.m4a")
+    let noisy = Night(start: start, end: night.end, events: [snore])
+    let (flow, spy, _) = makeFlow([noisy])
+    flow.start()
+    try #require(rootList(spy)).rootView.content.routes.openNight(noisy.summary())
+    guard case let .push(pushed) = spy.calls.last else {
+      Issue.record("expected push, got \(spy.calls)")
+      return
+    }
+    let detail = try #require(pushed as? HostingScreen<SessionDetailScreen>)
+
+    detail.rootView.content.routes.playEvents([snore], snore.id)
+
+    guard case let .present(presented, style) = spy.calls.last else {
+      Issue.record("expected present, got \(spy.calls)")
+      return
+    }
+    #expect(style == .sheet(detents: [.height(580), .large]))
+    let navigation = try #require(presented as? UINavigationController)
+    let player = try #require(navigation.viewControllers.first as? HostingScreen<PlayerScreen>)
+    #expect(player.navigationItem.title == Strings.eventPlayerNavigationTitle)
+    #expect(player.rootView.content.model.events == [snore])
+    player.navigationItem.rightBarButtonItems?.first?.primaryAction?.performWithSender(nil, target: nil)
+    #expect(spy.calls.last == .dismiss)
+  }
+
+  @Test func thePlayerIsTitledByTheKindOfEvent() {
+    #expect(SessionDetailComposer.playerTitle(for: .sleepTalking) == Strings.eventPlayerSleepTalkingTitle)
+    #expect(SessionDetailComposer.playerTitle(for: .coughing) == Strings.eventPlayerNoiseTitle)
   }
 
   @Test func deletingANightRemovesItThenPops() async {
@@ -153,6 +187,7 @@ extension Container {
     container.sessionRepository.register { repository }
     container.sessionFileStore.register { FakeSessionFileStore() }
     container.sleepStagePort.register { FakeSleepStagePort() }
+    container.makeClipPlayer.register { { FakeClipPlayer() } }
     return container
   }
 }

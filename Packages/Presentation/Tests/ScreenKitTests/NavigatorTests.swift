@@ -51,6 +51,15 @@ struct NavigatorTests {
     #expect(second.modalPresentationStyle == .fullScreen)
   }
 
+  @Test func aSheetCanHaveAFixedHeight() throws {
+    let navigator = NavigationControllerNavigator(animated: false)
+    let sheet = UIViewController()
+    navigator.configure(sheet, for: .sheet(detents: [.height(580), .large]))
+    let detents = try #require(sheet.sheetPresentationController?.detents)
+    #expect(detents.count == 2)
+    #expect(sheet.sheetPresentationController?.prefersGrabberVisible == true)
+  }
+
   @Test func anAlertKeepsItsOwnStyle() {
     let navigator = NavigationControllerNavigator(animated: false)
     let alert = UIAlertController(title: nil, message: nil, preferredStyle: .alert)

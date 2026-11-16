@@ -150,4 +150,19 @@ struct FileSessionStoreTests {
     #expect(left == ["b.m4a"])
     #expect(FileManager.default.fileExists(atPath: outside.path))
   }
+
+  @Test func servesOnlyExistingFilesInItsDirectory() throws {
+    let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString, isDirectory: true)
+    let clips = root.appendingPathComponent("Clips", isDirectory: true)
+    try FileManager.default.createDirectory(at: clips, withIntermediateDirectories: true)
+    defer { try? FileManager.default.removeItem(at: root) }
+    try Data([1]).write(to: clips.appendingPathComponent("a.m4a"))
+    try Data([1]).write(to: root.appendingPathComponent("keep.txt"))
+
+    let store = SleepPersistence.makeSessionFileStore(directory: clips)
+    #expect(store.url(forFileNamed: "a.m4a")?.lastPathComponent == "a.m4a")
+    #expect(store.url(forFileNamed: "missing.m4a") == nil)
+    #expect(store.url(forFileNamed: "../keep.txt") == nil)
+    #expect(store.url(forFileNamed: "") == nil)
+  }
 }

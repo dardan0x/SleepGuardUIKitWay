@@ -1,4 +1,5 @@
 import FactoryKit
+import SleepAudio
 import SleepDomain
 import UIKit
 
@@ -36,9 +37,12 @@ public final class AppCoordinator {
   private func seedSampleNightsInDebug() {
     #if DEBUG
     let repository = container.sessionRepository()
+    let clips = container.storageLocation().clipsDirectory
     seeding = Task {
       do {
-        try await SampleNights.seedIfEmpty(repository)
+        try await SampleNights.seedIfEmpty(repository) { name, seconds, intensity in
+          try SleepAudio.writeSampleClip(to: clips.appendingPathComponent(name), seconds: seconds, intensity: intensity)
+        }
       } catch {
         Log.storage.error("Seeding sample nights failed: \(error.localizedDescription, privacy: .public)")
       }

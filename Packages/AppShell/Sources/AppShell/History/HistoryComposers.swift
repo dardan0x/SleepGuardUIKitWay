@@ -38,10 +38,13 @@ struct SessionDetailComposer {
   }
 
   /// The events sheet in its own navigation controller, for its title bar.
-  func makeEventsSheet(rows: [DetailEventRow], onClose: @escaping @MainActor () -> Void) -> UIViewController {
+  func makeEventsSheet(
+    rows: [DetailEventRow], events: [NightEvent], playEvents: @escaping @MainActor ([NightEvent], NightEvent.ID) -> Void,
+    onClose: @escaping @MainActor () -> Void) -> UIViewController
+  {
     let theme = container.theme()
     let screen = HostingScreen(
-      rootView: EventsSheetScreen(rows: rows),
+      rootView: EventsSheetScreen(rows: rows, events: events, playEvents: playEvents),
       theme: theme,
       chrome: ScreenChrome(
         title: Strings.recordingsDetailEventsLabel,
@@ -49,5 +52,30 @@ struct SessionDetailComposer {
     let navigation = UINavigationController(rootViewController: screen)
     Appearance.apply(theme, to: navigation.navigationBar)
     return navigation
+  }
+
+  /// The player: a state owner over a new clip player, titled by the kind of
+  /// event, with a close button.
+  func makePlayer(events: [NightEvent], start: NightEvent.ID, onClose: @escaping @MainActor () -> Void) -> UIViewController {
+    let theme = container.theme()
+    let model = ClipPlaybackModel(
+      events: events, startEvent: start, player: container.makeClipPlayer()(), files: container.sessionFileStore())
+    let screen = HostingScreen(
+      rootView: PlayerScreen(model: model),
+      theme: theme,
+      chrome: ScreenChrome(
+        title: Self.playerTitle(for: events.first { $0.id == start }?.category ?? .snoring),
+        trailingItems: [BarItem(systemImage: "xmark.circle.fill", accessibilityLabel: Strings.actionClose, action: onClose)]))
+    let navigation = UINavigationController(rootViewController: screen)
+    Appearance.apply(theme, to: navigation.navigationBar)
+    return navigation
+  }
+
+  static func playerTitle(for category: SoundCategory) -> String {
+    switch category {
+    case .snoring: Strings.eventPlayerNavigationTitle
+    case .sleepTalking: Strings.eventPlayerSleepTalkingTitle
+    case .noise, .coughing, .other: Strings.eventPlayerNoiseTitle
+    }
   }
 }

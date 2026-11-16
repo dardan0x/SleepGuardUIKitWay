@@ -17,11 +17,30 @@ enum SampleNights {
     }
   }
 
-  /// Saves the sample nights if the store has none. Leaves real data alone.
-  static func seedIfEmpty(_ repository: any SessionRepository, before today: Date = .now) async throws {
+  /// The longest sample clip. Longer events play their clip only (the player
+  /// stops at the end of the file), which keeps seeding quick.
+  static let maxClipSeconds: TimeInterval = 15
+
+  /// Saves the sample nights if the store has none, and asks `writeClip` for
+  /// each snoring event's clip (name, seconds, intensity), off the main actor.
+  /// Leaves real data alone.
+  static func seedIfEmpty(
+    _ repository: any SessionRepository,
+    before today: Date = .now,
+    writeClip: @escaping @Sendable (String, TimeInterval, SnoreIntensity) throws -> Void = { _, _, _ in }) async throws
+  {
     var current = await repository.observeSummaries().makeAsyncIterator()
     guard let existing = await current.next(), existing.isEmpty else { return }
-    for session in make(before: today) {
+    let nights = make(before: today)
+    let clips = nights.flatMap(\.events).compactMap { event in
+      event.clipFileName.map { ($0, min(event.duration, maxClipSeconds), event.intensity) }
+    }
+    try await Task.detached(priority: .utility) {
+      for (name, seconds, intensity) in clips {
+        try writeClip(name, seconds, intensity)
+      }
+    }.value
+    for session in nights {
       try await repository.save(session, summary: session.summary())
     }
   }
@@ -71,8 +90,9 @@ enum SampleNights {
       let duration = Double.random(in: 8...90, using: &random)
       let intensity: SnoreIntensity = [.quiet, .light, .light, .loud, .loud, .epic][Int.random(in: 0...5, using: &random)]
       let firstBurst = duration * Double.random(in: 0.3...0.6, using: &random)
+      let id = random.uuid() // drawn where it always was, so the nights stay the same
       events.append(NightEvent(
-        id: random.uuid(),
+        id: id,
         start: start.addingTimeInterval(cursor),
         duration: duration,
         intensity: intensity,
@@ -82,7 +102,8 @@ enum SampleNights {
         bursts: [
           SnoreBurst(startOffset: 0, endOffset: firstBurst),
           SnoreBurst(startOffset: firstBurst + 2, endOffset: duration),
-        ]))
+        ],
+        clipFileName: "\(id.uuidString).m4a"))
       cursor += duration + Double.random(in: 30...200, using: &random)
     }
     return events
