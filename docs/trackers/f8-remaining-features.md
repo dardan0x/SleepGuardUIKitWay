@@ -30,4 +30,5 @@ The rest of SleepGuard's product, three parts of it switched per brand.
 ## Notes
 
 - From F7 (2026-11-16, decided with the user): start delay with its countdown screen and warm-up engine, sensitivity setting UI, storage limits, raw sample log go into F8-T1 / F8-T4.
+- **Content-first (ADR 0005, F10).** For each screen: SleepGuard's layout moves to the shared `SleepGuardContentKit`, SleepGuard hosts it, and this app adds only the screen (dependencies, routes) and its flow. SleepGuard's sleep-stage views move to the design kit with F8-T3.
 - Fix, don't port: SleepGuard maps survey chips by comparing localized strings. Use identifiers.
