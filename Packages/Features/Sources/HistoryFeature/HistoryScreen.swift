@@ -1,6 +1,6 @@
 import SleepCore
 import SleepDomain
-import SleepGuardDesignKit
+import SleepGuardContentKit
 import SwiftUI
 
 public struct HistoryDependencies: Sendable {
@@ -23,14 +23,16 @@ public struct HistoryRoutes {
   }
 }
 
-/// Every recorded night, by month and day. Updates live as nights are saved or
-/// deleted; re-subscribing when the screen reappears yields the current list
-/// at once, so returning from a night never shows the loading state.
+/// Every recorded night, by month and day (SleepCore's `NightMonth`), drawn by
+/// the shared `NightsListContent`. Updates live as nights are saved or deleted;
+/// re-subscribing when the screen reappears yields the current list at once, so
+/// returning from a night never shows the loading state. Confirms and performs
+/// deletes.
 public struct HistoryScreen: View {
   let dependencies: HistoryDependencies
   let routes: HistoryRoutes
   @State private var viewState: ViewState = .loading
-  @State private var pendingDelete: HistoryDay?
+  @State private var pendingDelete: NightDay?
   @State private var deleteFailed = false
   @Environment(\.calendar) private var calendar
 
@@ -43,16 +45,16 @@ public struct HistoryScreen: View {
     Group {
       switch viewState {
       case .loading:
-        HistoryLoadingView()
+        NightsListLoadingContent()
       case .empty:
-        HistoryEmptyView()
+        NightsListEmptyContent()
       case let .loaded(months):
-        HistoryLoadedView(months: months, onOpen: routes.openNight, onDelete: { pendingDelete = $0 })
+        NightsListContent(months: months, onOpen: routes.openNight, onDelete: { pendingDelete = $0 })
       }
     }
     .task {
       for await summaries in await dependencies.nights.observeSummaries() {
-        viewState = summaries.isEmpty ? .empty : .loaded(HistorySections.make(from: summaries, calendar: calendar))
+        viewState = summaries.isEmpty ? .empty : .loaded(NightMonth.months(from: summaries, calendar: calendar))
       }
     }
     .alert(Strings.recordingsDetailRemoveTitle, isPresented: isConfirmingDelete, presenting: pendingDelete) { day in
@@ -69,7 +71,7 @@ public struct HistoryScreen: View {
   }
 
   /// The list updates itself from the repository once each night is gone.
-  private func delete(_ day: HistoryDay) {
+  private func delete(_ day: NightDay) {
     Task {
       do {
         for night in day.nights {
@@ -84,6 +86,6 @@ public struct HistoryScreen: View {
   enum ViewState {
     case loading
     case empty
-    case loaded([HistoryMonth])
+    case loaded([NightMonth])
   }
 }
