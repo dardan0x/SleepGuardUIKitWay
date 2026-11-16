@@ -17,12 +17,12 @@ Last updated: 2026-11-14
 | Blocked | 0 |
 | — | — |
 | Total Tasks | 55 |
-| Tasks Done | 42 |
+| Tasks Done | 43 |
 | Tasks In Progress | 0 |
 | Tasks Blocked | 0 |
-| Tasks Backlog | 13 |
+| Tasks Backlog | 12 |
 | — | — |
-| **Progress** | **76%** |
+| **Progress** | **78%** |
 
 ## Features
 
@@ -35,17 +35,17 @@ Last updated: 2026-11-14
 | F4 | Statistics | P1 | Done | 5/5 | ██████████ 100% | [tracker](trackers/f4-statistics.md) |
 | F5 | Clip playback | P1 | Done | 5/5 | ██████████ 100% | [tracker](trackers/f5-clip-playback.md) |
 | F6 | Design kit adoption in SleepGuard | P2 | Done (bg-card open) | 4/4 | ██████████ 100% | [tracker](trackers/f6-design-kit-adoption.md) |
-| F7 | Recording and detection | P1 | In Progress | 4/7 | ██████░░░░ 57% | [tracker](trackers/f7-recording-detection.md) |
+| F7 | Recording and detection | P1 | In Progress | 5/7 | ███████░░░ 71% | [tracker](trackers/f7-recording-detection.md) |
 | F8 | Remaining features | P2 | Backlog | 0/6 | ░░░░░░░░░░ 0% | [tracker](trackers/f8-remaining-features.md) |
 | F9 | Showcase polish | P2 | Backlog | 0/4 | ░░░░░░░░░░ 0% | [tracker](trackers/f9-showcase-polish.md) |
 
 ## Currently Active
 
-- **F7-T5** — `RecordingFeature`: prestart, countdown, bedside clock, summary. First device check of the capture.
+- **F7-T6** — `RecordingFlow`: full-screen modal, `CommitSession`, discard. First on-screen and device check of recording.
 
 ## Up Next
 
-1. **F7-T6, T7** — Recording flow and commit, recovery.
+1. **F7-T7** — Checkpoints and recovery at launch; low-battery save.
 2. **F0** — Shared CI also builds SleepGuardUIKitWay (the open F0-T5 item).
 
 ## Blockers
@@ -58,6 +58,7 @@ Last updated: 2026-11-14
 
 | Date | Task | Event | Notes |
 |------|------|-------|-------|
+| 2026-11-16 | F7-T5 | Completed | Recording pieces in the kit + `Night.minimumSaveDuration` (shared 0.16.0); SleepGuard uses them. `RecordingFeature`: prestart, bedside clock (`LiveRecordingModel`), summary. Countdown moved to F8. Branch `feature/f7/t5-recording-screens` |
 | 2026-11-16 | F7-T4 | Completed | `RecordingSession` actor (capture → shared `DetectionEngine` → `RecordingDraft`, 5 Hz `LiveSnapshot`); SleepGuard's characterization cases pass unchanged. Port: `closeClip` / `compressClip`, open clip survives `stop`. Branch `feature/f7/t4-recording-session` |
 | 2026-11-16 | F7-T3b | Completed | Capture adapter: `AudioCapturePort`, `EngineAudioCapture` (direct tap, `.measurement`, resume), `CaptureProcessor` (the one allow-listed lock), `SoundClassifier`, `ClipCompressor`; 7 simulator tests. On shared 0.15.0. Engine not yet checked on a device. Branch `feature/f7/t3-capture` |
 | 2026-11-16 | F7-T3a | Completed | Detection inputs shared (`AudioLevels`, `SpectralFeatures`, `SoundClassLabels`, shared 0.15.0); SleepGuard uses them. F6 marked done on the dashboard. Branch `feature/f7/t3-capture` |
