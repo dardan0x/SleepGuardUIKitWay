@@ -26,7 +26,7 @@ Each task from T2 on is one shared release, then SleepGuard adopts it, then this
 |----|------|------|--------|------------|-------|--------------------|
 | F10-T1 | Decision recorded: ADR here and in SleepGuard, the three-layer rule in both apps' AGENTS/CLAUDE, trackers, layering table | Docs | Done | F7 | Both apps | — |
 | F10-T2 | `SleepGuardContentKit` product; Dashboard, Trends, Calendar, Last 7 Nights content; empty and loading placeholders | Shared / Refactor | Done | F10-T1 | Shared, both apps | `StatisticsFeature/Views/*` gone here; SleepGuard's Statistics screens host the same content |
-| F10-T3 | Nights list content; `NightsByMonth` rule in `SleepCore` | Shared / Refactor | Backlog | F10-T2 | Shared, both apps | `HistorySections` and SleepGuard's `SessionGrouper` gone; both apps' grouping tests pass on the rule |
+| F10-T3 | Nights list content; `NightMonth` rule in `SleepCore` | Shared / Refactor | Done | F10-T2 | Shared, both apps | `HistorySections` and SleepGuard's `SessionGrouper` gone; both apps' grouping tests pass on the rule |
 | F10-T4 | Night detail content, events sheet content, player card and event list | Shared / Refactor | Backlog | F10-T2 | Shared, both apps | `SessionDetailFeature/Views/*` gone here |
 | F10-T5 | Prestart, bedside clock and summary content (slots for SleepGuard's melody rows and overlay) | Shared / Refactor | Backlog | F10-T2 | Shared, both apps | The three recording screens here are containers only |
 | F10-T6 | Review: no screen-content view left in either app for the shared screens; docs final; feature doc | Docs | Backlog | F10-T3, T4, T5 | Both apps | — |
@@ -39,6 +39,13 @@ Each task from T2 on is one shared release, then SleepGuard adopts it, then this
 - F8 is built content-first (ADR 0005).
 
 ## Task Details
+
+### F10-T3 — Nights list (done 2026-11-16)
+- [x] Shared (0.18.0): `NightMonth.months(from:)` in SleepCore (months, then `NightDay`s, newest first at every level), tests with both apps' grouping cases; content `NightsListContent` (month sections, swipe and long-press delete request), `NightDayCard` (SleepGuard's row), `NightsListEmptyContent`, `NightsListLoadingContent`; kit `NightRow` shows the night's length and a chevron (SleepGuard's expanded row)
+- [x] Render tests for the day card, empty and loading content; the `List` itself can't be drawn by `ImageRenderer` (UIKit-backed), so it is checked in the apps
+- [x] Here: `HistoryScreen` hosts the content and keeps the delete confirmation; `HistorySections`, `HistoryLoadedView`, `HistoryDayRow` and the `HistoryFeatureTests` target removed
+- [x] SleepGuard F25-T3: same content and rule (6 files deleted, approved)
+- Visible changes here, toward SleepGuard's design: the day shows the medium date ("16 Nov 2026"), the length as "7h 12 mins", a long press asks to delete, the chevron doesn't turn, expanded nights show their length and a chevron
 
 ### F10-T2 — Statistics content (done 2026-11-16)
 - [x] Shared (0.17.0): product `SleepGuardContentKit` (re-exports the design kit); `StatisticsDashboardContent` (slot for an extra below the stats), `TrendsContent` + `TrendsRange`, `CalendarContent`, `LastSevenNightsContent`, `StatisticsEmptyContent`, `StatisticsLoadingContent`; gallery; render tests in both themes and text tests. `Theme.previewAlternate` made public for previews and tests
