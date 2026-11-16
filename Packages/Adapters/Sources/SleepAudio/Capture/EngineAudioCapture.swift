@@ -40,6 +40,7 @@ final class EngineAudioCapture: AudioCapturePort {
 
   func start() throws -> AsyncStream<CaptureSample> {
     stop()
+    discardClip() // left open by the last night
     try activateSession()
     let (stream, continuation) = AsyncStream.makeStream(of: CaptureSample.self)
     self.continuation = continuation
@@ -61,15 +62,20 @@ final class EngineAudioCapture: AudioCapturePort {
     clipURL = url
   }
 
-  func finishClip() async -> String? {
-    guard let raw = clipURL else { return nil }
+  func closeClip() -> String? {
+    guard let url = clipURL else { return nil }
     processor.closeClip()
     clipURL = nil
+    return url.lastPathComponent
+  }
+
+  func compressClip(named name: String) async -> String {
+    let raw = clipsDirectory.appendingPathComponent(name)
     let compressed = raw.deletingPathExtension().appendingPathExtension("m4a")
     guard await ClipCompressor.compress(from: raw, to: compressed) else {
       // The raw clip still plays; keep it rather than lose the event's audio.
       Log.audio.error("Clip compression failed; keeping the raw clip")
-      return raw.lastPathComponent
+      return name
     }
     try? FileManager.default.removeItem(at: raw)
     return compressed.lastPathComponent
@@ -84,7 +90,7 @@ final class EngineAudioCapture: AudioCapturePort {
 
   func stop() {
     guard isListening else { return }
-    discardClip()
+    // An open clip stays open for the final flush; it gets no more buffers.
     stopEngine()
     observers.forEach(NotificationCenter.default.removeObserver)
     observers = []

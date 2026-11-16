@@ -49,14 +49,21 @@ public protocol AudioCapturePort: AnyObject, Sendable {
   /// the stream. An interruption (a call) or a route change pauses the
   /// samples; listening resumes on its own when the system allows.
   func start() throws -> AsyncStream<CaptureSample>
-  /// Writes the microphone into the clip for event `id` until `finishClip`
-  /// or `discardClip`. An unfinished clip is discarded first.
+  /// Writes the microphone into the clip for event `id` until `closeClip`
+  /// or `discardClip`. A clip still open is discarded first.
   func startClip(id: UUID) throws
-  /// Closes the open clip and compresses it. Returns its file name in the
-  /// clips folder, or `nil` when no clip was open.
-  func finishClip() async -> String?
+  /// Stops writing the open clip and keeps it. Returns its file name in the
+  /// clips folder (raw audio), or `nil` when no clip was open. Immediate, so
+  /// clips close in event order.
+  func closeClip() -> String?
+  /// Compresses a closed clip. Returns the compressed file's name, or `name`
+  /// itself when compression failed (the raw clip still plays). Takes a
+  /// moment: run it off the detection path.
+  func compressClip(named name: String) async -> String
   /// Closes the open clip and deletes it.
   func discardClip()
-  /// Stops listening, ends the sample stream and discards an unfinished clip.
+  /// Stops listening and ends the sample stream. A clip still open stays open
+  /// (nothing more is written to it) for `closeClip` or `discardClip`: the
+  /// last event of the night is finalized after the microphone stops.
   func stop()
 }
