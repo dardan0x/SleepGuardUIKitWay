@@ -45,7 +45,9 @@ ALLOWED_IMPORTS = {
 }
 
 # Every module under Packages/Features/ (they don't exist yet; F3 adds the first).
-FEATURE_IMPORTS = {"SwiftUI", "Charts", "SleepDomain", "SleepCore", "SleepGuardDesignKit", "SleepStrings"}
+FEATURE_IMPORTS = {
+    "SwiftUI", "Charts", "SleepDomain", "SleepCore", "SleepGuardContentKit", "SleepGuardDesignKit", "SleepStrings",
+}
 
 ESCAPE_HATCH = re.compile(
     r"@unchecked\s+Sendable|nonisolated\(unsafe\)|@preconcurrency|uncheckedState|withLockUnchecked")

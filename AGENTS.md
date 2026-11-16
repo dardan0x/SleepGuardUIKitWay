@@ -22,7 +22,7 @@ Brand app targets (SleepGuard | SleepGuardLite | Nocturne)
         │
   ┌─────┼─────────────┬──────────────┐
 Features (SwiftUI)  ScreenKit      Adapters (SleepPersistence, SleepAudio, SleepHealth)
-  │   └─ SleepGuardDesignKit, SleepStrings (shared repo)      │
+  │   └─ SleepGuardContentKit, SleepGuardDesignKit, SleepStrings (shared repo)   │
   └──────────► SleepDomain ◄──────────────────────────────────┘
                    └─ SleepCore (shared repo: Night entities, night rules, score, detection)
 ```
@@ -33,7 +33,7 @@ Features (SwiftUI)  ScreenKit      Adapters (SleepPersistence, SleepAudio, Sleep
 |---|---|---|
 | `SleepDomain` | Foundation, `SleepCore` | everything else |
 | Adapters | `SleepDomain`, `SleepCore`, the one Apple framework they wrap | SwiftUI, UIKit (except where the framework requires it), Factory, features |
-| Features | `SleepDomain`, `SleepCore`, `SleepGuardDesignKit` (which re-exports `SleepStrings`), SwiftUI | UIKit, Factory, adapters, other features |
+| Features | `SleepDomain`, `SleepCore`, `SleepGuardContentKit`, `SleepGuardDesignKit` (which re-exports `SleepStrings`), SwiftUI | UIKit, Factory, adapters, other features |
 | `ScreenKit` | UIKit, SwiftUI, `SleepGuardDesignKit` | domain, features, Factory |
 | `AppShell` | everything except `SleepHealth` | — |
 | Brand targets | `AppShell`, the adapters that brand links | — |
@@ -67,6 +67,7 @@ Enforced by package manifests, **but only when a package builds on its own**: in
   public struct HistoryScreen: View { public init(dependencies:routes:) }
   ```
 - Only the screen (container) view takes `Dependencies` and `Routes`. Child views are presentational: data in, closures out.
+- **Three layers of view code (ADR 0005).** Components live in the shared `SleepGuardDesignKit`. A screen's content (its loaded layout, and state views that only draw) lives in the shared `SleepGuardContentKit`, used by SleepGuard too. The screen stays here: loading and `ViewState`, `Dependencies`, `Routes`, alerts. The test: if a view can be rendered from plain values alone, it is shared; if it needs a port, a use case, a route or an alert, it is a screen. Don't write a layout in a feature module that SleepGuard also shows: add it to the content kit (values and closures in; an app-only extra goes through an optional value or a `@ViewBuilder` slot, never a flag naming an app). New screens are built content-first.
 - Load in `.task`. Guard so popping back doesn't refetch. Observe changing data with the port's `AsyncStream` inside `.task`.
 - **Forbidden in features:** `NavigationStack`, `NavigationLink`, `.navigationDestination`, `.sheet`, `.fullScreenCover`, `.navigationTitle`, `.toolbar`, `@Query`, `@Environment(\.modelContext)`, `@Injected`, `UIApplication`, `UIDevice`. Allowed: `.alert`, `.confirmationDialog`.
 - Limits: a view file ≤ 200 lines; a screen container ≤ 100 lines; state views (`…LoadedView`, `…EmptyView`, `…ErrorView`) in their own files. Prefer a dedicated `View` struct over a computed `some View` for anything over ~20 lines or anything built per item.
