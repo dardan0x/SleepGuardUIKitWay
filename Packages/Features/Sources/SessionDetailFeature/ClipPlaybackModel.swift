@@ -15,6 +15,9 @@ public final class ClipPlaybackModel {
   public private(set) var isPlaying = false
   /// The current clip's file is loaded and can play.
   public private(set) var hasAudio = false
+  /// The current clip's waveform (0...1 bars) and whether it is still being read.
+  public private(set) var waveform: [Float] = []
+  public private(set) var isLoadingWaveform = false
   /// Band-pass and peak boost; the player applies it from the next sample.
   public var isEnhanced: Bool {
     didSet { player.isEnhanced = isEnhanced }
@@ -22,15 +25,26 @@ public final class ClipPlaybackModel {
 
   @ObservationIgnored private let player: any ClipPlayer
   @ObservationIgnored private let files: any SessionFileStore
+  @ObservationIgnored private let waveforms: any ClipWaveformSource
+  /// Reading the current clip's waveform; internal so tests can await it.
+  @ObservationIgnored private(set) var waveformLoading: Task<Void, Never>?
   @ObservationIgnored private let firstIndex: Int
   @ObservationIgnored private var fileDuration: TimeInterval = 0
   @ObservationIgnored private var ticking: Task<Void, Never>?
 
   /// `events` in play order; playback starts at `startEvent` (or the first).
-  public init(events: [NightEvent], startEvent: NightEvent.ID?, player: any ClipPlayer, files: any SessionFileStore, isEnhanced: Bool = true) {
+  public init(
+    events: [NightEvent],
+    startEvent: NightEvent.ID?,
+    player: any ClipPlayer,
+    files: any SessionFileStore,
+    waveforms: any ClipWaveformSource,
+    isEnhanced: Bool = true)
+  {
     self.events = events
     self.player = player
     self.files = files
+    self.waveforms = waveforms
     self.isEnhanced = isEnhanced
     playlist = ClipPlaylist(events: events)
     firstIndex = startEvent.flatMap { id in events.firstIndex { $0.id == id } } ?? 0
@@ -126,6 +140,7 @@ public final class ClipPlaybackModel {
   public func close() {
     if isPlaying { playlist.offset = min(player.position, clipDuration) }
     stopPlaying()
+    waveformLoading?.cancel()
     player.stop()
   }
 
@@ -146,12 +161,31 @@ public final class ClipPlaybackModel {
   private func load() {
     hasAudio = false
     fileDuration = 0
+    waveformLoading?.cancel()
+    waveform = []
+    isLoadingWaveform = false
     guard let name = playlist.current?.fileName, let url = files.url(forFileNamed: name) else { return }
     do {
       fileDuration = try player.load(url)
       hasAudio = true
     } catch {
       hasAudio = false
+    }
+    if hasAudio { loadWaveform(url) }
+  }
+
+  /// Reads the clip's waveform beside playback; a result for a clip that is
+  /// no longer current is dropped.
+  private func loadWaveform(_ url: URL) {
+    isLoadingWaveform = true
+    let index = playlist.index
+    let duration = clipDuration
+    let waveforms = waveforms
+    waveformLoading = Task { [weak self] in
+      let bars = await waveforms.waveform(of: url, duration: duration)
+      guard let self, !Task.isCancelled, playlist.index == index else { return }
+      waveform = bars
+      isLoadingWaveform = false
     }
   }
 

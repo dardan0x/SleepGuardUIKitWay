@@ -28,7 +28,7 @@ Each task from T2 on is one shared release, then SleepGuard adopts it, then this
 | F10-T2 | `SleepGuardContentKit` product; Dashboard, Trends, Calendar, Last 7 Nights content; empty and loading placeholders | Shared / Refactor | Done | F10-T1 | Shared, both apps | `StatisticsFeature/Views/*` gone here; SleepGuard's Statistics screens host the same content |
 | F10-T3 | Nights list content; `NightMonth` rule in `SleepCore` | Shared / Refactor | Done | F10-T2 | Shared, both apps | `HistorySections` and SleepGuard's `SessionGrouper` gone; both apps' grouping tests pass on the rule |
 | F10-T4a | Night detail and events sheet content; `EventFilter` and `EventListRow` rules in `SleepCore` | Shared / Refactor | Done | F10-T2 | Shared, both apps | Detail views and `DetailEvents` gone here |
-| F10-T4b | Player card and event list shared; clip waveform ported here (decided 2026-11-16: port now) | Shared / Adapter / Refactor | Backlog | F10-T4a | Shared, both apps | `PlayerScreen` hosts the shared player content with the waveform |
+| F10-T4b | Player card and event list shared; clip waveform ported here (decided 2026-11-16: port now) | Shared / Adapter / Refactor | Done | F10-T4a | Shared, both apps | `PlayerScreen` hosts the shared player content with the waveform |
 | F10-T5 | Prestart, bedside clock and summary content (slots for SleepGuard's melody rows and overlay) | Shared / Refactor | Backlog | F10-T2 | Shared, both apps | The three recording screens here are containers only |
 | F10-T6 | Review: no screen-content view left in either app for the shared screens; docs final; feature doc | Docs | Backlog | F10-T3, T4, T5 | Both apps | — |
 
@@ -40,6 +40,13 @@ Each task from T2 on is one shared release, then SleepGuard adopts it, then this
 - F8 is built content-first (ADR 0005).
 
 ## Task Details
+
+### F10-T4b — Player with waveform (done 2026-11-16)
+- [x] Shared (0.20.0): SleepCore `WaveformAccumulator` (SleepGuard's waveform math, fed in pieces; 4 tests); kit `ClipWaveform` (SleepGuard's bars, playhead, time labels, tap to seek, loading pulse; VoiceOver adjust ±15 s carried over from the old progress bar) replaces `PlayerProgress`; content `PlayerCard` (card with loading veil, explicit back / forward for SleepGuard's legacy player) and `PlayerContent` (card, enhanced audio, event list; 15 s skips through seek, `PlayerCard.position(skipping:)`), `PlayerClip`
+- [x] Here: port `ClipWaveformSource` (SleepDomain) + `FakeClipWaveformSource`; adapter `FileWaveformSource` (SleepAudio, `AVAudioFile` → accumulator, off the caller's actor); `ClipPlaybackModel` reads the current clip's bars beside playback (`waveform`, `isLoadingWaveform`; a stale result is dropped; cleared for a clip without a file); `PlayerScreen` hosts `PlayerContent`; registration and composer
+- [x] Tests: model waveform (3), file source on a generated clip (3)
+- [x] SleepGuard F25-T4b: `ClipPlayerContent` hosts `PlayerContent`, `LegacyPlayerContent` hosts `PlayerCard`, `WaveformGenerator` uses the accumulator (3 files deleted, approved)
+- Visible change here: the player shows the clip's waveform instead of a progress bar
 
 ### F10-T4a — Night detail (done 2026-11-16)
 - [x] Decided with the owner: a snoring row shows the episode's start (SleepGuard showed its longest event's); the filter offers all four as soon as a night has two kinds of event (SleepGuard's rule; sleep talking only while detected); the waveform comes to this app now (T4b)

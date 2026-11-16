@@ -9,6 +9,11 @@ public enum SleepAudio {
     EngineClipPlayer()
   }
 
+  /// Clip waveforms read from the files.
+  public static func makeClipWaveformSource() -> any ClipWaveformSource {
+    FileWaveformSource()
+  }
+
   /// Microphone capture; event clips are written to `clipsDirectory`.
   @MainActor
   public static func makeAudioCapture(clipsDirectory: URL) -> any AudioCapturePort {
