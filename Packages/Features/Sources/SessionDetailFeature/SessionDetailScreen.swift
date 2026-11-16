@@ -1,6 +1,6 @@
 import SleepCore
 import SleepDomain
-import SleepGuardDesignKit
+import SleepGuardContentKit
 import SwiftUI
 
 public struct SessionDetailDependencies: Sendable {
@@ -17,12 +17,12 @@ public struct SessionDetailDependencies: Sendable {
 public struct SessionDetailRoutes {
   /// "Show all": every row under the current filter, and the night's events
   /// (the sheet's Play needs them to find an episode's clips).
-  public var showAllEvents: @MainActor ([DetailEventRow], [NightEvent]) -> Void
+  public var showAllEvents: @MainActor ([EventListRow], [NightEvent]) -> Void
   /// Play: the events to play in order, starting with the given one.
   public var playEvents: @MainActor ([NightEvent], NightEvent.ID) -> Void
 
   public init(
-    showAllEvents: @escaping @MainActor ([DetailEventRow], [NightEvent]) -> Void,
+    showAllEvents: @escaping @MainActor ([EventListRow], [NightEvent]) -> Void,
     playEvents: @escaping @MainActor ([NightEvent], NightEvent.ID) -> Void)
   {
     self.showAllEvents = showAllEvents
@@ -30,12 +30,15 @@ public struct SessionDetailRoutes {
   }
 }
 
-/// One night: score, stats, and its events with a category filter. The title
-/// and the delete button belong to the navigation bar, owned by the shell.
+/// One night: loads it and hosts the shared `NightDetailContent` (score,
+/// stats, timeline, events with a filter; SleepCore's `EventFilter` and
+/// `EventListRow`). The title and the delete button belong to the navigation
+/// bar, owned by the shell.
 public struct SessionDetailScreen: View {
   let dependencies: SessionDetailDependencies
   let routes: SessionDetailRoutes
   @State private var viewState: ViewState = .loading
+  @State private var filter = EventFilter.all
 
   public init(dependencies: SessionDetailDependencies, routes: SessionDetailRoutes) {
     self.dependencies = dependencies
@@ -48,7 +51,13 @@ public struct SessionDetailScreen: View {
       case .loading:
         SessionDetailLoadingView()
       case let .loaded(detail):
-        SessionDetailLoadedView(detail: detail, routes: routes)
+        let night = detail.session
+        ScrollView {
+          NightDetailContent(
+            night: night, summary: detail.summary, filters: EventFilter.options(for: night.events), filter: $filter,
+            onPlay: { row in routes.playEvents(row.playback(in: night.events), row.id) },
+            onShowAll: { rows in routes.showAllEvents(rows, night.events) })
+        }
       case .error:
         SessionDetailErrorView { viewState = .loading }
       }

@@ -34,7 +34,7 @@ final class NightDetailNavigation {
   }
 
   /// Medium and large detents; the close button dismisses it.
-  private func showEvents(_ rows: [DetailEventRow], _ events: [NightEvent]) {
+  private func showEvents(_ rows: [EventListRow], _ events: [NightEvent]) {
     navigator.present(
       detail.makeEventsSheet(
         rows: rows, events: events,
