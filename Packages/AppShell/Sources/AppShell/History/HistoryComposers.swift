@@ -39,7 +39,7 @@ struct SessionDetailComposer {
 
   /// The events sheet in its own navigation controller, for its title bar.
   func makeEventsSheet(
-    rows: [DetailEventRow], events: [NightEvent], playEvents: @escaping @MainActor ([NightEvent], NightEvent.ID) -> Void,
+    rows: [EventListRow], events: [NightEvent], playEvents: @escaping @MainActor ([NightEvent], NightEvent.ID) -> Void,
     onClose: @escaping @MainActor () -> Void) -> UIViewController
   {
     let theme = container.theme()
