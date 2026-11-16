@@ -29,7 +29,7 @@ Each task from T2 on is one shared release, then SleepGuard adopts it, then this
 | F10-T3 | Nights list content; `NightMonth` rule in `SleepCore` | Shared / Refactor | Done | F10-T2 | Shared, both apps | `HistorySections` and SleepGuard's `SessionGrouper` gone; both apps' grouping tests pass on the rule |
 | F10-T4a | Night detail and events sheet content; `EventFilter` and `EventListRow` rules in `SleepCore` | Shared / Refactor | Done | F10-T2 | Shared, both apps | Detail views and `DetailEvents` gone here |
 | F10-T4b | Player card and event list shared; clip waveform ported here (decided 2026-11-16: port now) | Shared / Adapter / Refactor | Done | F10-T4a | Shared, both apps | `PlayerScreen` hosts the shared player content with the waveform |
-| F10-T5 | Prestart, bedside clock and summary content (slots for SleepGuard's melody rows and overlay) | Shared / Refactor | Backlog | F10-T2 | Shared, both apps | The three recording screens here are containers only |
+| F10-T5 | Prestart, bedside clock and summary content (slots for SleepGuard's melody rows and overlay) | Shared / Refactor | Done | F10-T2 | Shared, both apps | The three recording screens here are containers only |
 | F10-T6 | Review: no screen-content view left in either app for the shared screens; docs final; feature doc | Docs | Backlog | F10-T3, T4, T5 | Both apps | — |
 
 ## Notes
@@ -40,6 +40,12 @@ Each task from T2 on is one shared release, then SleepGuard adopts it, then this
 - F8 is built content-first (ADR 0005).
 
 ## Task Details
+
+### F10-T5 — Recording screens (done 2026-11-17)
+- [x] Shared (0.21.0): `PrestartContent` (options slot), `BedsideClockContent` (banner and overlay slots; the screen ticks `time` and decides Stop; `canStop`), `SessionSummaryContent`; their scrolling parts (`PrestartStack`, `SessionSummaryStack`) are what the render tests draw, since `ImageRenderer` can't draw inside a `ScrollView`
+- [x] Here: the three `RecordingFeature` screens host the content; alerts, permission and charger checks, the `TimelineView` tick and the early-stop rule stay in the screens
+- [x] SleepGuard F25-T5: prestart (delay and Snore Interrupter rows as `PrestartOptions` in the slot), bedside clock (melody disclaimer and overlay in the slots), summary host the same content. Kept at the owner's choice, now unused: `SessionSummaryTimeline.swift` and the `SessionSummaryHeader(session:scoreConfig:)` adapter
+- No visible change intended in either app
 
 ### F10-T4b — Player with waveform (done 2026-11-16)
 - [x] Shared (0.20.0): SleepCore `WaveformAccumulator` (SleepGuard's waveform math, fed in pieces; 4 tests); kit `ClipWaveform` (SleepGuard's bars, playhead, time labels, tap to seek, loading pulse; VoiceOver adjust ±15 s carried over from the old progress bar) replaces `PlayerProgress`; content `PlayerCard` (card with loading veil, explicit back / forward for SleepGuard's legacy player) and `PlayerContent` (card, enhanced audio, event list; 15 s skips through seek, `PlayerCard.position(skipping:)`), `PlayerClip`

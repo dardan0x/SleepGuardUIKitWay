@@ -1,5 +1,5 @@
 import SleepCore
-import SleepGuardDesignKit
+import SleepGuardContentKit
 import SwiftUI
 
 /// The screen left on the nightstand while recording: events so far, a dim
@@ -10,7 +10,6 @@ public struct BedsideClockScreen: View {
   let model: LiveRecordingModel
   let routes: BedsideClockRoutes
   @State private var confirmingEarlyStop = false
-  @Environment(\.theme) private var theme
 
   public init(model: LiveRecordingModel, routes: BedsideClockRoutes) {
     self.model = model
@@ -19,27 +18,13 @@ public struct BedsideClockScreen: View {
 
   public var body: some View {
     TimelineView(.periodic(from: .now, by: 1)) { context in
-      VStack(spacing: 0) {
-        HStack {
-          Spacer()
-          BedsideEventsBadge(count: model.eventCount)
-        }
-        .padding(.top, 16)
-        .padding(.horizontal, 24)
-        Spacer()
-        BedsideClockFace(time: context.date)
-        Spacer()
-        BedsideRecordingStatus(elapsed: context.date.timeIntervalSince(model.start), db: model.db, time: context.date)
-        Spacer()
-        BedsideSnoreStatus(state: model.snoreState)
-        Spacer()
-        StopRecordingButton(height: 52) { stopTapped(at: context.date) }
-          .disabled(model.phase != .recording)
-          .padding(.horizontal, 24)
-          .padding(.bottom, 32)
+      BedsideClockContent(
+        time: context.date, elapsed: context.date.timeIntervalSince(model.start), eventCount: model.eventCount,
+        db: model.db, snoreState: model.snoreState, canStop: model.phase == .recording)
+      {
+        stopTapped(at: context.date)
       }
     }
-    .background(theme.palette.bgPrimary.ignoresSafeArea())
     .task { await model.run() }
     .alert(Strings.sessionSummaryTooShortTitle, isPresented: $confirmingEarlyStop) {
       Button(Strings.actionKeepRecording, role: .cancel) {}
