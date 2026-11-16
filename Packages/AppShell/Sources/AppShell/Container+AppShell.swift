@@ -54,6 +54,35 @@ extension Container {
     self { LoadSessionDetail(sessions: self.sessionRepository(), sleepStages: self.sleepStagePort()) }
   }
 
+  var checkpointStore: Factory<any RecordingCheckpointStore> {
+    self { SleepPersistence.makeCheckpointStore(url: self.storageLocation().checkpointURL) }.singleton
+  }
+
+  var commitSession: Factory<CommitSession> {
+    self { CommitSession(sessions: self.sessionRepository(), checkpoints: self.checkpointStore()) }
+  }
+
+  var discardRecording: Factory<DiscardRecording> {
+    self { DiscardRecording(checkpoints: self.checkpointStore(), files: self.sessionFileStore()) }
+  }
+
+  var recoverInterruptedSession: Factory<RecoverInterruptedSession> {
+    self { RecoverInterruptedSession(checkpoints: self.checkpointStore(), files: self.sessionFileStore()) }
+  }
+
+  /// Makes the microphone capture for one night, writing clips beside the
+  /// others. A maker for the same reason as `makeClipPlayer`.
+  var makeAudioCapture: Factory<@MainActor @Sendable () -> any AudioCapturePort> {
+    self {
+      let clips = self.storageLocation().clipsDirectory
+      return { SleepAudio.makeAudioCapture(clipsDirectory: clips) }
+    }
+  }
+
+  var deviceServices: Factory<DeviceServices> {
+    self { .live }
+  }
+
   /// Makes a player per player sheet (the sheet's state owner releases it).
   /// A maker, because the player is main-actor and Factory's closures aren't.
   var makeClipPlayer: Factory<@MainActor @Sendable () -> any ClipPlayer> {

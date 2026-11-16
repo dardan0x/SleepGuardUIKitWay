@@ -18,6 +18,11 @@ nonisolated struct StorageLocation {
     root.appendingPathComponent("Clips", isDirectory: true)
   }
 
+  /// The night in progress, while recording (F7-T7).
+  var checkpointURL: URL {
+    root.appendingPathComponent("Recording.json")
+  }
+
   /// Picks the root and creates the folders.
   static func resolve(
     appGroup: String? = Bundle.main.object(forInfoDictionaryKey: "SGAppGroup") as? String,

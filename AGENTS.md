@@ -116,12 +116,12 @@ Notes: `docs/architecture/brands.md`.
 
 ## Concurrency
 
-- Swift 6 language mode in every target, including the three apps. No `@unchecked Sendable`, `nonisolated(unsafe)` or `@preconcurrency`, test code included. The one documented exception is the lock in the realtime audio tap.
+- Swift 6 language mode in every target, including the three apps. No `@unchecked Sendable`, `nonisolated(unsafe)`, `@preconcurrency` or unchecked lock state (`uncheckedState`, `withLockUnchecked`), test code included. The one exception is the lock in the realtime audio tap (`SleepAudio/Capture/CaptureProcessor.swift`): the tap's thread can't await, and the lock guards AVFoundation objects that aren't `Sendable`. It is the only entry in `ESCAPE_HATCH_ALLOWLIST`.
 - `SleepDomain` and adapters: no default isolation. Features, `ScreenKit`, `AppShell`: `.defaultIsolation(MainActor.self)`.
 - `async/await` only. No Combine, no GCD, no completion handlers, no NotificationCenter as an event bus.
 - No fire-and-forget `Task` in a load path. Tests `await`; they never poll or sleep.
 - Check `Task.isCancelled` before setting an error state.
-- Live detection is one ordered stream into `DetectionEngine` (from `SleepCore`). Never change detection state from a side path.
+- Live detection is one ordered stream into `DetectionEngine` (from `SleepCore`). Never change detection state from a side path. `RecordingSession` (SleepDomain, an actor) is the one sender: it classifies each capture sample, sends it, and performs the engine's outputs in order (clips through `AudioCapturePort`, events into the `RecordingDraft` value). Clip compression runs beside the engine, never inside a batch.
 
 Notes: `docs/architecture/concurrency.md`.
 

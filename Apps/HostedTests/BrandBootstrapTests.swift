@@ -18,6 +18,12 @@ struct BrandBootstrapTests {
     #expect(container.theme() == configuration.theme)
     _ = container.sessionRepository()
     _ = container.sessionFileStore()
+    _ = container.commitSession()
+    _ = container.makeAudioCapture()
+    _ = container.deviceServices()
+    _ = container.checkpointStore()
+    _ = container.discardRecording()
+    _ = container.recoverInterruptedSession()
     #expect(FileManager.default.fileExists(atPath: container.storageLocation().clipsDirectory.path))
   }
 

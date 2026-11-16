@@ -22,13 +22,13 @@ Vertical slices: the architecture and all three brands first, then one complete 
 | F3 | History → Session Detail | Done | 5/5 | The reference slice: list with live updates, push to detail, delete, events sheet |
 | F4 | Statistics | Done | 5/5 | Dashboard, trends, calendar, last 7 nights |
 | F5 | Clip playback | Done | 5/5 | Playback port, AVAudioEngine adapter, player sheet |
-| F6 | Design kit adoption in SleepGuard | Backlog | 0/4 | The original app moves its tokens and presentational components onto the shared kit (SleepGuard F24); when there's time |
+| F6 | Design kit adoption in SleepGuard | Done | 4/4 | The original app moves its tokens and presentational components onto the shared kit (SleepGuard F24); when there's time |
 
 ## M3 — The hard part
 
 | # | Feature | Status | Tasks | Notes |
 |---|---------|--------|-------|-------|
-| F7 | Recording and detection | Backlog | 0/6 | Capture adapter, recording actor, `RecordingFlow`, commit, summary, crash recovery |
+| F7 | Recording and detection | Done (device check open) | 7/7 | Capture adapter, recording actor, `RecordingFlow`, commit, summary, crash recovery |
 
 ## M4 — Parity and polish
 
