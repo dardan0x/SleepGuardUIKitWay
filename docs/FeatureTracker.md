@@ -16,13 +16,13 @@ Last updated: 2026-11-14
 | Backlog | 6 |
 | Blocked | 0 |
 | — | — |
-| Total Tasks | 54 |
-| Tasks Done | 34 |
+| Total Tasks | 55 |
+| Tasks Done | 36 |
 | Tasks In Progress | 0 |
 | Tasks Blocked | 0 |
-| Tasks Backlog | 20 |
+| Tasks Backlog | 19 |
 | — | — |
-| **Progress** | **63%** |
+| **Progress** | **65%** |
 
 ## Features
 
@@ -35,19 +35,18 @@ Last updated: 2026-11-14
 | F4 | Statistics | P1 | Done | 5/5 | ██████████ 100% | [tracker](trackers/f4-statistics.md) |
 | F5 | Clip playback | P1 | Done | 5/5 | ██████████ 100% | [tracker](trackers/f5-clip-playback.md) |
 | F6 | Design kit adoption in SleepGuard | P2 | Backlog | 0/4 | ░░░░░░░░░░ 0% | [tracker](trackers/f6-design-kit-adoption.md) |
-| F7 | Recording and detection | P1 | Backlog | 0/6 | ░░░░░░░░░░ 0% | [tracker](trackers/f7-recording-detection.md) |
+| F7 | Recording and detection | P1 | In Progress | 2/7 | ███░░░░░░░ 29% | [tracker](trackers/f7-recording-detection.md) |
 | F8 | Remaining features | P2 | Backlog | 0/6 | ░░░░░░░░░░ 0% | [tracker](trackers/f8-remaining-features.md) |
 | F9 | Showcase polish | P2 | Backlog | 0/4 | ░░░░░░░░░░ 0% | [tracker](trackers/f9-showcase-polish.md) |
 
 ## Currently Active
 
-- **F6** — Design kit adoption in SleepGuard, or **F7** — recording (see Up Next).
+- **F7-T3** — Capture adapter.
 
 ## Up Next
 
-1. **F7** — Recording and detection (the roadmap's next slice).
-2. **F6** — Design kit adoption in SleepGuard (SleepGuard F24), when there's time.
-3. **F0** — Shared CI also builds SleepGuardUIKitWay (the open F0-T5 item).
+1. **F7-T4…T7** — Recording actor, screens, flow, recovery.
+2. **F0** — Shared CI also builds SleepGuardUIKitWay (the open F0-T5 item).
 
 ## Blockers
 
@@ -59,6 +58,7 @@ Last updated: 2026-11-14
 
 | Date | Task | Event | Notes |
 |------|------|-------|-------|
+| 2026-11-16 | F7-T1, F7-T2 | Completed | F7 planned (7 tasks, core night). Per-sample detection rules in `SleepCore` (shared 0.14.0); SleepGuard uses them. Branch `feature/f7/t1-shared-detection` |
 | 2026-11-14 | — | Planned | Architecture proposal approved: `ARCHITECTURE_PLAN.md` |
 | 2026-11-14 | F0-T1 | Completed | `SleepGuardShared` created; `SleepCore` and `SleepStrings` moved out of SleepGuard; SleepGuard builds and all 8 package suites pass against it. SleepGuard commit `0aa76d3`, shared commit `317ea15` |
 | 2026-11-14 | F0-T2 | Completed | Store written before the move is a fixture in SleepGuard; a test opens it and decodes every moved type |
