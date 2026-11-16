@@ -25,7 +25,7 @@ The user starts a night, the app listens and detects snoring and sleep talking, 
 | F7-T3 | Capture adapter: tap off the main thread, levels, FFT score, sound classifier, event clip writer and compressor | Adapter | Done | F7-T1 | SleepAudio | Realtime tap isolated in one allow-listed file; simulator tests on generated audio |
 | F7-T4 | Recording actor: samples into the shared `DetectionEngine`, `RecordingDraft`, `AsyncStream<LiveSnapshot>` | Domain / Adapter | Done | F7-T3 | SleepDomain, SleepAudio | Characterization tests ported from SleepGuard's tracker tests |
 | F7-T5 | `RecordingFeature`: prestart, bedside clock, summary (countdown → F8, with the start delay) | UI | Done | F7-T4 | RecordingFeature | Matches SleepGuard |
-| F7-T6 | `RecordingFlow`, `CommitSession`, discard; full-screen modal owned by `AppCoordinator` | Shell | Backlog | F7-T5 | AppShell, SleepDomain | Works with any tab set; flow tests |
+| F7-T6 | `RecordingFlow`, `CommitSession`, discard; full-screen modal owned by `AppCoordinator` | Shell | Done | F7-T5 | AppShell, SleepDomain | Works with any tab set; flow tests |
 | F7-T7 | Checkpointing and `RecoverInterruptedSession` at launch; low-battery save | Domain / Shell | Backlog | F7-T6 | SleepDomain, SleepPersistence, AppShell | Kill the app mid-night; the night is offered at next launch |
 
 ## Notes
@@ -35,6 +35,16 @@ The user starts a night, the app listens and detects snoring and sleep talking, 
 - 2026-11-16: decided with the user: the per-sample detection rules go to the shared repo and SleepGuard uses them (T1, T2); F7 covers the core night only. Left for F8: Snore Interrupter and melodies, start delay, sensitivity setting UI, storage limits, raw sample log.
 
 ## Task Details
+
+### F7-T6 — Recording flow (done 2026-11-16)
+- [x] `RecordingFlow` (AppShell): prestart → bedside clock → summary, each replacing the last in its own navigation controller; presented full screen over the tabs by `AppCoordinator.startRecording()` (one at a time), so it works with any tab set. Closes on cancel, save, discard, or a start that failed
+- [x] `CommitSession` (SleepDomain): stores the night with its summary (SleepCore's score); refuses a night under `Night.minimumSaveDuration`. A failed save shows "Save failed" and stays on the summary, where Save can be tried again
+- [x] Discard (early stop or from the summary) removes the night's clips through `SessionFileStore`
+- [x] `RecordingComposer`: the three screens with no navigation bar; a `LiveRecordingModel` over a new capture with SleepGuard's defaults (medium, sleep talking off) until Settings (F8)
+- [x] `DeviceServices`: screen kept on while recording, the Settings link, charging; the only `UIApplication.shared` in packages (allow-listed)
+- [x] Brands' Info.plist: `NSMicrophoneUsageDescription` (with the brand's name), `UIBackgroundModes: audio`
+- [x] Tests: `CommitSessionTests` (3), `RecordingFlowTests` (9, navigator spy), `RecordingInAppTests` (hosted: Start Recording presents the prestart full screen, Cancel closes), new registrations in `everyRegistrationResolves`
+- Not checked: a night on a device (microphone, locked screen, background audio). The hosted test stops before the microphone: it can't answer the permission prompt
 
 ### F7-T5 — Recording screens (done 2026-11-16)
 **T5a — shared (0.16.0)**

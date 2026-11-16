@@ -30,6 +30,10 @@ public extension Target {
           "CFBundleURLSchemes": [.string(brand.urlScheme)],
         ]],
         "SGAppGroup": .string(brand.appGroup),
+        // A night records with the screen locked: audio keeps the app running.
+        "UIBackgroundModes": ["audio"],
+        "NSMicrophoneUsageDescription": .string(
+          "\(brand.displayName) uses the microphone to detect snoring during sleep sessions. Audio is analyzed locally on your device."),
       ]),
       sources: ["Apps/Shared/Sources/**", "Apps/\(brand.name)/Sources/**"],
       resources: ["Apps/\(brand.name)/Resources/**"],

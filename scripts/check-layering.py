@@ -39,7 +39,7 @@ ALLOWED_IMPORTS = {
     "ScreenKit": {"UIKit", "SwiftUI", "SleepGuardDesignKit"},
     "AppShell": {
         "UIKit", "SwiftUI", "FactoryKit", "SleepDomain", "SleepCore", "SleepPersistence", "SleepAudio",
-        "ScreenKit", "SleepGuardDesignKit", "SleepStrings", "HistoryFeature", "SessionDetailFeature", "StatisticsFeature",
+        "ScreenKit", "SleepGuardDesignKit", "SleepStrings", "HistoryFeature", "SessionDetailFeature", "StatisticsFeature", "RecordingFeature",
     },
     "AppShellTestSupport": {"AppShell", "UIKit", "SwiftUI", "ScreenKit", "SleepGuardDesignKit"},
 }
@@ -57,7 +57,11 @@ ESCAPE_HATCH_ALLOWLIST: dict[str, str] = {
 
 PRINT_CALL = re.compile(r"(?<![\w.])print\(")
 SHARED = re.compile(r"\b([A-Z]\w*)\.shared\b")
-SHARED_ALLOWLIST = {("Packages/AppShell/Sources/AppShell/AppShell.swift", "Container")}
+SHARED_ALLOWLIST = {
+    ("Packages/AppShell/Sources/AppShell/AppShell.swift", "Container"),
+    # The device switches recording needs (screen on, Settings link), in one place.
+    ("Packages/AppShell/Sources/AppShell/Recording/DeviceServices.swift", "UIApplication"),
+}
 
 FEATURE_BANNED = re.compile(
     r"\b(NavigationStack|NavigationLink|NavigationSplitView)\b"
