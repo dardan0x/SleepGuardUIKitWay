@@ -2,13 +2,14 @@ import Foundation
 import SleepDomain
 
 /// An `AudioCapturePort` a test drives: it sends samples, and checks which
-/// clips were started, finished and discarded.
+/// clips were started, closed, compressed and discarded.
 @MainActor
 public final class FakeAudioCapture: AudioCapturePort {
   public enum Call: Equatable {
     case start
     case startClip(UUID)
-    case finishClip
+    case closeClip
+    case compressClip(String)
     case discardClip
     case stop
   }
@@ -17,6 +18,8 @@ public final class FakeAudioCapture: AudioCapturePort {
   public var permission = true
   /// Thrown by the next `start`.
   public var startError: AudioCaptureError?
+  /// When false, `compressClip` fails and returns the raw name.
+  public var compresses = true
   private var continuation: AsyncStream<CaptureSample>.Continuation?
   private var openClip: UUID?
 
@@ -45,11 +48,18 @@ public final class FakeAudioCapture: AudioCapturePort {
     openClip = id
   }
 
-  /// `<id>.m4a` for the open clip.
-  public func finishClip() async -> String? {
-    calls.append(.finishClip)
+  /// `<id>.caf` for the open clip.
+  public func closeClip() -> String? {
+    calls.append(.closeClip)
     defer { openClip = nil }
-    return openClip.map { "\($0.uuidString).m4a" }
+    return openClip.map { "\($0.uuidString).caf" }
+  }
+
+  /// `<id>.m4a` for `<id>.caf`.
+  public func compressClip(named name: String) async -> String {
+    calls.append(.compressClip(name))
+    guard compresses else { return name }
+    return name.replacingOccurrences(of: ".caf", with: ".m4a")
   }
 
   public func discardClip() {
@@ -59,7 +69,6 @@ public final class FakeAudioCapture: AudioCapturePort {
 
   public func stop() {
     calls.append(.stop)
-    openClip = nil
     continuation?.finish()
     continuation = nil
   }

@@ -23,7 +23,7 @@ The user starts a night, the app listens and detects snoring and sleep talking, 
 | F7-T1 | Per-sample detection rules in `SleepCore` (shared 0.14.0): `SnoreClassifier` + sensitivity presets, `SpeechClassifier`, `DetectionSensitivity` | Domain | Done | F2 | Shared repo | SleepGuard's `SnoreDetectorTests` / `DetectionSensitivityTests` cases pass |
 | F7-T2 | SleepGuard's detectors and tracker use them | Refactor | Done | F7-T1 | SleepGuard | Its tests and the replay goldens pass unchanged |
 | F7-T3 | Capture adapter: tap off the main thread, levels, FFT score, sound classifier, event clip writer and compressor | Adapter | Done | F7-T1 | SleepAudio | Realtime tap isolated in one allow-listed file; simulator tests on generated audio |
-| F7-T4 | Recording actor: samples into the shared `DetectionEngine`, `RecordingDraft`, `AsyncStream<LiveSnapshot>` | Domain / Adapter | Backlog | F7-T3 | SleepDomain, SleepAudio | Characterization tests ported from SleepGuard's tracker tests |
+| F7-T4 | Recording actor: samples into the shared `DetectionEngine`, `RecordingDraft`, `AsyncStream<LiveSnapshot>` | Domain / Adapter | Done | F7-T3 | SleepDomain, SleepAudio | Characterization tests ported from SleepGuard's tracker tests |
 | F7-T5 | `RecordingFeature`: prestart, countdown, bedside clock, summary | UI | Backlog | F7-T4 | RecordingFeature | Matches SleepGuard |
 | F7-T6 | `RecordingFlow`, `CommitSession`, discard; full-screen modal owned by `AppCoordinator` | Shell | Backlog | F7-T5 | AppShell, SleepDomain | Works with any tab set; flow tests |
 | F7-T7 | Checkpointing and `RecoverInterruptedSession` at launch; low-battery save | Domain / Shell | Backlog | F7-T6 | SleepDomain, SleepPersistence, AppShell | Kill the app mid-night; the night is offered at next launch |
@@ -35,6 +35,16 @@ The user starts a night, the app listens and detects snoring and sleep talking, 
 - 2026-11-16: decided with the user: the per-sample detection rules go to the shared repo and SleepGuard uses them (T1, T2); F7 covers the core night only. Left for F8: Snore Interrupter and melodies, start delay, sensitivity setting UI, storage limits, raw sample log.
 
 ## Task Details
+
+### F7-T4 — Recording actor (done 2026-11-16)
+- [x] `RecordingSession` (SleepDomain, actor): `start()` starts the capture and the shared `DetectionEngine`, returns `AsyncStream<LiveSnapshot>` (5 Hz by sample time, newest only); `stop(at:)` stops the capture, drains the queued samples, finalizes, waits for compressions and returns the `RecordingDraft`
+- [x] Per sample: `SnoreClassifier.preset(sensitivity)` on the peak level (spectral score left out of the verdict, as in SleepGuard), `SpeechClassifier`, then `.sample` into the engine; engine settings from the sensitivity (`minEventDuration`, `highConfidenceGate`) and the sleep-talking flag
+- [x] Outputs performed in order: clip start / close / discard through the port, snore and sleep-talking events into the draft. Compression is a task beside the engine; the event points at the `.m4a` when done, at the raw `.caf` if compression failed
+- [x] `RecordingDraft` (value: id, start, events, gaps, levels) → `night(end:endReason:)`; `LiveSnapshot`
+- [x] Port change from T3 (nothing used it yet): `finishClip()` split into `closeClip()` (immediate, in event order) and `compressClip(named:)`; `stop()` leaves an open clip for the final flush instead of deleting it, so the night's last event keeps its audio
+- [x] 17 tests (macOS): SleepGuard's `DetectionCharacterizationTests` event and sleep-talking cases with their samples and expected lines unchanged (melody cases wait for F8), clips (kept, failed compression, discarded), draft → night, samples drained at stop, snapshot rate, start failure
+- Differs from SleepGuard on purpose: the session peak level is the loudest sample (SleepGuard's `peakDB` starts at 0 and never rises, since dBFS is negative); samples come per buffer instead of a 20 Hz loop (the rules are in time, so the rate doesn't matter)
+- Not yet: container registration and the flow (T6), checkpoints (T7), melody outputs (F8)
 
 ### F7-T3 — Capture (done 2026-11-16)
 **T3a — detection inputs shared (done 2026-11-16; shared 0.15.0)**

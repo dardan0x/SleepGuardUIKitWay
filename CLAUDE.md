@@ -121,7 +121,7 @@ Notes: `docs/architecture/brands.md`.
 - `async/await` only. No Combine, no GCD, no completion handlers, no NotificationCenter as an event bus.
 - No fire-and-forget `Task` in a load path. Tests `await`; they never poll or sleep.
 - Check `Task.isCancelled` before setting an error state.
-- Live detection is one ordered stream into `DetectionEngine` (from `SleepCore`). Never change detection state from a side path.
+- Live detection is one ordered stream into `DetectionEngine` (from `SleepCore`). Never change detection state from a side path. `RecordingSession` (SleepDomain, an actor) is the one sender: it classifies each capture sample, sends it, and performs the engine's outputs in order (clips through `AudioCapturePort`, events into the `RecordingDraft` value). Clip compression runs beside the engine, never inside a batch.
 
 Notes: `docs/architecture/concurrency.md`.
 
