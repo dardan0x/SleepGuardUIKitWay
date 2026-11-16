@@ -1,6 +1,6 @@
 import SleepCore
 import SleepDomain
-import SleepGuardDesignKit
+import SleepGuardContentKit
 import SwiftUI
 
 public struct StatisticsDependencies: Sendable {
@@ -29,9 +29,10 @@ public struct StatisticsRoutes {
   }
 }
 
-/// The dashboard: the latest night's score and stats, the week strip, and the
-/// last 7 nights. Updates live. Every number comes from SleepCore's rules;
-/// the title and the calendar button belong to the navigation bar (shell).
+/// The dashboard: loads the nights live and hosts the shared content
+/// (`StatisticsDashboardContent`, same as SleepGuard's). Every number comes
+/// from SleepCore's rules; the title and the calendar button belong to the
+/// navigation bar (shell).
 public struct StatisticsScreen: View {
   let dependencies: StatisticsDependencies
   let routes: StatisticsRoutes
@@ -46,11 +47,21 @@ public struct StatisticsScreen: View {
     Group {
       switch viewState {
       case .loading:
-        StatisticsLoadingView()
+        StatisticsLoadingContent()
       case .empty:
-        StatisticsEmptyView(onStartRecording: routes.startRecording)
+        StatisticsEmptyContent(onStartRecording: routes.startRecording)
+          .frame(maxWidth: .infinity, maxHeight: .infinity)
       case let .loaded(dashboard, now):
-        StatisticsLoadedView(dashboard: dashboard, now: now, routes: routes)
+        VStack(spacing: 0) {
+          ScrollView {
+            StatisticsDashboardContent(
+              dashboard: dashboard, latest: dashboard.latest, now: now,
+              onShowTrends: routes.showTrends, onShowLastSevenNights: routes.showLastSevenNights)
+          }
+          StartRecordingButton(height: 56, action: routes.startRecording)
+            .padding(.horizontal, 20)
+            .padding(.bottom, 8)
+        }
       }
     }
     .task {

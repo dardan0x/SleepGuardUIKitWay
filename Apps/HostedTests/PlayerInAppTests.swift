@@ -54,7 +54,9 @@ struct PlayerInAppTests {
 
     sheet.viewControllers.first?.navigationItem.rightBarButtonItems?.first?.primaryAction?.performWithSender(nil, target: nil)
     #expect(await until { navigation.presentedViewController == nil ? true : nil } == true)
-    #expect(!model.isPlaying)
+    // The player stops when the sheet disappears, which can come a beat after
+    // the presentation ends.
+    #expect(await until { model.isPlaying ? nil : true } == true)
     navigation.popToRootViewController(animated: false)
   }
 
