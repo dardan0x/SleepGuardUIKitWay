@@ -1,14 +1,16 @@
 import SleepCore
 import SleepDomain
-import SleepGuardDesignKit
+import SleepGuardContentKit
 import SwiftUI
 
-/// A month of nights: a dot per night in its loudest colour, the month's
-/// stats, and the selected day's night. From SleepCore's `CalendarMonth`.
+/// A month of nights. Loads the nights live, keeps the month and the selected
+/// day, and hosts the shared `CalendarContent` (SleepCore's `CalendarMonth`).
 public struct CalendarScreen: View {
   let dependencies: StatisticsDependencies
   let routes: NightListRoutes
   @State private var state: NightsState = .loading
+  @State private var month = Date()
+  @State private var selectedDay = Calendar.current.startOfDay(for: Date())
 
   public init(dependencies: StatisticsDependencies, routes: NightListRoutes) {
     self.dependencies = dependencies
@@ -19,10 +21,16 @@ public struct CalendarScreen: View {
     Group {
       switch state {
       case .loading:
-        StatisticsLoadingView()
+        StatisticsLoadingContent()
       case let .loaded(nights):
         ScrollView {
-          CalendarContent(nights: nights, today: Date(), onOpen: routes.openNight)
+          CalendarContent(
+            month: $month, selectedDay: $selectedDay, nights: nights,
+            onToday: {
+              month = Date()
+              selectedDay = Calendar.current.startOfDay(for: Date())
+            },
+            onOpen: routes.openNight)
         }
       }
     }

@@ -1,6 +1,6 @@
 import SleepCore
 import SleepDomain
-import SleepGuardDesignKit
+import SleepGuardContentKit
 import SwiftUI
 
 /// For screens that list nights (Last 7 Nights, Calendar).
@@ -13,8 +13,9 @@ public struct NightListRoutes {
   }
 }
 
-/// The last 7 recorded days: average score and its week-over-week trend,
-/// snoring per day, best and worst, and each day. From SleepCore's rules.
+/// The last 7 recorded days. Loads the nights live and hosts the shared
+/// `LastSevenNightsContent`; the numbers are SleepCore's `NightDayStats` and
+/// `ScoreTrend`.
 public struct LastSevenNightsScreen: View {
   let dependencies: StatisticsDependencies
   let routes: NightListRoutes
@@ -29,10 +30,11 @@ public struct LastSevenNightsScreen: View {
     Group {
       switch state {
       case .loading:
-        StatisticsLoadingView()
+        StatisticsLoadingContent()
       case let .loaded(nights):
         ScrollView {
-          LastSevenNightsContent(nights: nights, onOpen: routes.openNight)
+          LastSevenNightsContent(
+            stats: NightDayStats.recent(from: nights), trend: ScoreTrend.weekOverWeek(nights), onOpen: routes.openNight)
         }
       }
     }
