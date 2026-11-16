@@ -13,4 +13,9 @@ public enum SleepPersistence {
   public static func makeSessionFileStore(directory: URL) -> any SessionFileStore {
     FileSessionStore(directory: directory)
   }
+
+  /// The night in progress, as the file at `url`.
+  public static func makeCheckpointStore(url: URL) -> any RecordingCheckpointStore {
+    FileCheckpointStore(url: url)
+  }
 }

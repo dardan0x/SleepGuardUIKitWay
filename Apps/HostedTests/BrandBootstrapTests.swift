@@ -21,6 +21,9 @@ struct BrandBootstrapTests {
     _ = container.commitSession()
     _ = container.makeAudioCapture()
     _ = container.deviceServices()
+    _ = container.checkpointStore()
+    _ = container.discardRecording()
+    _ = container.recoverInterruptedSession()
     #expect(FileManager.default.fileExists(atPath: container.storageLocation().clipsDirectory.path))
   }
 

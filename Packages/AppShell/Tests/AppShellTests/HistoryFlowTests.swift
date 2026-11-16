@@ -188,6 +188,7 @@ extension Container {
     container.sessionFileStore.register { FakeSessionFileStore() }
     container.sleepStagePort.register { FakeSleepStagePort() }
     container.makeClipPlayer.register { { FakeClipPlayer() } }
+    container.checkpointStore.register { FakeRecordingCheckpointStore() }
     return container
   }
 }

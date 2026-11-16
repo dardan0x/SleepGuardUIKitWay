@@ -24,9 +24,14 @@ public final class LiveRecordingModel {
   public let start: Date
   @ObservationIgnored private let session: RecordingSession
 
-  public init(capture: any AudioCapturePort, settings: RecordingSession.Settings = .init(), start: Date = Date()) {
+  public init(
+    capture: any AudioCapturePort,
+    settings: RecordingSession.Settings = .init(),
+    checkpoints: (any RecordingCheckpointStore)? = nil,
+    start: Date = Date())
+  {
     self.start = start
-    session = RecordingSession(capture: capture, settings: settings, start: start)
+    session = RecordingSession(capture: capture, settings: settings, checkpoints: checkpoints, start: start)
   }
 
   public var eventCount: Int {
@@ -64,10 +69,11 @@ public final class LiveRecordingModel {
   }
 
   /// Stops listening, finalizes the night and returns it, clips compressed.
-  public func stop(at end: Date = Date()) async -> Night {
+  /// `.lowBattery` when the shell stops it before the battery runs out.
+  public func stop(at end: Date = Date(), endReason: Night.EndReason = .stopped) async -> Night {
     phase = .stopping
-    let draft = await session.stop(at: end)
+    let draft = await session.stop(at: end, endReason: endReason)
     phase = .stopped
-    return draft.night(end: end)
+    return draft.night(end: end, endReason: endReason)
   }
 }

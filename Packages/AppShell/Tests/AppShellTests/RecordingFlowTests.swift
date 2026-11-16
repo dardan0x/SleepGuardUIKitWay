@@ -21,6 +21,7 @@ struct RecordingFlowTests {
   final class DeviceLog {
     var screenOn: [Bool] = []
     var settingsOpened = 0
+    var battery: Float? = 0.8
   }
 
   private struct Harness {
@@ -28,6 +29,7 @@ struct RecordingFlowTests {
     let spy: NavigatorSpy
     let repository: FakeSessionRepository
     let files: FakeSessionFileStore
+    let checkpoints: FakeRecordingCheckpointStore
     let device: DeviceLog
     let closed: () -> Int
   }
@@ -35,20 +37,25 @@ struct RecordingFlowTests {
   private func makeFlow() -> Harness {
     let repository = FakeSessionRepository()
     let files = FakeSessionFileStore()
+    let checkpoints = FakeRecordingCheckpointStore()
     let device = DeviceLog()
     let container = Container.test(repository: repository)
     container.sessionFileStore.register { files }
+    container.checkpointStore.register { checkpoints }
     container.makeAudioCapture.register { { FakeAudioCapture() } }
     container.deviceServices.register {
       DeviceServices(
         keepScreenOn: { device.screenOn.append($0) },
         openSettings: { device.settingsOpened += 1 },
-        isCharging: { true })
+        isCharging: { true },
+        batteryLevel: { device.battery })
     }
     let spy = NavigatorSpy()
     var closes = 0
     let flow = RecordingFlow(navigator: spy, container: container, compactHeight: false) { closes += 1 }
-    return Harness(flow: flow, spy: spy, repository: repository, files: files, device: device, closed: { closes })
+    return Harness(
+      flow: flow, spy: spy, repository: repository, files: files, checkpoints: checkpoints, device: device,
+      closed: { closes })
   }
 
   private func night(minutes: Double, clips: [String] = []) -> Night {
@@ -159,9 +166,81 @@ struct RecordingFlowTests {
     h.flow.start()
     try root(h.spy, as: RecordingPrestartScreen.self).rootView.content.routes.start()
     try root(h.spy, as: BedsideClockScreen.self).rootView.content.routes.discarded(nil)
-    #expect(h.flow.finishing == nil)
+    await h.flow.finishing?.value
     #expect(await h.files.removed.isEmpty)
     #expect(h.closed() == 1)
+  }
+
+  // MARK: - Recovery and low battery (F7-T7)
+
+  @Test func aRecoveredNightStartsAtItsSummary() throws {
+    let h = makeFlow()
+    let night = night(minutes: 300, clips: ["a.m4a"])
+    h.flow.start(recovering: night)
+    #expect(try root(h.spy, as: SessionSummaryScreen.self).rootView.content.night == night)
+    #expect(h.spy.calls.count == 1)
+    #expect(h.device.screenOn.isEmpty)
+  }
+
+  @Test func savingOrDiscardingClearsTheCheckpoint() async throws {
+    let saving = makeFlow()
+    let night = night(minutes: 60)
+    await saving.checkpoints.save(night)
+    saving.flow.start(recovering: night)
+    try root(saving.spy, as: SessionSummaryScreen.self).rootView.content.routes.save(night)
+    await saving.flow.finishing?.value
+    #expect(await saving.checkpoints.night == nil)
+
+    let discarding = makeFlow()
+    await discarding.checkpoints.save(night)
+    discarding.flow.start(recovering: night)
+    try root(discarding.spy, as: SessionSummaryScreen.self).rootView.content.routes.discard(night)
+    await discarding.flow.finishing?.value
+    #expect(await discarding.checkpoints.night == nil)
+  }
+
+  /// At 2% the night is stopped, kept as a low-battery night and summarised.
+  @Test func lowBatteryStopsTheNightAndShowsItsSummary() async throws {
+    let h = makeFlow()
+    h.flow.start()
+    try root(h.spy, as: RecordingPrestartScreen.self).rootView.content.routes.start()
+    let model = try #require(h.flow.model)
+    let running = Task { await model.run() }
+    try await waitUntil { model.phase == .recording }
+
+    h.device.battery = 0.5
+    h.flow.checkBattery()
+    #expect(h.flow.finishing == nil)
+
+    h.device.battery = 0.02
+    h.flow.checkBattery()
+    await h.flow.finishing?.value
+    await running.value
+    let summary = try root(h.spy, as: SessionSummaryScreen.self)
+    #expect(summary.rootView.content.night.endReason == .lowBattery)
+    #expect(await h.checkpoints.night?.endReason == .lowBattery)
+    #expect(h.device.screenOn == [true, false])
+  }
+
+  @Test func anUnknownBatteryLevelNeverStopsTheNight() async throws {
+    let h = makeFlow()
+    h.device.battery = nil
+    h.flow.start()
+    try root(h.spy, as: RecordingPrestartScreen.self).rootView.content.routes.start()
+    let model = try #require(h.flow.model)
+    let running = Task { await model.run() }
+    try await waitUntil { model.phase == .recording }
+    h.flow.checkBattery()
+    #expect(h.flow.finishing == nil)
+    _ = await model.stop()
+    await running.value
+  }
+
+  private func waitUntil(_ condition: () -> Bool) async throws {
+    for _ in 0..<200 where !condition() {
+      try await Task.sleep(for: .milliseconds(10))
+    }
+    #expect(condition())
   }
 
   private func showSummary(_ night: Night, in h: Harness) throws -> SessionSummaryRoutes {
@@ -169,5 +248,37 @@ struct RecordingFlowTests {
     try root(h.spy, as: RecordingPrestartScreen.self).rootView.content.routes.start()
     try root(h.spy, as: BedsideClockScreen.self).rootView.content.routes.finished(night)
     return try root(h.spy, as: SessionSummaryScreen.self).rootView.content.routes
+  }
+}
+
+/// Launch: a checkpointed night with events comes back as the recording flow
+/// at its summary; without one, nothing opens.
+struct LaunchRecoveryTests {
+  private let start = Date(timeIntervalSinceReferenceDate: 815_000_000)
+
+  private func coordinator(checkpoint: Night?) -> AppCoordinator {
+    let container = Container.test()
+    container.checkpointStore.register { FakeRecordingCheckpointStore(checkpoint) }
+    container.deviceServices.register {
+      DeviceServices(keepScreenOn: { _ in }, openSettings: {}, isCharging: { true }, batteryLevel: { nil })
+    }
+    return AppCoordinator(container: container)
+  }
+
+  @Test func anInterruptedNightIsOffered() async throws {
+    let night = Night(
+      start: start, end: start.addingTimeInterval(3600),
+      events: [NightEvent(start: start.addingTimeInterval(60), duration: 30, intensity: .light)])
+    let app = coordinator(checkpoint: night)
+    app.start(in: UIWindow())
+    await app.recovery?.value
+    #expect(app.recording != nil)
+  }
+
+  @Test func nothingOpensWithoutOne() async {
+    let app = coordinator(checkpoint: nil)
+    app.start(in: UIWindow())
+    await app.recovery?.value
+    #expect(app.recording == nil)
   }
 }

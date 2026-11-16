@@ -4,13 +4,13 @@
 
 | Field | Value |
 |-------|-------|
-| **Status** | In Progress |
+| **Status** | Done (device check open) |
 | **Priority** | P1 |
 | **Milestone** | M3 |
 | **Blocked By** | F2, F5 |
 | **Started** | 2026-11-16 |
-| **Completed** | — |
-| **Feature Doc** | — |
+| **Completed** | 2026-11-16 |
+| **Feature Doc** | [f7-recording-detection.md](../features/f7-recording-detection.md) |
 
 ## Summary
 
@@ -26,7 +26,7 @@ The user starts a night, the app listens and detects snoring and sleep talking, 
 | F7-T4 | Recording actor: samples into the shared `DetectionEngine`, `RecordingDraft`, `AsyncStream<LiveSnapshot>` | Domain / Adapter | Done | F7-T3 | SleepDomain, SleepAudio | Characterization tests ported from SleepGuard's tracker tests |
 | F7-T5 | `RecordingFeature`: prestart, bedside clock, summary (countdown → F8, with the start delay) | UI | Done | F7-T4 | RecordingFeature | Matches SleepGuard |
 | F7-T6 | `RecordingFlow`, `CommitSession`, discard; full-screen modal owned by `AppCoordinator` | Shell | Done | F7-T5 | AppShell, SleepDomain | Works with any tab set; flow tests |
-| F7-T7 | Checkpointing and `RecoverInterruptedSession` at launch; low-battery save | Domain / Shell | Backlog | F7-T6 | SleepDomain, SleepPersistence, AppShell | Kill the app mid-night; the night is offered at next launch |
+| F7-T7 | Checkpointing and `RecoverInterruptedSession` at launch; low-battery save | Domain / Shell | Done | F7-T6 | SleepDomain, SleepPersistence, AppShell | Kill the app mid-night; the night is offered at next launch |
 
 ## Notes
 
@@ -35,6 +35,15 @@ The user starts a night, the app listens and detects snoring and sleep talking, 
 - 2026-11-16: decided with the user: the per-sample detection rules go to the shared repo and SleepGuard uses them (T1, T2); F7 covers the core night only. Left for F8: Snore Interrupter and melodies, start delay, sensitivity setting UI, storage limits, raw sample log.
 
 ## Task Details
+
+### F7-T7 — Checkpoints and recovery (done 2026-11-16)
+- [x] `RecordingCheckpointStore` port; `FileCheckpointStore` (SleepPersistence): one JSON file, atomic writes, Codable mirrors of `Night` / `NightEvent` in the adapter; unreadable reads as nothing
+- [x] `RecordingSession` checkpoints after each saved event, after each clip compresses, every 2 minutes of samples, and at stop (whole night, with its end reason)
+- [x] `RecoverInterruptedSession`: a checkpoint with events is offered; one without is cleared silently (SleepGuard's rule). `DiscardRecording`: clips, then checkpoint. `CommitSession` clears the checkpoint after a successful save; a failed save keeps it
+- [x] `AppCoordinator` looks at launch and opens the flow at the recovered night's summary
+- [x] Low battery: `RecordingFlow` checks every 30 s while recording; at ≤ 2% (SleepGuard's line) the night stops as `.lowBattery` and its summary shows the banner. Unknown level (simulator) never stops it
+- [x] Tests: Core 38 (recovery 5, checkpoints 3, commit 3), `FileCheckpointStoreTests` 3, AppShell 43 (recovery, checkpoint clearing, low battery, unknown battery, launch recovery 2)
+- Not ported: SleepGuard's pending-files record, which deletes the clip of an event open at a crash
 
 ### F7-T6 — Recording flow (done 2026-11-16)
 - [x] `RecordingFlow` (AppShell): prestart → bedside clock → summary, each replacing the last in its own navigation controller; presented full screen over the tabs by `AppCoordinator.startRecording()` (one at a time), so it works with any tab set. Closes on cancel, save, discard, or a start that failed
