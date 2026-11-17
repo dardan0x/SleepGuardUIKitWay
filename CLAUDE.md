@@ -177,7 +177,7 @@ swiftformat Packages Apps Project.swift Tuist --lint
 sh scripts/bump-shared.sh <version>              # move to a new SleepGuardShared release
 ```
 
-Tools are pinned in `mise.toml` (`mise install`). CI (`.github/workflows/ci.yml`) runs the checks, builds all three brands and runs `run-tests.sh` on every pull request, against the pinned shared release.
+Tools are pinned in `mise.toml` (`mise install`). CI (`.github/workflows/ci.yml`) runs the checks, builds every brand and runs `run-tests.sh` on every pull request, against the pinned shared release.
 
 After every task: all three schemes build with zero errors, tests pass, checks pass. A change that builds for one brand is not done.
 

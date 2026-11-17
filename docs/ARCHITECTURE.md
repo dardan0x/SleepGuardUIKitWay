@@ -1,6 +1,6 @@
 # Architecture
 
-SleepGuardUIKitWay is SleepGuard (a SwiftUI sleep and snoring app) rebuilt the way a large UIKit team would build it. UIKit owns the app and its navigation, SwiftUI draws the screens, the business rules sit in a domain core behind ports, and three brands ship from one codebase. The rules, strings, design kit and screen layouts are shared with SleepGuard through a separate repo, so both apps compute and draw the same things.
+SleepGuardUIKitWay is SleepGuard (a SwiftUI sleep and snoring app) rebuilt the way a large UIKit team would build it. UIKit owns the app and its navigation, SwiftUI draws the screens, the business rules sit in a domain core behind ports, and four brands ship from one codebase. The rules, strings, design kit and screen layouts are shared with SleepGuard through a separate repo, so both apps compute and draw the same things.
 
 Everything below was checked against the code on 2026-11-17 (shared release 0.27.0). Counts and names come from the source, not from the plans.
 
@@ -11,6 +11,7 @@ Tuist sees the apps and what they link directly (`tuist graph --skip-test-target
 ```
 SleepGuard      → AppShell, SleepGuardDesignKit, SleepHealth
 Nocturne        → AppShell, SleepGuardDesignKit, SleepHealth
+Dawn            → AppShell, SleepGuardDesignKit, SleepHealth
 SleepGuardLite  → AppShell, SleepGuardDesignKit            (no HealthKit)
 ```
 
@@ -21,8 +22,10 @@ graph TD
   SG[SleepGuard app] --> AppShell
   NO[Nocturne app] --> AppShell
   LI[SleepGuardLite app] --> AppShell
+  DA[Dawn app] --> AppShell
   SG --> SleepHealth
   NO --> SleepHealth
+  DA --> SleepHealth
 
   AppShell --> Features[8 feature modules]
   AppShell --> ScreenKit
@@ -66,7 +69,7 @@ The eight features are History, SessionDetail, Statistics, Recording, Settings, 
 | `ScreenKit` (Presentation) | 3 / 223 | `HostingScreen` (a SwiftUI screen in a themed hosting controller), `ScreenChrome` (title, bar items), `Navigator` | |
 | Features | 32 / 1,983 | 21 SwiftUI screens, each with a `Dependencies` and a `Routes` value | Navigate, present, persist, inject, or touch `UIApplication` (checked) |
 | `AppShell` | 22 / 1,771 | Launch, 9 flows and coordinators, composers, the Factory container (28 registrations), brand composition | Be imported by anything but the apps and its test support |
-| Apps | 3 brands | `Brand.swift`: one `BrandConfiguration` each; assets; Info.plist from the Tuist brand list | Contain logic |
+| Apps | 4 brands | `Brand.swift`: one `BrandConfiguration` each; assets; Info.plist from the Tuist brand list | Contain logic |
 
 ## How a screen comes up: a night's detail
 
@@ -82,14 +85,16 @@ Every screen follows this shape: intent out through `Routes`, data in through `D
 
 `BrandConfiguration` (AppShell) is the only place brands differ at runtime. Each brand states every value; the initializer has no defaults (ADR 0006):
 
-| Value | SleepGuard | Nocturne | Lite |
-|---|---|---|---|
-| `theme` | SleepGuard's | violet, amber for recording, rounded type, softer corners | teal |
-| `tabs` | Statistics, History, Settings, Learn | History, Statistics, Settings, Learn | Statistics, History, Settings |
-| `health` (a port, or `nil`) | `SleepHealth` | `SleepHealth` | `nil`: no HealthKit linked, no stages, no Health rows or onboarding page |
-| `snoreInterrupter` | on | on | off |
-| `learnURL` | `nil` for now | `nil` for now | no tab |
-| `appStoreID` | `nil` | `nil` | `nil` |
+| Value | SleepGuard | Nocturne | Lite | Dawn |
+|---|---|---|---|---|
+| `theme` | SleepGuard's | violet, amber for recording, rounded type, softer corners | teal | warm sunrise |
+| `tabs` | Statistics, History, Settings, Learn | History, Statistics, Settings, Learn | Statistics, History, Settings | Statistics, History, Settings |
+| `health` (a port, or `nil`) | `SleepHealth` | `SleepHealth` | `nil`: no HealthKit linked, no stages, no Health rows or onboarding page | `SleepHealth` |
+| `snoreInterrupter` | on | on | off | off |
+| `learnURL` | `nil` for now | `nil` for now | no tab | no tab |
+| `appStoreID` | `nil` | `nil` | `nil` | `nil` |
+
+Dawn is the worked example in [ADDING_A_BRAND.md](ADDING_A_BRAND.md).
 
 Identity (bundle id, display name, app group, URL scheme) lives in the Tuist brand list and reaches the app through Info.plist. Brand differences are read only in the container, the coordinators and the composers; there is no brand enum to switch on.
 
@@ -160,5 +165,5 @@ About 210 package tests and 9 in-app tests per brand, plus the shared repo's own
 - `Packages/AppShell/Sources/AppShell/Coordinators/AppCoordinator.swift`: launch, onboarding or tabs, the recording flow, the briefing.
 - `Packages/AppShell/Sources/AppShell/History/`: a flow, its composers and a navigation object end to end.
 - `Packages/Core/Sources/SleepDomain/Recording/RecordingSession.swift`: the recording actor.
-- `Apps/Nocturne/Sources/Brand.swift`: everything a brand is.
+- `Apps/Nocturne/Sources/Brand.swift`: everything a brand is; [ADDING_A_BRAND.md](ADDING_A_BRAND.md) adds one.
 - `scripts/check-layering.py`: the boundaries, as code.

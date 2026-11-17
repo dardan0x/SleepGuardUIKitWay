@@ -36,7 +36,7 @@ Vertical slices: the architecture and all three brands first, then one complete 
 |---|---------|--------|-------|-------|
 | F10 | Shared screen content | Done | 7/7 | Each screen's layout once, in the shared `SleepGuardContentKit`; screens stay per app (ADR 0005). Before F8 |
 | F8 | Remaining features | Done | 6/6 | Settings, onboarding, sleep stages, Snore Interrupter, Learn, personalization (three of them brand-gated) |
-| F9 | Showcase polish | In Progress | 1/4 | Architecture doc with module graph, "adding a brand" walkthrough, comparison with SleepGuard |
+| F9 | Showcase polish | In Progress | 2/4 | Architecture doc with module graph, "adding a brand" walkthrough, comparison with SleepGuard |
 
 ## Dependencies between features
 
