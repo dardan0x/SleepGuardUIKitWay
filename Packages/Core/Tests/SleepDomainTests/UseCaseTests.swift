@@ -51,6 +51,9 @@ struct DeleteSessionTests {
       func session(id: Night.ID) async throws -> Night { try await wrapping.session(id: id) }
       func delete(id _: Night.ID) async throws { throw DiskFull() }
       func observeSummaries() async -> AsyncStream<[NightSummary]> { await wrapping.observeSummaries() }
+      func nightFiles() async throws -> [NightFiles] { try await wrapping.nightFiles() }
+      func removeClips(of id: Night.ID) async throws { try await wrapping.removeClips(of: id) }
+      func deleteAll() async throws { throw DiskFull() }
     }
   }
 }

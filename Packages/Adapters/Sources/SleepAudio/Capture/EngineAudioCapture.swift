@@ -20,6 +20,9 @@ final class EngineAudioCapture: AudioCapturePort {
   private var format: AVAudioFormat?
   private var continuation: AsyncStream<CaptureSample>.Continuation?
   private var clipURL: URL?
+  /// The engine kept running during the start delay (no listening).
+  private var warmEngine: AVAudioEngine?
+  private var rawAudioFileName: String?
   private var observers: [NSObjectProtocol] = []
 
   init(clipsDirectory: URL) {
@@ -38,9 +41,31 @@ final class EngineAudioCapture: AudioCapturePort {
     await AVAudioApplication.requestRecordPermission()
   }
 
-  func start() throws -> AsyncStream<CaptureSample> {
+  func warmUp() throws {
+    guard warmEngine == nil, !isListening else { return }
+    try activateSession()
+    let engine = AVAudioEngine()
+    let input = engine.inputNode
+    let format = input.outputFormat(forBus: 0)
+    guard format.channelCount > 0, format.sampleRate > 0 else { throw AudioCaptureError.invalidFormat }
+    // A tap that drops the buffers: the microphone runs, so iOS keeps the app
+    // alive in the background until the night starts (SleepGuard's warm-up).
+    input.installTap(onBus: 0, bufferSize: 4096, format: format) { @Sendable _, _ in }
+    try engine.start()
+    warmEngine = engine
+  }
+
+  func coolDown() {
+    stopWarmEngine()
+    guard !isListening else { return }
+    try? AVAudioSession.sharedInstance().setActive(false, options: .notifyOthersOnDeactivation)
+  }
+
+  func start(rawAudioFileName: String?) throws -> AsyncStream<CaptureSample> {
     stop()
+    stopWarmEngine()
     discardClip() // left open by the last night
+    self.rawAudioFileName = rawAudioFileName
     try activateSession()
     let (stream, continuation) = AsyncStream.makeStream(of: CaptureSample.self)
     self.continuation = continuation
@@ -94,6 +119,8 @@ final class EngineAudioCapture: AudioCapturePort {
     stopEngine()
     observers.forEach(NotificationCenter.default.removeObserver)
     observers = []
+    processor.closeRaw()
+    rawAudioFileName = nil
     continuation?.finish()
     continuation = nil
     format = nil
@@ -132,11 +159,32 @@ final class EngineAudioCapture: AudioCapturePort {
     }
     self.engine = engine
     if let current = self.format, current != format {
-      // The open clip was made for the old format; its writes would fail.
-      Log.audio.notice("Input format changed; the open clip ends here")
+      // The open clip and the raw file were made for the old format; their
+      // writes would fail.
+      Log.audio.notice("Input format changed; the open clip and raw audio end here")
       processor.closeClip()
+      processor.closeRaw()
+    } else if self.format == nil, let rawAudioFileName {
+      openRawAudio(named: rawAudioFileName, format: format)
     }
     self.format = format
+  }
+
+  /// The night's full audio, kept for re-processing. A failure loses only
+  /// the raw file, never the night.
+  private func openRawAudio(named name: String, format: AVAudioFormat) {
+    do {
+      try processor.writeRaw(to: AVAudioFile(forWriting: clipsDirectory.appendingPathComponent(name), settings: format.settings))
+    } catch {
+      Log.audio.error("Raw audio not kept: \(error.localizedDescription, privacy: .public)")
+    }
+  }
+
+  private func stopWarmEngine() {
+    guard let warmEngine else { return }
+    warmEngine.stop()
+    warmEngine.inputNode.removeTap(onBus: 0)
+    self.warmEngine = nil
   }
 
   private func stopEngine() {

@@ -7,7 +7,9 @@ import SwiftUI
 nonisolated struct SleepGuardLiteBrand: BrandComposition {
   let configuration = BrandConfiguration(
     theme: .lite,
-    tabs: [.statistics, .history, .settings])
+    tabs: [.statistics, .history, .settings],
+    health: nil,
+    appStoreID: nil)
 }
 
 let appBrand = SleepGuardLiteBrand()

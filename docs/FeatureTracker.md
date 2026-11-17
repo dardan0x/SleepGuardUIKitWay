@@ -12,23 +12,23 @@ Last updated: 2026-11-14
 |--------|-------|
 | Features | 11 |
 | Done | 8 |
-| In Progress | 1 |
-| Backlog | 2 |
+| In Progress | 2 |
+| Backlog | 1 |
 | Blocked | 0 |
 | — | — |
 | Total Tasks | 62 |
-| Tasks Done | 52 |
+| Tasks Done | 53 |
 | Tasks In Progress | 0 |
 | Tasks Blocked | 0 |
-| Tasks Backlog | 10 |
+| Tasks Backlog | 9 |
 | — | — |
-| **Progress** | **84%** |
+| **Progress** | **85%** |
 
 ## Features
 
 | ID | Feature | Priority | Status | Tasks | Progress | File |
 |----|---------|----------|--------|-------|----------|------|
-| F0 | Shared repo | P0 | In Progress | 6/6 (0.4.0 release pending) | ██████████ 100% | [tracker](trackers/f0-shared-repo.md) |
+| F0 | Shared repo | P0 | In Progress | 6/6 (shared CI doesn't build this app yet) | ██████████ 100% | [tracker](trackers/f0-shared-repo.md) |
 | F1 | Foundation | P0 | Done | 8/8 | ██████████ 100% | [tracker](trackers/f1-foundation.md) |
 | F2 | Domain and persistence | P0 | Done | 5/5 | ██████████ 100% | [tracker](trackers/f2-domain-persistence.md) |
 | F3 | History → Session Detail | P0 | Done | 5/5 | ██████████ 100% | [tracker](trackers/f3-history-session-detail.md) |
@@ -37,18 +37,18 @@ Last updated: 2026-11-14
 | F6 | Design kit adoption in SleepGuard | P2 | Done (bg-card open) | 4/4 | ██████████ 100% | [tracker](trackers/f6-design-kit-adoption.md) |
 | F7 | Recording and detection | P1 | Done (device check open) | 7/7 | ██████████ 100% | [tracker](trackers/f7-recording-detection.md) |
 | F10 | Shared screen content | P1 | Done | 7/7 | ██████████ 100% | [tracker](trackers/f10-shared-screen-content.md) |
-| F8 | Remaining features | P2 | Backlog | 0/6 | ░░░░░░░░░░ 0% | [tracker](trackers/f8-remaining-features.md) |
+| F8 | Remaining features | P2 | In Progress | 1/6 | ██░░░░░░░░ 17% | [tracker](trackers/f8-remaining-features.md) |
 | F9 | Showcase polish | P2 | Backlog | 0/4 | ░░░░░░░░░░ 0% | [tracker](trackers/f9-showcase-polish.md) |
 
 ## Currently Active
 
-- **F8-T1** — Settings, built content-first (sensitivity, sleep talking, start delay with its countdown).
+- **F8-T1 device checks** — Apple Health permission and writing, the start delay's notification and warm-up with the screen locked, raw audio on a real night.
 - **F7 device check** — one short night on a phone (Debug saves after 2 min): microphone, locked screen, clips, recovery after a kill.
 
 ## Up Next
 
-1. **F8** — Remaining features, content-first.
-2. **F8** — Remaining features, built content-first (Settings first: sensitivity, sleep talking, start delay).
+1. **F8-T3** — Sleep stages from HealthKit (extends the `HealthAccess` brand port, ADR 0006).
+2. **F8-T4** — Snore Interrupter. Then T2, T5, T6.
 3. **F0** — Shared CI also builds SleepGuardUIKitWay (the open F0-T5 item).
 
 ## Blockers
@@ -61,6 +61,7 @@ Last updated: 2026-11-14
 
 | Date | Task | Event | Notes |
 |------|------|-------|-------|
+| 2026-11-17 | F8-T1 | Completed | Settings, profile editor, start delay with countdown, storage limits (with leftover files), delete all, Apple Health sync as a brand port (ADR 0006), raw logging. Shared content and rules (0.22.0). Branch `feature/f8/t1-settings` |
 | 2026-11-17 | F10-T6 | Completed | Review (nothing left to share for these screens), product lists updated in every doc, F10 feature doc. F10 done. Branch `feature/f10/t6-review` |
 | 2026-11-17 | F10-T5 | Completed | Recording screens' content shared (`PrestartContent`, `BedsideClockContent`, `SessionSummaryContent`, shared 0.21.0); both apps host it, SleepGuard's melody pieces in slots. Branch `feature/f10/t5-recording-content` |
 | 2026-11-16 | F10-T4b | Completed | Player content and `ClipWaveform` shared, `WaveformAccumulator` in SleepCore (shared 0.20.0); the waveform reaches this app (`ClipWaveformSource` port + `FileWaveformSource`). Branch `feature/f10/t4b-player` |

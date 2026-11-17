@@ -1,9 +1,10 @@
+import SleepDomain
 import SleepGuardContentKit
 import SwiftUI
 
-/// Before a night: hosts the shared `PrestartContent`. Start checks the
-/// microphone and the charger first, as SleepGuard's prestart does. The start
-/// delay and the Snore Interrupter rows (its options slot) come with F8.
+/// Before a night: hosts the shared `PrestartContent`, with the start delay
+/// in its options slot (the Snore Interrupter row comes with F8-T4). Start
+/// checks the microphone and the charger first, as SleepGuard's prestart does.
 public struct RecordingPrestartScreen: View {
   enum Alert {
     case microphone
@@ -13,6 +14,7 @@ public struct RecordingPrestartScreen: View {
   let dependencies: RecordingPrestartDependencies
   let routes: RecordingPrestartRoutes
   @State private var alert: Alert?
+  @State private var preferences: AppPreferences?
 
   public init(dependencies: RecordingPrestartDependencies, routes: RecordingPrestartRoutes) {
     self.dependencies = dependencies
@@ -24,21 +26,35 @@ public struct RecordingPrestartScreen: View {
       compact: dependencies.compactHeight,
       onStart: { Task { await startTapped() } },
       onCancel: routes.cancel)
-      .alert(Strings.sessionMicrophoneAlertTitle, isPresented: isShowing(.microphone)) {
-        Button(Strings.actionCancel, role: .cancel) {}
-        Button(Strings.sessionMicrophoneAlertOpenSettings, action: routes.openSettings)
-      } message: {
-        Text(Strings.sessionMicrophoneAlertMessage)
-      }
-      .alert(Strings.sessionChargingAlertTitle, isPresented: isShowing(.charging)) {
-        Button(Strings.actionCancel, role: .cancel) {}
-        Button(Strings.sessionChargingAlertStartAnyway, action: routes.start)
-      } message: {
-        Text(Strings.sessionChargingAlertMessage)
-      }
+    {
+      PrestartDelayOptions(minutes: Binding(
+        get: { preferences?.recordingDelayMinutes ?? 0 },
+        set: {
+          preferences?.recordingDelayMinutes = $0
+          dependencies.saveDelay($0)
+        }))
+    }
+    .task {
+      preferences = await dependencies.loadPreferences()
+    }
+    .alert(Strings.sessionMicrophoneAlertTitle, isPresented: isShowing(.microphone)) {
+      Button(Strings.actionCancel, role: .cancel) {}
+      Button(Strings.sessionMicrophoneAlertOpenSettings, action: routes.openSettings)
+    } message: {
+      Text(Strings.sessionMicrophoneAlertMessage)
+    }
+    .alert(Strings.sessionChargingAlertTitle, isPresented: isShowing(.charging)) {
+      Button(Strings.actionCancel, role: .cancel) {}
+      Button(Strings.sessionChargingAlertStartAnyway) { routes.start(preferences ?? AppPreferences()) }
+    } message: {
+      Text(Strings.sessionChargingAlertMessage)
+    }
   }
 
   private func startTapped() async {
+    if preferences == nil {
+      preferences = await dependencies.loadPreferences()
+    }
     guard await dependencies.requestPermission() else {
       alert = .microphone
       return
@@ -47,7 +63,7 @@ public struct RecordingPrestartScreen: View {
       alert = .charging
       return
     }
-    routes.start()
+    routes.start(preferences ?? AppPreferences())
   }
 
   private func isShowing(_ kind: Alert) -> Binding<Bool> {

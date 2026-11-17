@@ -1,5 +1,6 @@
 import AppShell
 import SleepGuardDesignKit
+import SleepHealth
 import SwiftUI
 
 /// Nocturne: a sister brand on the same product. Violet with amber for
@@ -7,7 +8,9 @@ import SwiftUI
 nonisolated struct NocturneBrand: BrandComposition {
   let configuration = BrandConfiguration(
     theme: .nocturne,
-    tabs: [.history, .statistics, .settings, .learn])
+    tabs: [.history, .statistics, .settings, .learn],
+    health: SleepHealth.makeHealthAccess(),
+    appStoreID: nil)
 }
 
 let appBrand = NocturneBrand()

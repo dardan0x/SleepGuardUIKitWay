@@ -27,6 +27,8 @@ final class CaptureProcessor: Sendable {
     var analyzer: SNAudioStreamAnalyzer?
     var framePosition: AVAudioFramePosition = 0
     var clip: AVAudioFile?
+    /// The whole night, when the raw audio is kept.
+    var raw: AVAudioFile?
   }
 
   private let state = OSAllocatedUnfairLock(uncheckedState: State())
@@ -58,6 +60,15 @@ final class CaptureProcessor: Sendable {
     state.withLockUnchecked { $0.clip = nil }
   }
 
+  /// Every buffer from now on is also written to `file` (the raw recording).
+  func writeRaw(to file: AVAudioFile) {
+    state.withLockUnchecked { $0.raw = file }
+  }
+
+  func closeRaw() {
+    state.withLockUnchecked { $0.raw = nil }
+  }
+
   /// Runs on the tap's thread for every buffer.
   func process(_ buffer: AVAudioPCMBuffer, at time: Date) -> CaptureSample {
     let channel = buffer.floatChannelData.map {
@@ -78,6 +89,14 @@ final class CaptureProcessor: Sendable {
           // what was written, stop writing.
           Log.audio.error("Clip write failed, closing the clip: \(error.localizedDescription, privacy: .public)")
           s.clip = nil
+        }
+      }
+      if let raw = s.raw {
+        do {
+          try raw.write(from: buffer)
+        } catch {
+          Log.audio.error("Raw audio write failed, closing it: \(error.localizedDescription, privacy: .public)")
+          s.raw = nil
         }
       }
       guard let magnitudes = Self.magnitudes(of: channel, transform: s.transform) else { return Float(0) }

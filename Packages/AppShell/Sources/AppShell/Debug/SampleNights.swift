@@ -31,6 +31,16 @@ enum SampleNights {
   {
     var current = await repository.observeSummaries().makeAsyncIterator()
     guard let existing = await current.next(), existing.isEmpty else { return }
+    try await seed(repository, before: today, writeClip: writeClip)
+  }
+
+  /// Saves the sample nights (replacing earlier copies: same ids) and their
+  /// clips. Settings' "Generate Mock Data" in Debug builds.
+  static func seed(
+    _ repository: any SessionRepository,
+    before today: Date = .now,
+    writeClip: @escaping @Sendable (String, TimeInterval, SnoreIntensity) throws -> Void = { _, _, _ in }) async throws
+  {
     let nights = make(before: today)
     let clips = nights.flatMap(\.events).compactMap { event in
       event.clipFileName.map { ($0, min(event.duration, maxClipSeconds), event.intensity) }

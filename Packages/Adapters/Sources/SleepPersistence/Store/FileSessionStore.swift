@@ -18,6 +18,17 @@ struct FileSessionStore: SessionFileStore {
     return FileManager.default.fileExists(atPath: url.path) ? url : nil
   }
 
+  func size(ofFileNamed name: String) async -> Int64 {
+    guard Self.isPlain(name),
+          let size = try? FileManager.default.attributesOfItem(atPath: directory.appendingPathComponent(name).path)[.size]
+          as? Int64 else { return 0 }
+    return size
+  }
+
+  func allFileNames() async -> [String] {
+    (try? FileManager.default.contentsOfDirectory(atPath: directory.path)) ?? []
+  }
+
   /// Only plain file names: a name can't reach outside the directory.
   private static func isPlain(_ name: String) -> Bool {
     !name.isEmpty && !name.contains("/") && name != ".." && name != "."

@@ -19,10 +19,14 @@ public actor RecordingSession {
   public struct Settings: Sendable, Equatable {
     public var sensitivity: DetectionSensitivity
     public var detectSleepTalking: Bool
+    /// Keep the full audio and the sample log (`RawRecording`); needs a
+    /// `RawLogWriter`.
+    public var preserveRawAudio: Bool
 
-    public init(sensitivity: DetectionSensitivity = .medium, detectSleepTalking: Bool = true) {
+    public init(sensitivity: DetectionSensitivity = .medium, detectSleepTalking: Bool = true, preserveRawAudio: Bool = false) {
       self.sensitivity = sensitivity
       self.detectSleepTalking = detectSleepTalking
+      self.preserveRawAudio = preserveRawAudio
     }
   }
 
@@ -31,10 +35,15 @@ public actor RecordingSession {
   /// A checkpoint at least this often (sample time), besides one per event,
   /// so a quiet night survives a crash too (SleepGuard: about 2 minutes).
   static let checkpointInterval: TimeInterval = 120
+  /// Raw log samples are written in batches of this many (about a second).
+  static let rawLogBatch = 40
 
   public private(set) var draft: RecordingDraft
   private let capture: any AudioCapturePort
   private let checkpoints: (any RecordingCheckpointStore)?
+  private let settings: Settings
+  private let rawLog: (any RawLogWriter)?
+  private var rawSamples: [SnoreSample] = []
   private let snoreClassifier: SnoreClassifier
   private let speechClassifier = SpeechClassifier()
   private let engine: DetectionEngine
@@ -49,14 +58,18 @@ public actor RecordingSession {
   private var lastSampleTime: Date?
 
   /// `checkpoints`: where the night in progress is kept while recording.
+  /// `rawLog`: where samples go when `settings.preserveRawAudio` is on.
   public init(
     capture: any AudioCapturePort,
     settings: Settings = Settings(),
     checkpoints: (any RecordingCheckpointStore)? = nil,
+    rawLog: (any RawLogWriter)? = nil,
     start: Date = Date())
   {
     self.capture = capture
     self.checkpoints = checkpoints
+    self.settings = settings
+    self.rawLog = settings.preserveRawAudio ? rawLog : nil
     draft = RecordingDraft(start: start)
     let classifier = SnoreClassifier.preset(settings.sensitivity)
     snoreClassifier = classifier
@@ -71,7 +84,11 @@ public actor RecordingSession {
   /// only, if the reader falls behind), which end when `stop` returns.
   public func start() async throws -> AsyncStream<LiveSnapshot> {
     precondition(engineTask == nil, "RecordingSession.start() called twice")
-    let samples = try await capture.start()
+    let rawAudio = rawLog == nil ? nil : RawRecording.audioFileName(for: draft.id)
+    let samples = try await capture.start(rawAudioFileName: rawAudio)
+    await rawLog?.begin(night: draft.id, metadata: RawLogMetadata(
+      sessionStart: draft.start, detectionSensitivity: settings.sensitivity.rawValue,
+      detectSleepTalking: settings.detectSleepTalking, snoreInterrupterMode: "never"))
     let (stream, continuation) = AsyncStream.makeStream(of: LiveSnapshot.self, bufferingPolicy: .bufferingNewest(1))
     snapshots = continuation
     let engine = engine
@@ -103,6 +120,11 @@ public actor RecordingSession {
     }
     compressions = []
     await checkpoints?.save(draft.night(end: end, endReason: endReason))
+    if let rawLog {
+      await rawLog.append(rawSamples)
+      rawSamples = []
+      await rawLog.finish()
+    }
     snapshots?.finish()
     return draft
   }
@@ -112,6 +134,11 @@ public actor RecordingSession {
   /// One sample from the capture: ingested, then a checkpoint when one is due.
   func receive(_ sample: CaptureSample) async {
     ingest(sample)
+    if let rawLog, rawSamples.count >= Self.rawLogBatch {
+      let batch = rawSamples
+      rawSamples = []
+      await rawLog.append(batch)
+    }
     if lastCheckpoint.map({ sample.time.timeIntervalSince($0) >= Self.checkpointInterval }) ?? true {
       await checkpoint(at: sample.time)
     }
@@ -132,6 +159,12 @@ public actor RecordingSession {
       db: sample.db, spectralScore: sample.spectralScore, snoreConfidence: sample.snoreConfidence,
       snoreState: state, isSpeech: isSpeech)
     input.yield(.sample(detection, at: sample.time))
+    if rawLog != nil {
+      rawSamples.append(SnoreSample(
+        elapsed: sample.time.timeIntervalSince(draft.start), db: sample.db, peakDB: sample.peakDB,
+        spectralScore: sample.spectralScore, snoreConfidence: sample.snoreConfidence,
+        speechConfidence: sample.speechConfidence, state: state))
+    }
 
     if lastSnapshot.map({ sample.time.timeIntervalSince($0) >= Self.snapshotInterval }) ?? true {
       lastSnapshot = sample.time

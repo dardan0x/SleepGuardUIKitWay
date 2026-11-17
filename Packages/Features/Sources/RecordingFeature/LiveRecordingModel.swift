@@ -28,10 +28,11 @@ public final class LiveRecordingModel {
     capture: any AudioCapturePort,
     settings: RecordingSession.Settings = .init(),
     checkpoints: (any RecordingCheckpointStore)? = nil,
+    rawLog: (any RawLogWriter)? = nil,
     start: Date = Date())
   {
     self.start = start
-    session = RecordingSession(capture: capture, settings: settings, checkpoints: checkpoints, start: start)
+    session = RecordingSession(capture: capture, settings: settings, checkpoints: checkpoints, rawLog: rawLog, start: start)
   }
 
   public var eventCount: Int {
