@@ -4,13 +4,13 @@
 
 | Field | Value |
 |-------|-------|
-| **Status** | In Progress |
+| **Status** | Done |
 | **Priority** | P1 |
 | **Milestone** | M4 |
 | **Blocked By** | F7 |
 | **Started** | 2026-11-16 |
-| **Completed** | — |
-| **Feature Doc** | — |
+| **Completed** | 2026-11-17 |
+| **Feature Doc** | [f10-shared-screen-content.md](../features/f10-shared-screen-content.md) |
 
 ## Summary
 
@@ -30,7 +30,7 @@ Each task from T2 on is one shared release, then SleepGuard adopts it, then this
 | F10-T4a | Night detail and events sheet content; `EventFilter` and `EventListRow` rules in `SleepCore` | Shared / Refactor | Done | F10-T2 | Shared, both apps | Detail views and `DetailEvents` gone here |
 | F10-T4b | Player card and event list shared; clip waveform ported here (decided 2026-11-16: port now) | Shared / Adapter / Refactor | Done | F10-T4a | Shared, both apps | `PlayerScreen` hosts the shared player content with the waveform |
 | F10-T5 | Prestart, bedside clock and summary content (slots for SleepGuard's melody rows and overlay) | Shared / Refactor | Done | F10-T2 | Shared, both apps | The three recording screens here are containers only |
-| F10-T6 | Review: no screen-content view left in either app for the shared screens; docs final; feature doc | Docs | Backlog | F10-T3, T4, T5 | Both apps | — |
+| F10-T6 | Review: no screen-content view left in either app for the shared screens; docs final; feature doc | Docs | Done | F10-T3, T4, T5 | Both apps | — |
 
 ## Notes
 
@@ -40,6 +40,11 @@ Each task from T2 on is one shared release, then SleepGuard adopts it, then this
 - F8 is built content-first (ADR 0005).
 
 ## Task Details
+
+### F10-T6 — Review and docs (done 2026-11-17)
+- [x] Review: this app's feature modules hold screens, state owners and the detail's loading / error views only (SleepGuard's differ). SleepGuard's hold containers, SleepGuard-only features and slot views. `StatBox` / `WaveformShape` stay in SleepGuard: only its debug sections use them
+- [x] Docs: product lists (shared README, ADR 0004, `architecture/modules.md`, README here; SleepGuard AGENTS / CLAUDE, technical overview); feature doc
+- [x] No code change, no release
 
 ### F10-T5 — Recording screens (done 2026-11-17)
 - [x] Shared (0.21.0): `PrestartContent` (options slot), `BedsideClockContent` (banner and overlay slots; the screen ticks `time` and decides Stop; `canStop`), `SessionSummaryContent`; their scrolling parts (`PrestartStack`, `SessionSummaryStack`) are what the render tests draw, since `ImageRenderer` can't draw inside a `ScrollView`
