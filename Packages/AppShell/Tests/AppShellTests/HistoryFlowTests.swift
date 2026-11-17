@@ -86,7 +86,7 @@ struct HistoryFlowTests {
       NightEvent(start: start.addingTimeInterval(3600), duration: 10, category: .sleepTalking, intensity: .quiet),
     ]
     let noisy = Night(start: start, end: night.end, events: events)
-    let rows = DetailEventRow.make(episodes: noisy.displayableEpisodes, events: noisy.events, filter: .all)
+    let rows = EventListRow.rows(for: noisy)
     let (flow, spy, _) = makeFlow([noisy])
     flow.start()
     try #require(rootList(spy)).rootView.content.routes.openNight(noisy.summary())
@@ -188,6 +188,7 @@ extension Container {
     container.sessionFileStore.register { FakeSessionFileStore() }
     container.sleepStagePort.register { FakeSleepStagePort() }
     container.makeClipPlayer.register { { FakeClipPlayer() } }
+    container.clipWaveformSource.register { FakeClipWaveformSource() }
     container.checkpointStore.register { FakeRecordingCheckpointStore() }
     return container
   }

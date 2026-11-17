@@ -10,19 +10,19 @@ Last updated: 2026-11-14
 
 | Metric | Count |
 |--------|-------|
-| Features | 10 |
-| Done | 7 |
+| Features | 11 |
+| Done | 8 |
 | In Progress | 1 |
 | Backlog | 2 |
 | Blocked | 0 |
 | — | — |
-| Total Tasks | 55 |
-| Tasks Done | 45 |
+| Total Tasks | 62 |
+| Tasks Done | 52 |
 | Tasks In Progress | 0 |
 | Tasks Blocked | 0 |
 | Tasks Backlog | 10 |
 | — | — |
-| **Progress** | **82%** |
+| **Progress** | **84%** |
 
 ## Features
 
@@ -36,17 +36,20 @@ Last updated: 2026-11-14
 | F5 | Clip playback | P1 | Done | 5/5 | ██████████ 100% | [tracker](trackers/f5-clip-playback.md) |
 | F6 | Design kit adoption in SleepGuard | P2 | Done (bg-card open) | 4/4 | ██████████ 100% | [tracker](trackers/f6-design-kit-adoption.md) |
 | F7 | Recording and detection | P1 | Done (device check open) | 7/7 | ██████████ 100% | [tracker](trackers/f7-recording-detection.md) |
+| F10 | Shared screen content | P1 | Done | 7/7 | ██████████ 100% | [tracker](trackers/f10-shared-screen-content.md) |
 | F8 | Remaining features | P2 | Backlog | 0/6 | ░░░░░░░░░░ 0% | [tracker](trackers/f8-remaining-features.md) |
 | F9 | Showcase polish | P2 | Backlog | 0/4 | ░░░░░░░░░░ 0% | [tracker](trackers/f9-showcase-polish.md) |
 
 ## Currently Active
 
+- **F8-T1** — Settings, built content-first (sensitivity, sleep talking, start delay with its countdown).
 - **F7 device check** — one short night on a phone (Debug saves after 2 min): microphone, locked screen, clips, recovery after a kill.
 
 ## Up Next
 
-1. **F8** — Remaining features (Settings first: sensitivity, sleep talking, start delay).
-2. **F0** — Shared CI also builds SleepGuardUIKitWay (the open F0-T5 item).
+1. **F8** — Remaining features, content-first.
+2. **F8** — Remaining features, built content-first (Settings first: sensitivity, sleep talking, start delay).
+3. **F0** — Shared CI also builds SleepGuardUIKitWay (the open F0-T5 item).
 
 ## Blockers
 
@@ -58,6 +61,13 @@ Last updated: 2026-11-14
 
 | Date | Task | Event | Notes |
 |------|------|-------|-------|
+| 2026-11-17 | F10-T6 | Completed | Review (nothing left to share for these screens), product lists updated in every doc, F10 feature doc. F10 done. Branch `feature/f10/t6-review` |
+| 2026-11-17 | F10-T5 | Completed | Recording screens' content shared (`PrestartContent`, `BedsideClockContent`, `SessionSummaryContent`, shared 0.21.0); both apps host it, SleepGuard's melody pieces in slots. Branch `feature/f10/t5-recording-content` |
+| 2026-11-16 | F10-T4b | Completed | Player content and `ClipWaveform` shared, `WaveformAccumulator` in SleepCore (shared 0.20.0); the waveform reaches this app (`ClipWaveformSource` port + `FileWaveformSource`). Branch `feature/f10/t4b-player` |
+| 2026-11-16 | F10-T4a | Completed | Night detail and events grid content, SleepCore's `EventFilter` / `EventListRow` (shared 0.19.0); both apps host it. T4 split: the player and its waveform are T4b. Branch `feature/f10/t4a-night-detail` |
+| 2026-11-16 | F10-T3 | Completed | Nights list content and SleepCore's `NightMonth` (shared 0.18.0); both apps host it; `HistorySections` and the History views removed. Branch `feature/f10/t3-nights-list` |
+| 2026-11-16 | F10-T2 | Completed | `SleepGuardContentKit` (shared 0.17.0) with the Statistics screens' content; both apps host it; this app's 5 content views and their render tests removed. Branch `feature/f10/t2-statistics-content` |
+| 2026-11-16 | F10-T1 | Completed | F10 planned with the owner: screen content moves to a new shared product, screens stay per app (ADR 0005; SleepGuard ADR 0006, F25). Rule in AGENTS/CLAUDE, layering table. Branch `feature/f10/t1-content-kit-setup` |
 | 2026-11-16 | F7-T7 | Completed | Checkpoint port and file store, `RecoverInterruptedSession`, `DiscardRecording`, checkpoints from the recording actor, launch recovery, low-battery stop. F7 done (device check open); feature doc written. Feature counts corrected (were stale). Branch `feature/f7/t7-recovery` |
 | 2026-11-16 | F7-T6 | Completed | `RecordingFlow` (full-screen modal from `AppCoordinator`), `CommitSession`, discard with clips, `DeviceServices`, microphone text and background audio in Info.plist; flow and hosted tests. Device night not done yet. Branch `feature/f7/t6-recording-flow` |
 | 2026-11-16 | F7-T5 | Completed | Recording pieces in the kit + `Night.minimumSaveDuration` (shared 0.16.0); SleepGuard uses them. `RecordingFeature`: prestart, bedside clock (`LiveRecordingModel`), summary. Countdown moved to F8. Branch `feature/f7/t5-recording-screens` |

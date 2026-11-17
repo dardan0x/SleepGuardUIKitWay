@@ -9,6 +9,7 @@ import Testing
 @MainActor
 struct ClipPlaybackModelTests {
   private let start = Date(timeIntervalSinceReferenceDate: 0)
+  private let waveforms = FakeClipWaveformSource(bars: [0.25, 1, 0.5])
 
   /// Three clips of 10, 20 and 30 s; files `a`, `b`, `c` of the same length.
   private func make(startAt: Int? = nil, missing: Set<String> = [], fileDurations: [String: TimeInterval]? = nil)
@@ -24,8 +25,37 @@ struct ClipPlaybackModelTests {
     let player = FakeClipPlayer(durations: fileDurations ?? ["a.m4a": 10, "b.m4a": 20, "c.m4a": 30])
     let model = ClipPlaybackModel(
       events: events, startEvent: startAt.map { events[$0].id }, player: player,
-      files: FakeSessionFileStore(urls: urls))
+      files: FakeSessionFileStore(urls: urls), waveforms: waveforms)
     return (model, player)
+  }
+
+  // MARK: - Waveform (F10-T4b)
+
+  @Test func theCurrentClipsWaveformLoads() async {
+    let (model, _) = make(startAt: 1)
+    model.start()
+    #expect(model.isLoadingWaveform)
+    await model.waveformLoading?.value
+    #expect(model.waveform == [0.25, 1, 0.5])
+    #expect(!model.isLoadingWaveform)
+    #expect(await waveforms.requested == ["b.m4a"])
+  }
+
+  @Test func anotherClipLoadsItsOwnWaveform() async {
+    let (model, _) = make()
+    model.start()
+    await model.waveformLoading?.value
+    model.select(2)
+    await model.waveformLoading?.value
+    #expect(await waveforms.requested == ["a.m4a", "c.m4a"])
+    #expect(model.waveform == [0.25, 1, 0.5])
+  }
+
+  @Test func aClipWithoutItsFileHasNoWaveform() async {
+    let (model, _) = make(startAt: 1, missing: ["b"])
+    model.start()
+    #expect(model.waveform.isEmpty && !model.isLoadingWaveform)
+    #expect(await waveforms.requested.isEmpty)
   }
 
   @Test func startPlaysTheChosenClip() {

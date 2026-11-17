@@ -15,7 +15,8 @@ Both apps consume one package from a separate repo, `../SleepGuardShared`:
 |---|---|---|
 | `SleepCore` | Night entities (`Night`, `NightEvent`, `NightEpisode`, `NightSummary`) and rules (episodes, snoring duration, stage stats, score inputs, summary); score formula and config; detection state machine and actor; stored value types | Extracted from SleepGuard (0.1.0); night entities and rules moved from this app's `SleepDomain` in F0-T6 (0.4.0) |
 | `SleepStrings` | String catalog and generated `Strings` | Extracted from SleepGuard |
-| `SleepGuardDesignKit` | `Theme` value, environment key, components with no domain types | To build in F1 |
+| `SleepGuardDesignKit` | `Theme` value, environment key, components that only take values | Built in F1; SleepGuard draws with it since F6 (its ADR 0005) |
+| `SleepGuardContentKit` | Screen content: each screen's loaded layout, values and actions in | F10 (0.17.0 to 0.21.0); see ADR 0005 |
 
 Not shared: ports, use cases, adapters, navigation, DI. Those are where the two apps intentionally differ: SleepGuard has no ports or use cases (its views use SwiftData and services directly).
 

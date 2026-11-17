@@ -83,6 +83,10 @@ extension Container {
     self { .live }
   }
 
+  var clipWaveformSource: Factory<any ClipWaveformSource> {
+    self { SleepAudio.makeClipWaveformSource() }.singleton
+  }
+
   /// Makes a player per player sheet (the sheet's state owner releases it).
   /// A maker, because the player is main-actor and Factory's closures aren't.
   var makeClipPlayer: Factory<@MainActor @Sendable () -> any ClipPlayer> {

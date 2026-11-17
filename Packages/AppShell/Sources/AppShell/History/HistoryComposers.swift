@@ -39,7 +39,7 @@ struct SessionDetailComposer {
 
   /// The events sheet in its own navigation controller, for its title bar.
   func makeEventsSheet(
-    rows: [DetailEventRow], events: [NightEvent], playEvents: @escaping @MainActor ([NightEvent], NightEvent.ID) -> Void,
+    rows: [EventListRow], events: [NightEvent], playEvents: @escaping @MainActor ([NightEvent], NightEvent.ID) -> Void,
     onClose: @escaping @MainActor () -> Void) -> UIViewController
   {
     let theme = container.theme()
@@ -59,7 +59,8 @@ struct SessionDetailComposer {
   func makePlayer(events: [NightEvent], start: NightEvent.ID, onClose: @escaping @MainActor () -> Void) -> UIViewController {
     let theme = container.theme()
     let model = ClipPlaybackModel(
-      events: events, startEvent: start, player: container.makeClipPlayer()(), files: container.sessionFileStore())
+      events: events, startEvent: start, player: container.makeClipPlayer()(), files: container.sessionFileStore(),
+      waveforms: container.clipWaveformSource())
     let screen = HostingScreen(
       rootView: PlayerScreen(model: model),
       theme: theme,
