@@ -1,0 +1,164 @@
+# Architecture
+
+SleepGuardUIKitWay is SleepGuard (a SwiftUI sleep and snoring app) rebuilt the way a large UIKit team would build it. UIKit owns the app and its navigation, SwiftUI draws the screens, the business rules sit in a domain core behind ports, and three brands ship from one codebase. The rules, strings, design kit and screen layouts are shared with SleepGuard through a separate repo, so both apps compute and draw the same things.
+
+Everything below was checked against the code on 2026-11-17 (shared release 0.27.0). Counts and names come from the source, not from the plans.
+
+## Module graph
+
+Tuist sees the apps and what they link directly (`tuist graph --skip-test-targets`):
+
+```
+SleepGuard      → AppShell, SleepGuardDesignKit, SleepHealth
+Nocturne        → AppShell, SleepGuardDesignKit, SleepHealth
+SleepGuardLite  → AppShell, SleepGuardDesignKit            (no HealthKit)
+```
+
+Inside the packages, the graph is in their manifests (`swift package dump-package`, non-test targets):
+
+```mermaid
+graph TD
+  SG[SleepGuard app] --> AppShell
+  NO[Nocturne app] --> AppShell
+  LI[SleepGuardLite app] --> AppShell
+  SG --> SleepHealth
+  NO --> SleepHealth
+
+  AppShell --> Features[8 feature modules]
+  AppShell --> ScreenKit
+  AppShell --> SleepPersistence
+  AppShell --> SleepAudio
+  AppShell --> SleepDomain
+  AppShell --> FactoryKit
+
+  Features --> SleepDomain
+  Features --> ContentKit[SleepGuardContentKit]
+  SleepPersistence --> SleepDomain
+  SleepAudio --> SleepDomain
+  SleepAudio --> SleepMelodies
+  SleepHealth --> SleepDomain
+  ScreenKit --> DesignKit[SleepGuardDesignKit]
+  SleepDomain --> SleepCore
+  ContentKit --> DesignKit
+  DesignKit --> SleepStrings
+  DesignKit --> SleepCore
+
+  subgraph Shared["SleepGuardShared, pinned 0.27.0"]
+    SleepCore
+    SleepStrings
+    SleepMelodies
+    DesignKit
+    ContentKit
+  end
+```
+
+The eight features are History, SessionDetail, Statistics, Recording, Settings, Onboarding, Briefing and Learn. Not every one imports `SleepDomain`: Onboarding, Briefing and Learn need only SleepCore values and the content kit. No feature imports another feature, an adapter, or Factory.
+
+## The layers
+
+| Module | Files / lines | What it holds | What it must not do |
+|---|---|---|---|
+| `SleepCore` (shared) | — | Night values and every rule: score, detection state machine, statistics, playback, interrupter, onboarding pages, briefing, report | Import anything but Foundation |
+| `SleepDomain` (Core) | 25 / 1,217 | 12 ports, 9 use cases, the recording actor and its draft, preferences | Know about SwiftData, AVFoundation, HealthKit, UIKit or SwiftUI |
+| `SleepPersistence` | 11 / 634 | SwiftData records behind `SessionRepository`; files for clips, checkpoint, profile, raw log, survey answers; UserDefaults preferences | Leak a `@Model` past its ports |
+| `SleepAudio` | 11 / 1,054 | AVAudioEngine capture and analysis, clip compression and playback, waveforms, the interrupter's player, store and recorder | |
+| `SleepHealth` | 1 / 87 | HealthKit: write a night, read its sleep stages | Be linked by Lite |
+| `ScreenKit` (Presentation) | 3 / 223 | `HostingScreen` (a SwiftUI screen in a themed hosting controller), `ScreenChrome` (title, bar items), `Navigator` | |
+| Features | 32 / 1,983 | 21 SwiftUI screens, each with a `Dependencies` and a `Routes` value | Navigate, present, persist, inject, or touch `UIApplication` (checked) |
+| `AppShell` | 22 / 1,771 | Launch, 9 flows and coordinators, composers, the Factory container (28 registrations), brand composition | Be imported by anything but the apps and its test support |
+| Apps | 3 brands | `Brand.swift`: one `BrandConfiguration` each; assets; Info.plist from the Tuist brand list | Contain logic |
+
+## How a screen comes up: a night's detail
+
+1. A row in History calls `HistoryRoutes.openNight(summary)`. The screen only reports the intent.
+2. `HistoryFlow` hands it to `NightDetailNavigation.show(_:)`, which asks `SessionDetailComposer.make(...)` for a controller and pushes it through its `Navigator`.
+3. The composer resolves `LoadSessionDetail` from the container and builds `HostingScreen(rootView: SessionDetailScreen(dependencies:routes:), theme:, chrome:)`. The chrome carries the title and the bar items (report, delete); the screen never sets them.
+4. `SessionDetailScreen` loads through `LoadSessionDetail`. That reads the night from `SessionRepository`, asks `SleepStagePort` for stages when the night has none (the brand's Apple Health, or nothing in Lite), and saves the night with its new score.
+5. The screen hosts the shared `NightDetailContent` (the same layout SleepGuard shows), with the stages card in its slot. Tapping Play, Show all, Share or the stages' info calls a route; the navigation object presents the sheet.
+
+Every screen follows this shape: intent out through `Routes`, data in through `Dependencies`, presentation decided by a flow.
+
+## Brands
+
+`BrandConfiguration` (AppShell) is the only place brands differ at runtime. Each brand states every value; the initializer has no defaults (ADR 0006):
+
+| Value | SleepGuard | Nocturne | Lite |
+|---|---|---|---|
+| `theme` | SleepGuard's | violet, amber for recording, rounded type, softer corners | teal |
+| `tabs` | Statistics, History, Settings, Learn | History, Statistics, Settings, Learn | Statistics, History, Settings |
+| `health` (a port, or `nil`) | `SleepHealth` | `SleepHealth` | `nil`: no HealthKit linked, no stages, no Health rows or onboarding page |
+| `snoreInterrupter` | on | on | off |
+| `learnURL` | `nil` for now | `nil` for now | no tab |
+| `appStoreID` | `nil` | `nil` | `nil` |
+
+Identity (bundle id, display name, app group, URL scheme) lives in the Tuist brand list and reaches the app through Info.plist. Brand differences are read only in the container, the coordinators and the composers; there is no brand enum to switch on.
+
+## The shared repo
+
+`../SleepGuardShared` is its own git repo, pinned by exact version in every manifest and in `Project.swift`:
+
+| Product | Holds |
+|---|---|
+| `SleepCore` | The rules both apps compute with |
+| `SleepStrings` | The string catalog and generated `Strings` |
+| `SleepMelodies` | The Snore Interrupter's built-in sounds |
+| `SleepGuardDesignKit` | Theme tokens and components that draw values |
+| `SleepGuardContentKit` | Screen layouts: values and closures in (ADR 0005) |
+
+`tuist generate` builds against the local checkout for day-to-day work; `TUIST_SHARED_RELEASE=1` builds the pinned release. A shared change is a release: tag it, run `scripts/bump-shared.sh`, run the tests in both apps.
+
+## Recording a night
+
+`RecordingSession` (an actor in `SleepDomain`) turns microphone samples into a `RecordingDraft`:
+
+1. `AudioCapturePort` (`SleepAudio`'s AVAudioEngine tap) yields one `CaptureSample` per buffer.
+2. Each sample is classified with SleepCore's snore and speech rules and sent, timestamped, into SleepCore's `DetectionEngine`: one ordered stream, on its own actor.
+3. The engine's outputs come back in order: clips start, close or are discarded through the capture port; events and gaps go into the draft; the Snore Interrupter plays with the microphone paused.
+4. The draft is checkpointed, so a killed app offers the night at the next launch; Save commits it through `CommitSession` (and to Apple Health when on).
+
+The same rules and the same test cases run in SleepGuard, so both apps detect the same events from the same samples.
+
+## Rules and how they're enforced
+
+| Rule | Enforced by |
+|---|---|
+| Each module imports only what its row allows; a new module must be added to the table | `scripts/check-layering.py` |
+| Features don't navigate, present, persist, inject or use `UIApplication` / `UIDevice` | `check-layering.py` |
+| No `.shared` singletons in packages (the container's bootstrap and `DeviceServices` excepted) | `check-layering.py` |
+| No `print`; `os.Logger` | `check-layering.py` |
+| Swift 6 language mode everywhere; no `@unchecked Sendable`, `nonisolated(unsafe)` or `@preconcurrency`, except one listed lock on the audio thread | `check-layering.py` and the compiler |
+| UI packages (Presentation, Features, AppShell) default to `MainActor` isolation | Their manifests |
+| A view file at most 200 lines; a screen (`*Screen.swift`) at most 100 | `scripts/check-view-size.py` |
+| No user-facing literal outside `Strings` | `scripts/check-hardcoded-strings.py` |
+| A package builds on its own, so an undeclared import fails | `scripts/run-tests.sh` (packages lane: own derived data per package) |
+
+## Tests
+
+`sh scripts/run-tests.sh` runs three lanes:
+
+| Lane | What | |
+|---|---|---|
+| macOS | `swift test` in Core: use cases and the recording actor against fakes | seconds |
+| Packages | Each package built standalone on the simulator, its tests run | Adapters against real files and stores; Features' state owners; AppShell's flows over a navigator spy |
+| In-app | Each brand's hosted tests inside that brand's app | Bootstrap, tabs, a night's detail, the player, the recording flow |
+
+About 210 package tests and 9 in-app tests per brand, plus the shared repo's own (rules, renders of every screen's content in two themes, detection replay goldens).
+
+## Decisions
+
+| ADR | Decision |
+|---|---|
+| [0001](adr/0001-uikit-shell-swiftui-screens.md) | UIKit shell, SwiftUI screens |
+| [0002](adr/0002-hexagonal-core.md) | A hexagonal core: ports and use cases, adapters outside |
+| [0003](adr/0003-white-label-brands.md) | White-label brands from one codebase |
+| [0004](adr/0004-shared-repo.md) | Shared code in its own repo, pinned by version |
+| [0005](adr/0005-shared-screen-content.md) | Screen layouts shared too; each app hosts them |
+| [0006](adr/0006-brand-capabilities.md) | A brand capability is a port it builds or a value it states |
+
+## Where to look first
+
+- `Packages/AppShell/Sources/AppShell/Coordinators/AppCoordinator.swift`: launch, onboarding or tabs, the recording flow, the briefing.
+- `Packages/AppShell/Sources/AppShell/History/`: a flow, its composers and a navigation object end to end.
+- `Packages/Core/Sources/SleepDomain/Recording/RecordingSession.swift`: the recording actor.
+- `Apps/Nocturne/Sources/Brand.swift`: everything a brand is.
+- `scripts/check-layering.py`: the boundaries, as code.

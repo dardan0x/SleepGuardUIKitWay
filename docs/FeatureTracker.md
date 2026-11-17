@@ -12,17 +12,17 @@ Last updated: 2026-11-14
 |--------|-------|
 | Features | 11 |
 | Done | 9 |
-| In Progress | 1 |
-| Backlog | 1 |
+| In Progress | 2 |
+| Backlog | 0 |
 | Blocked | 0 |
 | — | — |
 | Total Tasks | 62 |
-| Tasks Done | 58 |
+| Tasks Done | 59 |
 | Tasks In Progress | 0 |
 | Tasks Blocked | 0 |
-| Tasks Backlog | 4 |
+| Tasks Backlog | 3 |
 | — | — |
-| **Progress** | **94%** |
+| **Progress** | **95%** |
 
 ## Features
 
@@ -38,7 +38,7 @@ Last updated: 2026-11-14
 | F7 | Recording and detection | P1 | Done (device check open) | 7/7 | ██████████ 100% | [tracker](trackers/f7-recording-detection.md) |
 | F10 | Shared screen content | P1 | Done | 7/7 | ██████████ 100% | [tracker](trackers/f10-shared-screen-content.md) |
 | F8 | Remaining features | P2 | Done (device checks open) | 6/6 | ██████████ 100% | [tracker](trackers/f8-remaining-features.md) |
-| F9 | Showcase polish | P2 | Backlog | 0/4 | ░░░░░░░░░░ 0% | [tracker](trackers/f9-showcase-polish.md) |
+| F9 | Showcase polish | P2 | In Progress | 1/4 | ███░░░░░░░ 25% | [tracker](trackers/f9-showcase-polish.md) |
 
 ## Currently Active
 
@@ -47,7 +47,7 @@ Last updated: 2026-11-14
 
 ## Up Next
 
-1. **F9** — Showcase polish.
+1. **F9-T2** — Adding a brand: a fourth brand as a worked example. Then T3, T4.
 2. **F0** — Shared CI also builds SleepGuardUIKitWay (the open F0-T5 item).
 
 ## Blockers
@@ -60,6 +60,7 @@ Last updated: 2026-11-14
 
 | Date | Task | Event | Notes |
 |------|------|-------|-------|
+| 2026-11-17 | F9-T1 | Completed | `docs/ARCHITECTURE.md`, checked against the code: module graph, layers with sizes, a screen end to end, brands, shared repo, recording, rules and their checks, tests, ADRs. Branch `feature/f9/t1-architecture-doc` |
 | 2026-11-17 | F8-T6 | Completed | Personalization: morning briefing (shared engine as values, survey with storage), profile prompt on the dashboard, PDF report and clip sharing (0.27.0). F8 done. Branch `feature/f8/t6-personalization` |
 | 2026-11-17 | F8-T5 | Completed | Learn tab: the shared Learn page or its empty state (0.26.0); `BrandConfiguration.learnURL` (nil until a page exists); placeholder flow removed. Branch `feature/f8/t5-learn` |
 | 2026-11-17 | F8-T2 | Completed | Onboarding on first launch (shared pages and page rules, 0.25.0): microphone and, in Health brands, Apple Health; finishing keeps the flag and can start a night; the launch waits for the preferences, so no tabs flash first. Branch `feature/f8/t2-onboarding` |
