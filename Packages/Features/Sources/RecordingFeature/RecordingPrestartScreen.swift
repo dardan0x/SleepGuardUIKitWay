@@ -1,10 +1,12 @@
+import SleepCore
 import SleepDomain
 import SleepGuardContentKit
 import SwiftUI
 
 /// Before a night: hosts the shared `PrestartContent`, with the start delay
-/// in its options slot (the Snore Interrupter row comes with F8-T4). Start
-/// checks the microphone and the charger first, as SleepGuard's prestart does.
+/// and, for a brand that has it, the Snore Interrupter row in its options
+/// slot. Start checks the microphone and the charger first, as SleepGuard's
+/// prestart does.
 public struct RecordingPrestartScreen: View {
   enum Alert {
     case microphone
@@ -27,12 +29,20 @@ public struct RecordingPrestartScreen: View {
       onStart: { Task { await startTapped() } },
       onCancel: routes.cancel)
     {
-      PrestartDelayOptions(minutes: Binding(
-        get: { preferences?.recordingDelayMinutes ?? 0 },
-        set: {
-          preferences?.recordingDelayMinutes = $0
-          dependencies.saveDelay($0)
-        }))
+      PrestartOptions(
+        delayMinutes: Binding(
+          get: { preferences?.recordingDelayMinutes ?? 0 },
+          set: {
+            preferences?.recordingDelayMinutes = $0
+            dependencies.saveDelay($0)
+          }),
+        interrupterMode: dependencies.hasInterrupter ? preferences?.interrupterMode ?? .never : nil)
+      {
+        routes.openInterrupter { choice in
+          preferences?.interrupterMode = choice.mode
+          preferences?.melodyID = choice.melodyID
+        }
+      }
     }
     .task {
       preferences = await dependencies.loadPreferences()

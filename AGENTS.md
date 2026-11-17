@@ -50,7 +50,7 @@ Enforced by package manifests, **but only when a package builds on its own**: in
 
 ## Adapters
 
-- One adapter module per framework: `SleepPersistence` (SwiftData, files, UserDefaults), `SleepAudio` (AVFoundation, SoundAnalysis, Accelerate), `SleepHealth` (HealthKit).
+- One adapter module per framework: `SleepPersistence` (SwiftData, files, UserDefaults), `SleepAudio` (AVFoundation, SoundAnalysis, Accelerate; the shared `SleepMelodies` sound files), `SleepHealth` (HealthKit).
 - Adapter types and mappers are `internal`. A module exposes a small public factory surface and nothing else.
 - Framework types never cross the port. Map to domain values inside the adapter.
 - **SwiftData lives behind a `@ModelActor`.** `@Model` records never leave that actor. They are persistence records, not domain objects: no business logic on them.

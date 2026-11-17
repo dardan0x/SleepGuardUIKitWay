@@ -13,12 +13,17 @@ public final class FakeAudioCapture: AudioCapturePort {
     case closeClip
     case compressClip(String)
     case discardClip
+    case pause
+    case resume
     case stop
   }
 
   public private(set) var calls: [Call] = []
   /// The raw audio file the last `start` was asked to keep.
   public private(set) var rawAudioFileName: String?
+  /// Between `pause` and `resume`: a test stops sending samples, as the
+  /// microphone would.
+  public private(set) var isPaused = false
   public var permission = true
   /// Thrown by the next `start`.
   public var startError: AudioCaptureError?
@@ -78,6 +83,16 @@ public final class FakeAudioCapture: AudioCapturePort {
   public func discardClip() {
     calls.append(.discardClip)
     openClip = nil
+  }
+
+  public func pause() {
+    calls.append(.pause)
+    isPaused = true
+  }
+
+  public func resume() {
+    calls.append(.resume)
+    isPaused = false
   }
 
   public func stop() {

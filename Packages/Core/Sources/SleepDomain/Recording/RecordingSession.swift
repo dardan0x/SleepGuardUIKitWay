@@ -56,17 +56,26 @@ public actor RecordingSession {
   private var lastSnapshot: Date?
   private var lastCheckpoint: Date?
   private var lastSampleTime: Date?
+  private let interrupter: SnoreInterrupter?
+  private var melodyPlaying = false
+  /// The event's clip, closed when the melody paused the microphone; the
+  /// event keeps it when it is finalized after the melody.
+  private var closedClip: String?
 
   /// `checkpoints`: where the night in progress is kept while recording.
   /// `rawLog`: where samples go when `settings.preserveRawAudio` is on.
+  /// `interrupter`: the Snore Interrupter, for brands that have it (over the
+  /// same `capture`).
   public init(
     capture: any AudioCapturePort,
     settings: Settings = Settings(),
     checkpoints: (any RecordingCheckpointStore)? = nil,
     rawLog: (any RawLogWriter)? = nil,
+    interrupter: SnoreInterrupter? = nil,
     start: Date = Date())
   {
     self.capture = capture
+    self.interrupter = interrupter
     self.checkpoints = checkpoints
     self.settings = settings
     self.rawLog = settings.preserveRawAudio ? rawLog : nil
@@ -88,7 +97,16 @@ public actor RecordingSession {
     let samples = try await capture.start(rawAudioFileName: rawAudio)
     await rawLog?.begin(night: draft.id, metadata: RawLogMetadata(
       sessionStart: draft.start, detectionSensitivity: settings.sensitivity.rawValue,
-      detectSleepTalking: settings.detectSleepTalking, snoreInterrupterMode: "never"))
+      detectSleepTalking: settings.detectSleepTalking,
+      snoreInterrupterMode: (interrupter?.mode ?? .never).rawValue))
+    if let interrupter {
+      // Into the stream right away, so the gap is in order with the samples
+      // and never queued behind `finalize`.
+      let input = input
+      await MainActor.run {
+        interrupter.onStopped = { time in input.yield(.melodyDidStop(at: time)) }
+      }
+    }
     let (stream, continuation) = AsyncStream.makeStream(of: LiveSnapshot.self, bufferingPolicy: .bufferingNewest(1))
     snapshots = continuation
     let engine = engine
@@ -110,6 +128,7 @@ public actor RecordingSession {
   /// event at `end`, waits for its clips to compress, checkpoints the whole
   /// night (kept until it is saved or discarded) and returns the draft.
   public func stop(at end: Date = Date(), endReason: Night.EndReason = .stopped) async -> RecordingDraft {
+    await interrupter?.stop()
     await capture.stop()
     await samplesTask?.value
     input.yield(.finalize(at: end))
@@ -157,7 +176,7 @@ public actor RecordingSession {
     let isSpeech = speechClassifier.classify(db: sample.db, speechConfidence: sample.speechConfidence)
     let detection = DetectionInput(
       db: sample.db, spectralScore: sample.spectralScore, snoreConfidence: sample.snoreConfidence,
-      snoreState: state, isSpeech: isSpeech)
+      snoreState: state, isSpeech: isSpeech, isMelodyPlaying: melodyPlaying)
     input.yield(.sample(detection, at: sample.time))
     if rawLog != nil {
       rawSamples.append(SnoreSample(
@@ -167,11 +186,17 @@ public actor RecordingSession {
     }
 
     if lastSnapshot.map({ sample.time.timeIntervalSince($0) >= Self.snapshotInterval }) ?? true {
-      lastSnapshot = sample.time
-      snapshots?.yield(LiveSnapshot(
-        time: sample.time, db: sample.db, snoreState: state, isSpeech: isSpeech, eventCount: draft.events.count))
+      publish(time: sample.time, db: sample.db, snoreState: state, isSpeech: isSpeech)
     }
   }
+
+  private func publish(time: Date, db: Float, snoreState: DetectionState, isSpeech: Bool) {
+    lastSnapshot = time
+    snapshots?.yield(LiveSnapshot(
+      time: time, db: db, snoreState: snoreState, isSpeech: isSpeech, eventCount: draft.events.count,
+      melodyPlaying: melodyPlaying))
+  }
+
 
   /// Resumes once the engine has handled everything sent so far and this
   /// session has performed its outputs.
@@ -183,35 +208,56 @@ public actor RecordingSession {
 
   // MARK: - Engine outputs
 
+  /// Performs one batch; returns the engine's feedback (the melody started).
   private func perform(_ batch: DetectionEngine.Batch) async -> [DetectionEngine.Message] {
+    var feedback: [DetectionEngine.Message] = []
     for output in batch.outputs {
       switch output {
       case let .snoreEventStarted(id, _):
         // Without a clip the event is still kept.
         try? await capture.startClip(id: id)
       case let .snoreEventFinalized(event):
-        let clip = await capture.closeClip()
+        let open = await capture.closeClip()
+        let clip = open ?? closedClip
+        closedClip = nil
         draft.events.append(NightEvent(
           id: event.id, start: event.start, duration: event.duration, category: .snoring,
           intensity: event.intensity, averageDB: event.averageDB, peakDB: event.peakDB,
           averageConfidence: event.averageConfidence, bursts: event.bursts, clipFileName: clip))
         if let clip { compress(clip, of: event.id) }
       case .snoreEventDiscarded:
+        // A clip closed for the melody is left for the launch cleanup
+        // (`EnforceStorageLimits` removes files no night refers to).
+        closedClip = nil
         await capture.discardClip()
       case let .speechEventFinalized(event):
         draft.events.append(NightEvent(
           start: event.start, duration: event.duration, category: .sleepTalking,
           intensity: .quiet, averageDB: event.averageDB, peakDB: event.peakDB))
-      case .melodyRequested, .melodyStopRequested, .eventClipClosed, .snoringResumedAfterMelody, .recordingGap:
-        // The Snore Interrupter comes in F8. No melody plays, so nothing to do
-        // and nothing to report back.
-        break
+      case .melodyRequested:
+        if let interrupter, await interrupter.play() {
+          melodyPlaying = true
+          feedback.append(.melodyDidStart(at: batch.time))
+          publish(time: batch.time, db: AudioLevels.floorDB, snoreState: .none, isSpeech: false)
+        }
+      case .melodyStopRequested:
+        await interrupter?.stop()
+      case .eventClipClosed:
+        if let clip = await capture.closeClip() { closedClip = clip }
+      case .snoringResumedAfterMelody:
+        draft.recordingGaps = draft.recordingGaps.markingLastSnoringResumed()
+      case let .recordingGap(start, duration):
+        // The melody stopped: samples are live again, and the screen hears
+        // it now rather than at the next sample.
+        draft.recordingGaps = draft.recordingGaps.adding(start: start, duration: duration, nightStart: draft.start)
+        melodyPlaying = false
+        publish(time: batch.time, db: AudioLevels.floorDB, snoreState: .none, isSpeech: false)
       }
     }
     if batch.outputs.contains(where: \.savesAnEvent) {
       await checkpoint(at: batch.time)
     }
-    return []
+    return feedback
   }
 
   /// Keeps the night so far, ending at `time`.

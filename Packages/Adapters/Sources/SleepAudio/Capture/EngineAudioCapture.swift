@@ -24,6 +24,9 @@ final class EngineAudioCapture: AudioCapturePort {
   private var warmEngine: AVAudioEngine?
   private var rawAudioFileName: String?
   private var observers: [NSObjectProtocol] = []
+  /// Paused for the Snore Interrupter's melody: nothing restarts the engine
+  /// until `resume`.
+  private var isPaused = false
 
   init(clipsDirectory: URL) {
     self.clipsDirectory = clipsDirectory
@@ -113,8 +116,21 @@ final class EngineAudioCapture: AudioCapturePort {
     try? FileManager.default.removeItem(at: url)
   }
 
+  func pause() {
+    guard isListening, !isPaused else { return }
+    isPaused = true
+    stopEngine()
+  }
+
+  func resume() {
+    guard isPaused else { return }
+    isPaused = false
+    resumeIfNeeded()
+  }
+
   func stop() {
     guard isListening else { return }
+    isPaused = false
     // An open clip stays open for the final flush; it gets no more buffers.
     stopEngine()
     observers.forEach(NotificationCenter.default.removeObserver)
@@ -198,7 +214,7 @@ final class EngineAudioCapture: AudioCapturePort {
   /// Back to listening after an interruption or a route change, when the
   /// engine isn't running.
   private func resumeIfNeeded() {
-    guard isListening, !isRunning else { return }
+    guard isListening, !isPaused, !isRunning else { return }
     stopEngine()
     do {
       try activateSession()

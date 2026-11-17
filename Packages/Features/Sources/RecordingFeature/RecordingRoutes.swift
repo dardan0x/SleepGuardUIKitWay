@@ -14,19 +14,23 @@ public struct RecordingPrestartDependencies {
   public var loadPreferences: @MainActor () async -> AppPreferences
   /// Keeps a new delay for next time.
   public var saveDelay: @MainActor (Int) -> Void
+  /// The brand has the Snore Interrupter: its row shows.
+  public var hasInterrupter: Bool
 
   public init(
     compactHeight: Bool,
     requestPermission: @escaping @MainActor () async -> Bool,
     isCharging: @escaping @MainActor () -> Bool,
     loadPreferences: @escaping @MainActor () async -> AppPreferences,
-    saveDelay: @escaping @MainActor (Int) -> Void)
+    saveDelay: @escaping @MainActor (Int) -> Void,
+    hasInterrupter: Bool)
   {
     self.compactHeight = compactHeight
     self.requestPermission = requestPermission
     self.isCharging = isCharging
     self.loadPreferences = loadPreferences
     self.saveDelay = saveDelay
+    self.hasInterrupter = hasInterrupter
   }
 }
 
@@ -37,15 +41,30 @@ public struct RecordingPrestartRoutes {
   public var cancel: @MainActor () -> Void
   /// The app's page in Settings, to allow the microphone.
   public var openSettings: @MainActor () -> Void
+  /// The Snore Interrupter's settings; `saved` with the new choice.
+  public var openInterrupter: @MainActor (_ saved: @escaping @MainActor (SnoreInterrupterChoice) -> Void) -> Void
 
   public init(
     start: @escaping @MainActor (AppPreferences) -> Void,
     cancel: @escaping @MainActor () -> Void,
-    openSettings: @escaping @MainActor () -> Void)
+    openSettings: @escaping @MainActor () -> Void,
+    openInterrupter: @escaping @MainActor (_ saved: @escaping @MainActor (SnoreInterrupterChoice) -> Void) -> Void)
   {
     self.start = start
     self.cancel = cancel
     self.openSettings = openSettings
+    self.openInterrupter = openInterrupter
+  }
+}
+
+/// What the Snore Interrupter plays, and for how long.
+public struct SnoreInterrupterChoice: Equatable, Sendable {
+  public var mode: SnoreInterrupterMode
+  public var melodyID: Int
+
+  public init(mode: SnoreInterrupterMode, melodyID: Int) {
+    self.mode = mode
+    self.melodyID = melodyID
   }
 }
 

@@ -8,7 +8,6 @@ import Testing
 ///
 /// The event cases are SleepGuard's `DetectionCharacterizationTests`, with the
 /// same samples and the same expected lines: same shared rules, same night.
-/// Their melody parts are left out until the Snore Interrupter (F8).
 @MainActor
 struct RecordingSessionTests {
   // MARK: - Snore events (SleepGuard's cases)
@@ -219,6 +218,87 @@ struct RecordingSessionTests {
     #expect(night.events.first?.clipFileName?.hasSuffix(".m4a") == true)
   }
 
+  // MARK: - Snore Interrupter (SleepGuard's cases)
+
+  /// The melody pauses the mic; snoring resumes within the 3 s breathing
+  /// delay, so the first gap counts as snoring and the event spans it.
+  /// Resumed snoring plays the melody again; after the second gap nothing
+  /// resumes, so the event ends at the last snoring sample before it.
+  @Test func melodyGapWithResumedSnoringExtendsTheEvent() async throws {
+    let harness = try await Harness(melody: .pausesMic)
+    await harness.snore(2, db: -35, confidence: 0.6)
+    await harness.silence(5)
+    harness.interrupter?.stop()
+    await harness.silence(1)
+    await harness.snore(2, db: -35, confidence: 0.6)
+    await harness.silence(3)
+    harness.interrupter?.stop()
+    await harness.silence(11)
+    #expect(await harness.summary(gaps: true) == [
+      "snoring light t=0.05 d=8.10 avg=-35.0 peak=-35.0 conf=0.60 bursts=[0.00-0.10, 8.10-8.10]",
+      "gap t=0.15 d=6.85 resumed=true",
+      "gap t=8.15 d=4.85 resumed=false",
+    ])
+    #expect(harness.player.plays.count == 2)
+    #expect(harness.capture.calls.filter { $0 == .pause }.count == 2)
+    #expect(harness.capture.calls.filter { $0 == .resume }.count == 2)
+  }
+
+  /// No snoring within the breathing delay: the event is cut back to before
+  /// the melody (0.10 s, under every minimum) and discarded; the gap stays.
+  @Test func melodyGapWithoutSnoringDiscardsTheEvent() async throws {
+    let harness = try await Harness(melody: .pausesMic)
+    await harness.snore(2, db: -35, confidence: 0.6)
+    await harness.silence(5)
+    harness.interrupter?.stop()
+    await harness.silence(11)
+    #expect(await harness.summary(gaps: true) == ["gap t=0.15 d=6.85 resumed=false"])
+  }
+
+  /// With the mic still live, sustained silence stops the melody, but only
+  /// after its 4 s minimum play time.
+  @Test func sustainedSilenceStopsTheMelodyAfterItsMinimumPlayTime() async throws {
+    let harness = try await Harness(melody: .keepsMicLive)
+    await harness.snore(1, db: -35, confidence: 0.6)
+    await harness.silence(6)
+    #expect(await harness.summary(gaps: true) == ["gap t=0.15 d=4.00 resumed=false"])
+    #expect(harness.player.stops == 1)
+  }
+
+  /// The melody's own end (its length) records the gap the same way, and the
+  /// night's end stops a melody still playing.
+  @Test func theMelodyEndingByItselfOrWithTheNightLeavesAGap() async throws {
+    let harness = try await Harness(melody: .pausesMic)
+    await harness.snore(1, db: -35, confidence: 0.6)
+    await harness.silence(2)
+    harness.player.finish()
+    await harness.silence(11)
+    await harness.snore(1, db: -35, confidence: 0.6)
+    let draft = await harness.stop()
+    #expect(draft.recordingGaps.map(\.startOffset).count == 2)
+    #expect(harness.capture.isPaused == false)
+  }
+
+  @Test func theSnapshotSaysWhileTheMelodyPlays() async throws {
+    let harness = try await Harness(melody: .pausesMic)
+    await harness.snore(1, db: -35, confidence: 0.6)
+    #expect(harness.latest?.melodyPlaying == true)
+    harness.interrupter?.stop()
+    await harness.silence(0.05)
+    #expect(harness.latest?.melodyPlaying == false)
+  }
+
+  @Test func theRawLogNamesTheMode() async throws {
+    let rawLog = FakeRawLogWriter()
+    let capture = FakeAudioCapture()
+    let interrupter = SnoreInterrupter(
+      mode: .thirtySeconds, melodyID: 6, player: FakeMelodyPlayer(), store: FakeMelodyStore(), capture: capture)
+    let session = RecordingSession(
+      capture: capture, settings: .init(preserveRawAudio: true), rawLog: rawLog, interrupter: interrupter)
+    _ = try await session.start()
+    #expect(await rawLog.metadata?.snoreInterrupterMode == "thirtySeconds")
+  }
+
   @Test func aStartFailureIsThrown() async throws {
     let capture = FakeAudioCapture()
     capture.startError = .noMicrophone
@@ -234,20 +314,52 @@ struct RecordingSessionTests {
 /// real spacing allows.
 @MainActor
 final class Harness {
-  let capture = FakeAudioCapture()
+  /// The Snore Interrupter, as SleepGuard's harness scripts it: the real one
+  /// pauses the microphone; `keepsMicLive` sends samples through anyway.
+  enum Melody { case pausesMic, keepsMicLive }
+
+  let capture: FakeAudioCapture
+  let player: FakeMelodyPlayer
   let session: RecordingSession
-  private var tick = 0
+  let interrupter: SnoreInterrupter?
+  private(set) var latest: LiveSnapshot?
+  private let clock: TickClock
+  private let micStaysLive: Bool
   private var stopped: RecordingDraft?
+  private var snapshotsTask: Task<Void, Never>?
 
   init(
     sensitivity: DetectionSensitivity = .medium,
     sleepTalking: Bool = false,
-    checkpoints: FakeRecordingCheckpointStore? = nil) async throws
+    checkpoints: FakeRecordingCheckpointStore? = nil,
+    melody: Melody? = nil) async throws
   {
+    micStaysLive = melody == .keepsMicLive
+    let capture = FakeAudioCapture()
+    let player = FakeMelodyPlayer()
+    let clock = TickClock()
+    self.capture = capture
+    self.player = player
+    self.clock = clock
+    interrupter = melody.map { _ in
+      SnoreInterrupter(
+        mode: .always, melodyID: 6, player: player, store: FakeMelodyStore(), capture: capture,
+        now: { Sample.at(Double(clock.tick) * 0.05) })
+    }
     session = RecordingSession(
       capture: capture, settings: .init(sensitivity: sensitivity, detectSleepTalking: sleepTalking),
-      checkpoints: checkpoints, start: Sample.start)
-    _ = try await session.start()
+      checkpoints: checkpoints, interrupter: interrupter, start: Sample.start)
+    let snapshots = try await session.start()
+    snapshotsTask = Task { [weak self] in
+      for await snapshot in snapshots {
+        self?.latest = snapshot
+      }
+    }
+  }
+
+  private var tick: Int {
+    get { clock.tick }
+    set { clock.tick = newValue }
   }
 
   static func sample(at seconds: TimeInterval, db: Float, snore: Float, speech: Float) -> CaptureSample {
@@ -277,24 +389,38 @@ final class Harness {
   private func feed(_ seconds: Double, db: Float, snore: Float, speech: Float) async {
     for _ in 0..<Int((seconds / 0.05).rounded()) {
       tick += 1
+      // A paused microphone sends nothing (SleepGuard dropped these samples).
+      guard micStaysLive || !capture.isPaused else { continue }
       await session.ingest(Self.sample(at: Double(tick) * 0.05, db: db, snore: snore, speech: speech))
       await session.waitUntilProcessed()
+      await Task.yield()
     }
   }
 
-  /// One line per event in time order, in SleepGuard's harness format.
-  func summary() async -> [String] {
+  /// One line per event in time order, in SleepGuard's harness format; then
+  /// one per gap with `gaps`.
+  func summary(gaps: Bool = false) async -> [String] {
     let draft: RecordingDraft = if let stopped { stopped } else { await session.draft }
     let events = draft.events.sorted { $0.start < $1.start }
-    return events.map { event in
+    let eventLines = events.map { event in
       let bursts = event.bursts.map { "\(f($0.startOffset))-\(f($0.endOffset))" }.joined(separator: ", ")
       return "\(event.category.rawValue) \(event.intensity.rawValue) t=\(f(event.start.timeIntervalSince(Sample.start))) "
         + "d=\(f(event.duration)) avg=\(f(event.averageDB, 1)) peak=\(f(event.peakDB, 1)) "
         + "conf=\(f(event.averageConfidence)) bursts=[\(bursts)]"
+    }
+    guard gaps else { return eventLines }
+    return eventLines + draft.recordingGaps.map {
+      "gap t=\(f($0.startOffset)) d=\(f($0.duration)) resumed=\($0.snoringResumed)"
     }
   }
 
   private func f(_ value: Double, _ digits: Int = 2) -> String {
     String(format: "%.\(digits)f", value)
   }
+}
+
+/// The harness's sample clock, read by the interrupter when a melody stops.
+@MainActor
+final class TickClock {
+  var tick = 0
 }

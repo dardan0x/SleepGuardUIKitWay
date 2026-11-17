@@ -10,7 +10,8 @@ nonisolated struct NocturneBrand: BrandComposition {
     theme: .nocturne,
     tabs: [.history, .statistics, .settings, .learn],
     health: SleepHealth.makeHealthAccess(),
-    appStoreID: nil)
+    appStoreID: nil,
+    snoreInterrupter: true)
 }
 
 let appBrand = NocturneBrand()

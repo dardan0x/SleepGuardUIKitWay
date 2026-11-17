@@ -3,6 +3,7 @@ import SleepAudio
 import SleepDomain
 import SleepGuardDesignKit
 import SleepPersistence
+import UIKit
 
 /// The shell's registrations. Everything derives from `brand`, the one value
 /// supplied from outside (`AppShell.bootstrap(brand:)`). Only `AppShell`
@@ -81,6 +82,32 @@ extension Container {
   /// The brand's Apple Health, or `nil` (Lite doesn't link HealthKit).
   var healthAccess: Factory<(any HealthAccess)?> {
     self { self.brand().configuration.health }
+  }
+
+  /// Makes the Snore Interrupter's sounds, or `nil` in a brand without it.
+  /// A maker, because the store is main-actor (it reads its list when made).
+  var makeMelodyStore: Factory<(@MainActor @Sendable () -> any MelodyStore)?> {
+    self {
+      guard self.brand().configuration.snoreInterrupter else { return nil }
+      let directory = self.storageLocation().melodiesDirectory
+      return { SleepAudio.makeMelodyStore(directory: directory) }
+    }
+  }
+
+  /// The interrupter's player (`preview: false`, a new one per night) or the
+  /// picker's preview player. A maker, as for `makeClipPlayer`.
+  var makeMelodyPlayer: Factory<@MainActor @Sendable (_ preview: Bool) -> any MelodyPlayer> {
+    self {
+      { preview in
+        preview ? SleepAudio.makePreviewPlayer() : SleepAudio.makeMelodyPlayer {
+          UIImpactFeedbackGenerator(style: .medium).impactOccurred()
+        }
+      }
+    }
+  }
+
+  var makeMelodyRecorder: Factory<@MainActor @Sendable () -> any MelodyRecorder> {
+    self { { SleepAudio.makeMelodyRecorder() } }
   }
 
   /// A new writer per night: it holds that night's open file.

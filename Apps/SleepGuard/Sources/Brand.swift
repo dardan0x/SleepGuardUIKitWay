@@ -9,7 +9,8 @@ nonisolated struct SleepGuardBrand: BrandComposition {
     theme: .sleepGuard,
     tabs: [.statistics, .history, .settings, .learn],
     health: SleepHealth.makeHealthAccess(),
-    appStoreID: nil)
+    appStoreID: nil,
+    snoreInterrupter: true)
 }
 
 let appBrand = SleepGuardBrand()
