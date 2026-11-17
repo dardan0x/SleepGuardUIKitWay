@@ -10,7 +10,9 @@ nonisolated struct SleepGuardBrand: BrandComposition {
     tabs: [.statistics, .history, .settings, .learn],
     health: SleepHealth.makeHealthAccess(),
     appStoreID: nil,
-    snoreInterrupter: true)
+    snoreInterrupter: true,
+    // No Learn page yet: the tab shows "No content available".
+    learnURL: nil)
 }
 
 let appBrand = SleepGuardBrand()

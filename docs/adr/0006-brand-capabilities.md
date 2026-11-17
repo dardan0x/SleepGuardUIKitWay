@@ -25,6 +25,7 @@ Settings is the first screen whose rows differ by brand. SleepGuard and Nocturne
 - The cost: `BrandConfiguration` imports `SleepDomain` for the port type. That's the domain, which the shell already depends on.
 - F8-T3 (sleep stages): `HealthAccess` refines `SleepStagePort`, so a brand's Health port also reads the stages; the container uses it, or `NoSleepStages` when the brand has no Health (Lite). Stages are read whenever the brand has Health; Health's own permission is the gate.
 - F8-T4 (Snore Interrupter): `snoreInterrupter: Bool`, a value, because every brand links AVFoundation; Lite says `false`. The container makes the melody store only when it is on, and the composer turns it into the prestart's `hasInterrupter` and the night's `SnoreInterrupter`.
+- F8-T5 (Learn): whether a brand has the tab is its `tabs` list (Lite leaves `.learn` out); the page is `learnURL: URL?`, a value. SleepGuard's comes from Remote Config, which this app doesn't have; `nil` shows the shared "No content available".
 
 ## Alternatives
 

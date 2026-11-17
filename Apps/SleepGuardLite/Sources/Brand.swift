@@ -11,7 +11,8 @@ nonisolated struct SleepGuardLiteBrand: BrandComposition {
     tabs: [.statistics, .history, .settings],
     health: nil,
     appStoreID: nil,
-    snoreInterrupter: false)
+    snoreInterrupter: false,
+    learnURL: nil)
 }
 
 let appBrand = SleepGuardLiteBrand()

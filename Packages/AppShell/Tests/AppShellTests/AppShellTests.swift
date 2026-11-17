@@ -17,6 +17,8 @@ struct MainTabCoordinatorTests {
     #expect(coordinator.flows.first is HistoryFlow)
     #expect(coordinator.flows[1] is StatisticsFlow)
     #expect(coordinator.flows[2] is SettingsFlow)
+    let withLearn = MainTabCoordinator(container: container(TestBrand(tabs: [.statistics, .learn])))
+    #expect(withLearn.flows.last is LearnFlow)
   }
 
   @Test func everyTabStartsOnItsOwnHostedScreenWithItsTitle() throws {
@@ -56,53 +58,5 @@ struct MainTabCoordinatorTests {
 
   private func container(_ brand: TestBrand) -> Container {
     Container.test(brand: brand)
-  }
-}
-
-struct PlaceholderFlowTests {
-  @Test func startSetsTheRootScreen() throws {
-    let spy = NavigatorSpy()
-    let flow = PlaceholderFlow(tab: .history, navigator: spy, composer: PlaceholderScreenComposer(theme: .sleepGuard))
-    flow.start()
-    guard case let .setRoot(root) = try #require(spy.calls.first) else {
-      Issue.record("expected setRoot, got \(spy.calls)")
-      return
-    }
-    #expect(root.navigationItem.title == Strings.tabSessions)
-  }
-
-  /// A route closure from the screen becomes a navigator call: the screen asks,
-  /// the flow decides how.
-  @Test func continueRoutePresentsASheetAndCloseDismissesIt() throws {
-    let spy = NavigatorSpy()
-    let flow = PlaceholderFlow(tab: .history, navigator: spy, composer: PlaceholderScreenComposer(theme: .sleepGuard))
-    flow.start()
-    let root = try #require(rootScreen(spy))
-
-    root.rootView.content.routes.showDetails()
-    guard case let .present(sheet, style) = spy.calls.last else {
-      Issue.record("expected present, got \(spy.calls)")
-      return
-    }
-    #expect(style == .sheet(detents: [.medium, .large]))
-
-    let presented = try #require(sheet as? HostingScreen<PlaceholderScreen>)
-    presented.rootView.content.routes.close?()
-    #expect(spy.calls.last == .dismiss)
-  }
-
-  @Test func theFlowIsNotRetainedByItsScreens() throws {
-    let spy = NavigatorSpy()
-    var flow: PlaceholderFlow? = PlaceholderFlow(
-      tab: .history, navigator: spy, composer: PlaceholderScreenComposer(theme: .sleepGuard))
-    flow?.start()
-    weak var weakFlow = flow
-    flow = nil
-    #expect(weakFlow == nil)
-  }
-
-  private func rootScreen(_ spy: NavigatorSpy) -> HostingScreen<PlaceholderScreen>? {
-    guard case let .setRoot(root) = spy.calls.first else { return nil }
-    return root as? HostingScreen<PlaceholderScreen>
   }
 }

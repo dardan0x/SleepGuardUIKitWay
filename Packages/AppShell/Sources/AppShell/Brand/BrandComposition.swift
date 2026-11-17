@@ -1,3 +1,4 @@
+import Foundation
 import SleepDomain
 import SleepGuardDesignKit
 
@@ -29,15 +30,22 @@ public nonisolated struct BrandConfiguration: Sendable {
   /// prestart row and bedside controls. Every brand links the audio it
   /// needs, so this is a value, not a port.
   public var snoreInterrupter: Bool
+  /// The page the Learn tab shows; `nil`: "No content available". Only read
+  /// when `tabs` has `.learn`.
+  public var learnURL: URL?
 
   /// Every value is stated by each brand: a capability can't be forgotten.
-  public init(theme: Theme, tabs: [AppTab], health: (any HealthAccess)?, appStoreID: String?, snoreInterrupter: Bool) {
+  public init(
+    theme: Theme, tabs: [AppTab], health: (any HealthAccess)?, appStoreID: String?, snoreInterrupter: Bool,
+    learnURL: URL?)
+  {
     precondition(!tabs.isEmpty, "A brand needs at least one tab")
     self.theme = theme
     self.tabs = tabs
     self.health = health
     self.appStoreID = appStoreID
     self.snoreInterrupter = snoreInterrupter
+    self.learnURL = learnURL
   }
 }
 

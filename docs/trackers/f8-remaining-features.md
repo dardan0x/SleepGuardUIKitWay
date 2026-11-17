@@ -24,7 +24,7 @@ The rest of SleepGuard's product, three parts of it switched per brand.
 | F8-T2 | Onboarding flow | UI / Shell | Done | F1 | All | `OnboardingFlow`; shown once |
 | F8-T3 | Sleep stages from HealthKit | Adapter / UI | Done | F3 | SleepGuard, Nocturne | Lite does not link `SleepHealth`; stage UI absent there |
 | F8-T4 | Snore Interrupter: melody playback, custom melody recording; prestart row, bedside overlay, melody gaps in detection | Adapter / UI | Done | F7 | SleepGuard, Nocturne | Capability off in Lite |
-| F8-T5 | Learn tab | UI / Shell | Backlog | F1 | SleepGuard, Nocturne | Tab absent in Lite |
+| F8-T5 | Learn tab | UI / Shell | Done | F1 | SleepGuard, Nocturne | Tab absent in Lite |
 | F8-T6 | Personalization: profile, morning briefing; share and PDF export | UI / Domain | Backlog | F4 | All | Briefing engine returns values; the view maps them to strings |
 
 ## F8-T1 — Settings (done 2026-11-17, one branch at the owner's choice)
@@ -64,6 +64,14 @@ The rest of SleepGuard's product, three parts of it switched per brand.
 - [x] `OnboardingFlow`: finishing keeps `hasCompletedOnboarding` (SleepGuard's key) and turns on Health sync when allowed here; "Start recording" opens a night over the tabs
 - [x] `AppCoordinator`: the theme's background until the preferences are read, then the onboarding or the tabs; the unfinished-night offer and Debug sample nights wait for the tabs
 - [ ] By hand: the real microphone and Health prompts on a fresh install
+
+## F8-T5 — Learn tab (done 2026-11-17)
+
+- [x] Shared (0.26.0): content kit `LearnContent` (title row, the page in a web view, or "No content available"); the page loads when its URL changes, not on every update (a SleepGuard flaw); `data-open-external` links open through `openURL`
+- [x] SleepGuard hosts the same content (its F26-T5) and its tab order no longer shows Learn when `feature_learn` is off, or twice when it's on
+- [x] `LearnFeature` (`LearnScreen`), `LearnFlow`; `BrandConfiguration.learnURL` (decided with the user: a brand value, as there's no Remote Config here). SleepGuard and Nocturne pass `nil` until a page exists; Lite has no tab
+- [x] The F1 placeholder flow and screen are gone (nothing else used them)
+- [ ] With a real URL: the page loads, an external link opens in Safari
 
 ## Notes
 

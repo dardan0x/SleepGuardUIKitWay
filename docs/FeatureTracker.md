@@ -17,12 +17,12 @@ Last updated: 2026-11-14
 | Blocked | 0 |
 | — | — |
 | Total Tasks | 62 |
-| Tasks Done | 56 |
+| Tasks Done | 57 |
 | Tasks In Progress | 0 |
 | Tasks Blocked | 0 |
-| Tasks Backlog | 6 |
+| Tasks Backlog | 5 |
 | — | — |
-| **Progress** | **90%** |
+| **Progress** | **92%** |
 
 ## Features
 
@@ -37,7 +37,7 @@ Last updated: 2026-11-14
 | F6 | Design kit adoption in SleepGuard | P2 | Done (bg-card open) | 4/4 | ██████████ 100% | [tracker](trackers/f6-design-kit-adoption.md) |
 | F7 | Recording and detection | P1 | Done (device check open) | 7/7 | ██████████ 100% | [tracker](trackers/f7-recording-detection.md) |
 | F10 | Shared screen content | P1 | Done | 7/7 | ██████████ 100% | [tracker](trackers/f10-shared-screen-content.md) |
-| F8 | Remaining features | P2 | In Progress | 4/6 | ███████░░░ 67% | [tracker](trackers/f8-remaining-features.md) |
+| F8 | Remaining features | P2 | In Progress | 5/6 | ████████░░ 83% | [tracker](trackers/f8-remaining-features.md) |
 | F9 | Showcase polish | P2 | Backlog | 0/4 | ░░░░░░░░░░ 0% | [tracker](trackers/f9-showcase-polish.md) |
 
 ## Currently Active
@@ -47,7 +47,7 @@ Last updated: 2026-11-14
 
 ## Up Next
 
-1. **F8-T5** — Learn tab. Then T6 (personalization).
+1. **F8-T6** — Personalization: profile, morning briefing; share and PDF export.
 2. **F0** — Shared CI also builds SleepGuardUIKitWay (the open F0-T5 item).
 
 ## Blockers
@@ -60,6 +60,7 @@ Last updated: 2026-11-14
 
 | Date | Task | Event | Notes |
 |------|------|-------|-------|
+| 2026-11-17 | F8-T5 | Completed | Learn tab: the shared Learn page or its empty state (0.26.0); `BrandConfiguration.learnURL` (nil until a page exists); placeholder flow removed. Branch `feature/f8/t5-learn` |
 | 2026-11-17 | F8-T2 | Completed | Onboarding on first launch (shared pages and page rules, 0.25.0): microphone and, in Health brands, Apple Health; finishing keeps the flag and can start a night; the launch waits for the preferences, so no tabs flash first. Branch `feature/f8/t2-onboarding` |
 | 2026-11-17 | F8-T4 | Completed | Snore Interrupter: melody on detected snoring with the microphone paused and the gap recorded, prestart row and settings sheet, picker with preview, custom recordings, bedside note and overlay; off in Lite (`BrandConfiguration.snoreInterrupter`). Shared rules, sounds and content (0.24.0). Branch `feature/f8/t4-snore-interrupter` |
 | 2026-11-17 | F8-T3 | Completed | Sleep stages from Apple Health on the night detail and the dashboard, with the info sheet; `HealthAccess` refines `SleepStagePort`, read whenever the brand has Health. Shared rules, components and content (0.23.0). Branch `feature/f8/t3-sleep-stages` |
