@@ -36,7 +36,7 @@ Vertical slices: the architecture and all three brands first, then one complete 
 |---|---------|--------|-------|-------|
 | F10 | Shared screen content | Done | 7/7 | Each screen's layout once, in the shared `SleepGuardContentKit`; screens stay per app (ADR 0005). Before F8 |
 | F8 | Remaining features | Done | 6/6 | Settings, onboarding, sleep stages, Snore Interrupter, Learn, personalization (three of them brand-gated) |
-| F9 | Showcase polish | In Progress | 3/4 | Architecture doc with module graph, "adding a brand" walkthrough, comparison with SleepGuard |
+| F9 | Showcase polish | In Progress | 3/4 | Architecture doc with module graph, "adding a brand" walkthrough (Dawn, a fourth brand), comparison with SleepGuard, README. The brands' screenshots wait for the UI polish |
 
 ## Dependencies between features
 
@@ -50,6 +50,10 @@ F0 → F1 → F2 → F3 → F5 → F7 → F10 → F8 → F9
 
 Widgets, Apple Watch, Firebase (replaced by a static per-brand configuration adapter), migrating data from SleepGuard's store.
 
-## Known issues
+## Still open
 
-- None yet.
+- **Screenshots** of the brands in the README (F9-T4), after the UI polish.
+- **Device checks** (F7, F8): a real night on a phone, Apple Health with a Watch night, the start delay with the screen locked, a Snore Interrupter melody, the onboarding's permission prompts, a briefing and a PDF. Listed in the F7 and F8 trackers.
+- **Learn page**: SleepGuard and Nocturne have no `learnURL` yet, so the tab shows "No content available".
+- **Dawn**: kept as a fourth brand or only as the example in `docs/ADDING_A_BRAND.md` (it costs a target and a CI build).
+- **F0**: the shared repo's CI doesn't build this app yet.

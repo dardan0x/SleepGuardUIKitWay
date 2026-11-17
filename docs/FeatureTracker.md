@@ -2,7 +2,7 @@
 
 > Updated by the AI after every task. This is the source of truth for project state.
 
-Last updated: 2026-11-14
+Last updated: 2026-11-18
 
 ---
 
@@ -18,9 +18,9 @@ Last updated: 2026-11-14
 | — | — |
 | Total Tasks | 62 |
 | Tasks Done | 61 |
-| Tasks In Progress | 0 |
+| Tasks In Progress | 1 |
 | Tasks Blocked | 0 |
-| Tasks Backlog | 1 |
+| Tasks Backlog | 0 |
 | — | — |
 | **Progress** | **98%** |
 
@@ -38,16 +38,17 @@ Last updated: 2026-11-14
 | F7 | Recording and detection | P1 | Done (device check open) | 7/7 | ██████████ 100% | [tracker](trackers/f7-recording-detection.md) |
 | F10 | Shared screen content | P1 | Done | 7/7 | ██████████ 100% | [tracker](trackers/f10-shared-screen-content.md) |
 | F8 | Remaining features | P2 | Done (device checks open) | 6/6 | ██████████ 100% | [tracker](trackers/f8-remaining-features.md) |
-| F9 | Showcase polish | P2 | In Progress | 3/4 | ████████░░ 75% | [tracker](trackers/f9-showcase-polish.md) |
+| F9 | Showcase polish | P2 | In Progress (T4: screenshots after the UI polish) | 3/4 | ████████░░ 75% | [tracker](trackers/f9-showcase-polish.md) |
 
 ## Currently Active
 
-- **F8-T1 / F8-T3 / F8-T4 device checks** — Apple Health permission and writing, real sleep stages from an Apple Watch night, the start delay's notification and warm-up with the screen locked, raw audio on a real night, a Snore Interrupter melody with the microphone resuming after it, the onboarding's permission prompts on a fresh install.
+- **F9-T4** — README written; the brands' screenshots wait for the UI polish.
+- **F8 device checks** — Apple Health permission and writing, real sleep stages from an Apple Watch night, the start delay's notification and warm-up with the screen locked, raw audio on a real night, a Snore Interrupter melody with the microphone resuming after it, the onboarding's permission prompts on a fresh install, a morning briefing and a PDF report.
 - **F7 device check** — one short night on a phone (Debug saves after 2 min): microphone, locked screen, clips, recovery after a kill.
 
 ## Up Next
 
-1. **F9-T4** — README: the brands' screenshots, how to run, where to look first.
+1. **UI polish**, then the brands' screenshots in the README (finishes F9-T4).
 2. **F0** — Shared CI also builds SleepGuardUIKitWay (the open F0-T5 item).
 
 ## Blockers
@@ -60,6 +61,7 @@ Last updated: 2026-11-14
 
 | Date | Task | Event | Notes |
 |------|------|-------|-------|
+| 2026-11-18 | F9-T4 | In progress | README rewritten (brands, how to run, where to look first, layout, status); screenshots deferred until the UI polish. Branch `feature/f9/t4-readme` |
 | 2026-11-17 | F9-T3 | Completed | `docs/COMPARISON.md`: a night's detail in both apps, concern by concern, sizes and tests measured; honest about where SleepGuard's shape is simpler. Branch `feature/f9/t3-comparison` |
 | 2026-11-17 | F9-T2 | Completed | Dawn, a fourth brand, added as the worked example in `docs/ADDING_A_BRAND.md`: one folder and one brand-list entry; the test script and CI now find brands by folder. Branch `feature/f9/t2-adding-a-brand` |
 | 2026-11-17 | F9-T1 | Completed | `docs/ARCHITECTURE.md`, checked against the code: module graph, layers with sizes, a screen end to end, brands, shared repo, recording, rules and their checks, tests, ADRs. Branch `feature/f9/t1-architecture-doc` |
