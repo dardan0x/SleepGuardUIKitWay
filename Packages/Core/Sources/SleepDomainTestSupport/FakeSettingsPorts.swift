@@ -49,9 +49,15 @@ public actor FakeHealthAccess: HealthAccess {
   public private(set) var saved: [Night.ID] = []
   public private(set) var requests = 0
   private let granted: Bool
+  private let stages: [SleepStageSegment]
 
-  public init(granted: Bool = true) {
+  public init(granted: Bool = true, stages: [SleepStageSegment] = []) {
     self.granted = granted
+    self.stages = stages
+  }
+
+  public func stages(from _: Date, to _: Date) async throws -> [SleepStageSegment] {
+    stages
   }
 
   public func requestAuthorization() async -> Bool {

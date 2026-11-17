@@ -42,8 +42,12 @@ extension Container {
     self { SleepPersistence.makeSessionFileStore(directory: self.storageLocation().clipsDirectory) }.singleton
   }
 
+  /// The brand's Apple Health reads the stages; a brand without it has none.
   var sleepStagePort: Factory<any SleepStagePort> {
-    self { NoSleepStages() }.singleton
+    self {
+      guard let health = self.healthAccess() else { return NoSleepStages() as any SleepStagePort }
+      return health
+    }.singleton
   }
 
   var deleteSession: Factory<DeleteSession> {

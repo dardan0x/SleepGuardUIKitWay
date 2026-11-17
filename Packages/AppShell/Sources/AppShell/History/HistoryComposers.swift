@@ -72,6 +72,10 @@ struct SessionDetailComposer {
     return navigation
   }
 
+  func makeStagesInfo(_ stages: SleepStageBreakdown, onClose: @escaping @MainActor () -> Void) -> UIViewController {
+    HostingScreen(rootView: SleepStagesInfoScreen(breakdown: stages, close: onClose), theme: container.theme())
+  }
+
   static func playerTitle(for category: SoundCategory) -> String {
     switch category {
     case .snoring: Strings.eventPlayerNavigationTitle

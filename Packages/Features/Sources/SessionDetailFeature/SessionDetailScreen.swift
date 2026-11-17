@@ -20,18 +20,22 @@ public struct SessionDetailRoutes {
   public var showAllEvents: @MainActor ([EventListRow], [NightEvent]) -> Void
   /// Play: the events to play in order, starting with the given one.
   public var playEvents: @MainActor ([NightEvent], NightEvent.ID) -> Void
+  /// The info button on the sleep stages: the stages sheet.
+  public var showStagesInfo: @MainActor (SleepStageBreakdown) -> Void
 
   public init(
     showAllEvents: @escaping @MainActor ([EventListRow], [NightEvent]) -> Void,
-    playEvents: @escaping @MainActor ([NightEvent], NightEvent.ID) -> Void)
+    playEvents: @escaping @MainActor ([NightEvent], NightEvent.ID) -> Void,
+    showStagesInfo: @escaping @MainActor (SleepStageBreakdown) -> Void)
   {
     self.showAllEvents = showAllEvents
     self.playEvents = playEvents
+    self.showStagesInfo = showStagesInfo
   }
 }
 
 /// One night: loads it and hosts the shared `NightDetailContent` (score,
-/// stats, timeline, events with a filter; SleepCore's `EventFilter` and
+/// stats, sleep stages when there are any, timeline, events with a filter; SleepCore's `EventFilter` and
 /// `EventListRow`). The title and the delete button belong to the navigation
 /// bar, owned by the shell.
 public struct SessionDetailScreen: View {
@@ -56,7 +60,15 @@ public struct SessionDetailScreen: View {
           NightDetailContent(
             night: night, summary: detail.summary, filters: EventFilter.options(for: night.events), filter: $filter,
             onPlay: { row in routes.playEvents(row.playback(in: night.events), row.id) },
-            onShowAll: { rows in routes.showAllEvents(rows, night.events) })
+            onShowAll: { rows in routes.showAllEvents(rows, night.events) },
+            stages: {
+              if let stages = SleepStageBreakdown(segments: night.sleepStages) {
+                SleepStagesCard(breakdown: stages, start: night.start, duration: night.duration) {
+                  routes.showStagesInfo(stages)
+                }
+              }
+            },
+            footer: { EmptyView() })
         }
       case .error:
         SessionDetailErrorView { viewState = .loading }
