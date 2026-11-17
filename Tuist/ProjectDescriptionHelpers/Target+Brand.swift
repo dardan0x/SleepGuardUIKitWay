@@ -10,7 +10,7 @@ public extension Target {
       product: .app,
       bundleId: brand.bundleId,
       deploymentTargets: .iOS("17.0"),
-      infoPlist: .extendingDefault(with: [
+      infoPlist: .extendingDefault(with: healthUsage(brand).merging([
         "CFBundleDisplayName": .string(brand.displayName),
         "CFBundleShortVersionString": "0.1.0",
         "CFBundleVersion": "1",
@@ -34,7 +34,7 @@ public extension Target {
         "UIBackgroundModes": ["audio"],
         "NSMicrophoneUsageDescription": .string(
           "\(brand.displayName) uses the microphone to detect snoring during sleep sessions. Audio is analyzed locally on your device."),
-      ]),
+      ]) { $1 }),
       sources: ["Apps/Shared/Sources/**", "Apps/\(brand.name)/Sources/**"],
       resources: ["Apps/\(brand.name)/Resources/**"],
       entitlements: .file(path: "Apps/\(brand.name)/\(brand.name).entitlements"),
@@ -72,4 +72,16 @@ public extension Target {
         "SWIFT_DEFAULT_ACTOR_ISOLATION": "MainActor",
       ]))
   }
+}
+
+/// Apple Health's permission texts, for brands that link HealthKit (Settings'
+/// "Sync to Apple Health" writes each night; sleep stages are read in F8-T3).
+private func healthUsage(_ brand: Brand) -> [String: Plist.Value] {
+  guard brand.usesHealthKit else { return [:] }
+  return [
+    "NSHealthShareUsageDescription": .string(
+      "\(brand.displayName) reads your sleep stages from Apple Health to show them beside your snoring."),
+    "NSHealthUpdateUsageDescription": .string(
+      "\(brand.displayName) saves each recorded night to Apple Health as time asleep."),
+  ]
 }

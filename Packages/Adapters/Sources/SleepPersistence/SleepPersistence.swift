@@ -14,6 +14,21 @@ public enum SleepPersistence {
     FileSessionStore(directory: directory)
   }
 
+  /// Settings, in the `UserDefaults` suite (`nil`: the app's standard defaults).
+  public static func makePreferencesStore(suiteName: String? = nil) -> any PreferencesStore {
+    UserDefaultsPreferencesStore(suiteName: suiteName)
+  }
+
+  /// The profile, as the file at `url`.
+  public static func makeProfileStore(url: URL) -> any ProfileStore {
+    FileProfileStore(url: url)
+  }
+
+  /// Raw recordings' sample logs, beside the clips in `directory`.
+  public static func makeRawLogWriter(directory: URL) -> any RawLogWriter {
+    FileRawLogWriter(directory: directory)
+  }
+
   /// The night in progress, as the file at `url`.
   public static func makeCheckpointStore(url: URL) -> any RecordingCheckpointStore {
     FileCheckpointStore(url: url)

@@ -9,4 +9,8 @@ public protocol SessionFileStore: Sendable {
   /// The file to play, or `nil` when it doesn't exist (or the name isn't a
   /// plain file name).
   func url(forFileNamed name: String) -> URL?
+  /// The file's size in bytes, 0 when it doesn't exist.
+  func size(ofFileNamed name: String) async -> Int64
+  /// Every file in the folder: what storage limits and delete all look through.
+  func allFileNames() async -> [String]
 }

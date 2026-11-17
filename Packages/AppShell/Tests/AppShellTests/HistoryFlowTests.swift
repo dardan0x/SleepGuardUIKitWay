@@ -190,6 +190,15 @@ extension Container {
     container.makeClipPlayer.register { { FakeClipPlayer() } }
     container.clipWaveformSource.register { FakeClipWaveformSource() }
     container.checkpointStore.register { FakeRecordingCheckpointStore() }
+    let preferences = FakePreferencesStore()
+    container.preferencesStore.register { preferences }
+    let profiles = FakeProfileStore()
+    container.profileStore.register { profiles }
+    container.makeRawLogWriter.register { { FakeRawLogWriter() } }
+    container.makeAudioCapture.register { { FakeAudioCapture() } }
+    container.deviceServices.register {
+      DeviceServices(keepScreenOn: { _ in }, openSettings: {}, isCharging: { true }, batteryLevel: { nil })
+    }
     return container
   }
 }

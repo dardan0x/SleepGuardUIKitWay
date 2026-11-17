@@ -99,7 +99,7 @@ struct RecordingFlowTests {
   @Test func startingReplacesThePrestartWithTheBedsideClockAndKeepsTheScreenOn() throws {
     let h = makeFlow()
     h.flow.start()
-    try root(h.spy, as: RecordingPrestartScreen.self).rootView.content.routes.start()
+    try root(h.spy, as: RecordingPrestartScreen.self).rootView.content.routes.start(AppPreferences())
     _ = try root(h.spy, as: BedsideClockScreen.self)
     #expect(h.flow.model != nil)
     #expect(h.device.screenOn == [true])
@@ -108,7 +108,7 @@ struct RecordingFlowTests {
   @Test func aFinishedNightShowsItsSummaryAndLetsTheScreenSleep() throws {
     let h = makeFlow()
     h.flow.start()
-    try root(h.spy, as: RecordingPrestartScreen.self).rootView.content.routes.start()
+    try root(h.spy, as: RecordingPrestartScreen.self).rootView.content.routes.start(AppPreferences())
     try root(h.spy, as: BedsideClockScreen.self).rootView.content.routes.finished(night(minutes: 60))
     let summary = try root(h.spy, as: SessionSummaryScreen.self)
     #expect(summary.rootView.content.night.duration == 3600)
@@ -153,7 +153,7 @@ struct RecordingFlowTests {
   @Test func stoppingEarlyDiscardsTheClips() async throws {
     let h = makeFlow()
     h.flow.start()
-    try root(h.spy, as: RecordingPrestartScreen.self).rootView.content.routes.start()
+    try root(h.spy, as: RecordingPrestartScreen.self).rootView.content.routes.start(AppPreferences())
     try root(h.spy, as: BedsideClockScreen.self).rootView.content.routes.discarded(night(minutes: 1, clips: ["a.caf"]))
     await h.flow.finishing?.value
     #expect(await h.files.removed == ["a.caf"])
@@ -164,7 +164,7 @@ struct RecordingFlowTests {
   @Test func aStartThatFailedClosesWithNothingToRemove() async throws {
     let h = makeFlow()
     h.flow.start()
-    try root(h.spy, as: RecordingPrestartScreen.self).rootView.content.routes.start()
+    try root(h.spy, as: RecordingPrestartScreen.self).rootView.content.routes.start(AppPreferences())
     try root(h.spy, as: BedsideClockScreen.self).rootView.content.routes.discarded(nil)
     await h.flow.finishing?.value
     #expect(await h.files.removed.isEmpty)
@@ -203,7 +203,7 @@ struct RecordingFlowTests {
   @Test func lowBatteryStopsTheNightAndShowsItsSummary() async throws {
     let h = makeFlow()
     h.flow.start()
-    try root(h.spy, as: RecordingPrestartScreen.self).rootView.content.routes.start()
+    try root(h.spy, as: RecordingPrestartScreen.self).rootView.content.routes.start(AppPreferences())
     let model = try #require(h.flow.model)
     let running = Task { await model.run() }
     try await waitUntil { model.phase == .recording }
@@ -226,7 +226,7 @@ struct RecordingFlowTests {
     let h = makeFlow()
     h.device.battery = nil
     h.flow.start()
-    try root(h.spy, as: RecordingPrestartScreen.self).rootView.content.routes.start()
+    try root(h.spy, as: RecordingPrestartScreen.self).rootView.content.routes.start(AppPreferences())
     let model = try #require(h.flow.model)
     let running = Task { await model.run() }
     try await waitUntil { model.phase == .recording }
@@ -245,7 +245,7 @@ struct RecordingFlowTests {
 
   private func showSummary(_ night: Night, in h: Harness) throws -> SessionSummaryRoutes {
     h.flow.start()
-    try root(h.spy, as: RecordingPrestartScreen.self).rootView.content.routes.start()
+    try root(h.spy, as: RecordingPrestartScreen.self).rootView.content.routes.start(AppPreferences())
     try root(h.spy, as: BedsideClockScreen.self).rootView.content.routes.finished(night)
     return try root(h.spy, as: SessionSummaryScreen.self).rootView.content.routes
   }

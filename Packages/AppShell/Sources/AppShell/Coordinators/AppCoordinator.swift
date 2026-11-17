@@ -43,12 +43,21 @@ public final class AppCoordinator {
 
   /// A night interrupted by a crash, a kill or a dead battery comes back as
   /// its summary, for Save or Discard (SleepGuard does the same at launch).
+  /// Then the storage limits, as SleepGuard runs them at launch. An offered
+  /// night keeps its checkpoint until saved or discarded, so its files stay.
   private func offerInterruptedNight() {
     let recover = container.recoverInterruptedSession()
+    let enforceLimits = container.enforceStorageLimits()
     recovery = Task { [weak self] in
-      guard let night = await recover() else { return }
-      Log.app.notice("Offering a night interrupted before it was saved")
-      self?.presentRecording { $0.start(recovering: night) }
+      if let night = await recover() {
+        Log.app.notice("Offering a night interrupted before it was saved")
+        self?.presentRecording { $0.start(recovering: night) }
+      }
+      do {
+        try await enforceLimits()
+      } catch {
+        Log.storage.error("Storage limits failed at launch: \(error.localizedDescription, privacy: .public)")
+      }
     }
   }
 

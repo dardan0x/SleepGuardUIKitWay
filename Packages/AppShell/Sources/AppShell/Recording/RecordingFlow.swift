@@ -5,8 +5,8 @@ import SleepCore
 import SleepDomain
 import UIKit
 
-/// A night, start to finish: prestart → bedside clock → summary → saved or
-/// discarded. A full-screen modal owned by `AppCoordinator`, so it works
+/// A night, start to finish: prestart → (start delay countdown) → bedside
+/// clock → summary → saved or discarded. A full-screen modal owned by `AppCoordinator`, so it works
 /// whichever tabs a brand has (SleepGuard's summary only appeared while its
 /// Statistics tab was alive). Each step replaces the last: there is no going
 /// back to a finished step. A night recovered at launch starts at its summary.
@@ -21,6 +21,7 @@ final class RecordingFlow {
   private let composer: RecordingComposer
   private let commit: CommitSession
   private let discardRecording: DiscardRecording
+  private let enforceStorageLimits: EnforceStorageLimits
   private let device: DeviceServices
   private let onClose: @MainActor () -> Void
   /// The night in progress, kept here for the whole night.
@@ -28,12 +29,17 @@ final class RecordingFlow {
   /// Saving, discarding or a low-battery stop, awaited by tests.
   private(set) var finishing: Task<Void, Never>?
   private var batteryWatch: Task<Void, Never>?
+  /// The capture kept warm during the start delay.
+  private var warmCapture: (any AudioCapturePort)?
+  /// The storage limits after a save, awaited by tests.
+  private(set) var cleanup: Task<Void, Never>?
 
   init(navigator: any Navigator, container: Container, compactHeight: Bool, onClose: @escaping @MainActor () -> Void) {
     self.navigator = navigator
     composer = RecordingComposer(container: container, compactHeight: compactHeight)
     commit = container.commitSession()
     discardRecording = container.discardRecording()
+    enforceStorageLimits = container.enforceStorageLimits()
     device = container.deviceServices()
     self.onClose = onClose
   }
@@ -44,7 +50,7 @@ final class RecordingFlow {
 
   func start() {
     navigator.setRoot(composer.makePrestart(routes: RecordingPrestartRoutes(
-      start: { [weak self] in self?.startNight() },
+      start: { [weak self] preferences in self?.begin(preferences) },
       cancel: { [weak self] in self?.onClose() },
       openSettings: device.openSettings)))
   }
@@ -67,8 +73,49 @@ final class RecordingFlow {
     }
   }
 
-  private func startNight() {
-    let model = composer.makeModel()
+  /// Now, or after the start delay.
+  private func begin(_ preferences: AppPreferences) {
+    let minutes = RecordingDelay.valid(preferences.recordingDelayMinutes)
+    guard minutes > 0 else { return startNight(capture: composer.makeCapture(), preferences: preferences) }
+    showCountdown(minutes: minutes, preferences: preferences)
+  }
+
+  /// The start delay: the microphone stays warm (so the app keeps running
+  /// with the screen locked), a notification says when the night starts, and
+  /// the screen stays on as on the bedside clock.
+  private func showCountdown(minutes: Int, preferences: AppPreferences) {
+    let capture = composer.makeCapture()
+    do {
+      try capture.warmUp()
+    } catch {
+      Log.app.error("Warm-up failed; the countdown may pause in the background: \(error.localizedDescription, privacy: .public)")
+    }
+    warmCapture = capture
+    let target = Date().addingTimeInterval(TimeInterval(minutes * 60))
+    device.scheduleStartNotification(target)
+    device.keepScreenOn(true)
+    navigator.setRoot(composer.makeCountdown(target: target, routes: RecordingCountdownRoutes(
+      cancel: { [weak self] in self?.cancelCountdown() },
+      start: { [weak self] in self?.endCountdown(preferences: preferences) })))
+  }
+
+  private func cancelCountdown() {
+    warmCapture?.coolDown()
+    warmCapture = nil
+    device.cancelStartNotification()
+    device.keepScreenOn(false)
+    start()
+  }
+
+  private func endCountdown(preferences: AppPreferences) {
+    guard let capture = warmCapture else { return }
+    warmCapture = nil
+    device.cancelStartNotification()
+    startNight(capture: capture, preferences: preferences)
+  }
+
+  private func startNight(capture: any AudioCapturePort, preferences: AppPreferences) {
+    let model = composer.makeModel(capture: capture, preferences: preferences)
     self.model = model
     device.keepScreenOn(true)
     batteryWatch = Task { [weak self] in
@@ -96,11 +143,24 @@ final class RecordingFlow {
     finishing = Task { [commit, composer] in
       do {
         try await commit(night)
+        enforceLimits()
         onClose()
       } catch {
         Log.storage.error("Saving the night failed: \(error.localizedDescription, privacy: .public)")
         finishing = nil
         navigator.present(composer.makeSaveFailedAlert(), style: .alert)
+      }
+    }
+  }
+
+  /// The storage limits, now that a night was added (SleepGuard runs them
+  /// after each save). A failure is logged; the night is saved.
+  private func enforceLimits() {
+    cleanup = Task { [enforceStorageLimits] in
+      do {
+        try await enforceStorageLimits()
+      } catch {
+        Log.storage.error("Storage limits failed: \(error.localizedDescription, privacy: .public)")
       }
     }
   }

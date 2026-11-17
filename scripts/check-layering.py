@@ -40,8 +40,11 @@ ALLOWED_IMPORTS = {
     "AppShell": {
         "UIKit", "SwiftUI", "FactoryKit", "SleepDomain", "SleepCore", "SleepPersistence", "SleepAudio",
         "ScreenKit", "SleepGuardDesignKit", "SleepStrings", "HistoryFeature", "SessionDetailFeature", "StatisticsFeature", "RecordingFeature",
+        "SettingsFeature",
+        # DeviceServices: the microphone permission and the start delay's notification.
+        "AVFAudio", "UserNotifications",
     },
-    "AppShellTestSupport": {"AppShell", "UIKit", "SwiftUI", "ScreenKit", "SleepGuardDesignKit"},
+    "AppShellTestSupport": {"AppShell", "UIKit", "SwiftUI", "ScreenKit", "SleepGuardDesignKit", "SleepDomain"},
 }
 
 # Every module under Packages/Features/ (they don't exist yet; F3 adds the first).
@@ -61,8 +64,9 @@ PRINT_CALL = re.compile(r"(?<![\w.])print\(")
 SHARED = re.compile(r"\b([A-Z]\w*)\.shared\b")
 SHARED_ALLOWLIST = {
     ("Packages/AppShell/Sources/AppShell/AppShell.swift", "Container"),
-    # The device switches recording needs (screen on, Settings link), in one place.
+    # The device switches (screen on, Settings link, permissions), in one place.
     ("Packages/AppShell/Sources/AppShell/Recording/DeviceServices.swift", "UIApplication"),
+    ("Packages/AppShell/Sources/AppShell/Recording/DeviceServices.swift", "AVAudioApplication"),
 }
 
 FEATURE_BANNED = re.compile(

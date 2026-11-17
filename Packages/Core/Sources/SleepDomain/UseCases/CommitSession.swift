@@ -8,7 +8,9 @@ import SleepCore
 /// the summary (score, snoring time, events) is computed once here, from
 /// SleepCore, and stored with the night, as SleepGuard's `SessionCommitter`
 /// caches its score. A night under `Night.minimumSaveDuration` is refused.
-/// The checkpoint is cleared only after the save succeeds.
+/// The checkpoint is cleared only after the save succeeds. Then, if the
+/// person turned it on and the brand has Apple Health, the night is written
+/// there too (a failure there doesn't undo the save).
 public struct CommitSession: Sendable {
   public enum Failure: Error, Equatable {
     case tooShort
@@ -17,16 +19,30 @@ public struct CommitSession: Sendable {
   private let sessions: any SessionRepository
   private let checkpoints: any RecordingCheckpointStore
   private let scoreConfig: SleepScoreConfig
+  private let health: (any HealthAccess)?
+  private let preferences: (any PreferencesStore)?
 
-  public init(sessions: any SessionRepository, checkpoints: any RecordingCheckpointStore, scoreConfig: SleepScoreConfig = .default) {
+  public init(
+    sessions: any SessionRepository,
+    checkpoints: any RecordingCheckpointStore,
+    health: (any HealthAccess)? = nil,
+    preferences: (any PreferencesStore)? = nil,
+    scoreConfig: SleepScoreConfig = .default)
+  {
     self.sessions = sessions
     self.checkpoints = checkpoints
+    self.health = health
+    self.preferences = preferences
     self.scoreConfig = scoreConfig
   }
 
   public func callAsFunction(_ night: Night) async throws {
     guard night.duration >= Night.minimumSaveDuration else { throw Failure.tooShort }
-    try await sessions.save(night, summary: night.summary(using: scoreConfig))
+    let summary = night.summary(using: scoreConfig)
+    try await sessions.save(night, summary: summary)
     await checkpoints.clear()
+    if let health, await preferences?.load().syncToHealth == true {
+      await health.save(night, summary: summary)
+    }
   }
 }

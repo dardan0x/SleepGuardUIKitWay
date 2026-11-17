@@ -59,7 +59,44 @@ extension Container {
   }
 
   var commitSession: Factory<CommitSession> {
-    self { CommitSession(sessions: self.sessionRepository(), checkpoints: self.checkpointStore()) }
+    self {
+      CommitSession(
+        sessions: self.sessionRepository(), checkpoints: self.checkpointStore(), health: self.healthAccess(),
+        preferences: self.preferencesStore())
+    }
+  }
+
+  var preferencesStore: Factory<any PreferencesStore> {
+    self { SleepPersistence.makePreferencesStore() }.singleton
+  }
+
+  var profileStore: Factory<any ProfileStore> {
+    self { SleepPersistence.makeProfileStore(url: self.storageLocation().profileURL) }.singleton
+  }
+
+  /// The brand's Apple Health, or `nil` (Lite doesn't link HealthKit).
+  var healthAccess: Factory<(any HealthAccess)?> {
+    self { self.brand().configuration.health }
+  }
+
+  /// A new writer per night: it holds that night's open file.
+  var makeRawLogWriter: Factory<@Sendable () -> any RawLogWriter> {
+    self {
+      let clips = self.storageLocation().clipsDirectory
+      return { SleepPersistence.makeRawLogWriter(directory: clips) }
+    }
+  }
+
+  var enforceStorageLimits: Factory<EnforceStorageLimits> {
+    self {
+      EnforceStorageLimits(
+        sessions: self.sessionRepository(), files: self.sessionFileStore(), checkpoints: self.checkpointStore(),
+        preferences: self.preferencesStore())
+    }
+  }
+
+  var deleteAllData: Factory<DeleteAllData> {
+    self { DeleteAllData(sessions: self.sessionRepository(), files: self.sessionFileStore(), checkpoints: self.checkpointStore()) }
   }
 
   var discardRecording: Factory<DiscardRecording> {

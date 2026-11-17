@@ -18,6 +18,11 @@ nonisolated struct StorageLocation {
     root.appendingPathComponent("Clips", isDirectory: true)
   }
 
+  /// The person's profile (F8-T1).
+  var profileURL: URL {
+    root.appendingPathComponent("Profile.json")
+  }
+
   /// The night in progress, while recording (F7-T7).
   var checkpointURL: URL {
     root.appendingPathComponent("Recording.json")

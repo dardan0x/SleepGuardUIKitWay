@@ -17,21 +17,48 @@ struct RecordingComposer {
   func makePrestart(routes: RecordingPrestartRoutes) -> UIViewController {
     let capture = container.makeAudioCapture()()
     let device = container.deviceServices()
+    let preferences = container.preferencesStore()
     return host(RecordingPrestartScreen(
       dependencies: RecordingPrestartDependencies(
         compactHeight: compactHeight,
         requestPermission: { await capture.requestPermission() },
-        isCharging: device.isCharging),
+        isCharging: device.isCharging,
+        loadPreferences: { await preferences.load() },
+        saveDelay: { minutes in
+          Task {
+            var stored = await preferences.load()
+            stored.recordingDelayMinutes = minutes
+            await preferences.save(stored)
+          }
+        }),
       routes: routes))
   }
 
-  /// A night's model over a new capture. Sensitivity and sleep talking are
-  /// SleepGuard's defaults (medium, off) until Settings arrives (F8).
-  func makeModel() -> LiveRecordingModel {
-    LiveRecordingModel(
-      capture: container.makeAudioCapture()(),
-      settings: RecordingSession.Settings(sensitivity: .medium, detectSleepTalking: false),
-      checkpoints: container.checkpointStore())
+  /// A new microphone capture for one night (warmed up first when the night
+  /// starts after a delay).
+  func makeCapture() -> any AudioCapturePort {
+    container.makeAudioCapture()()
+  }
+
+  /// A night's model over `capture`, with the Settings choices. The raw
+  /// recording is kept only in Debug builds, when switched on.
+  func makeModel(capture: any AudioCapturePort, preferences: AppPreferences) -> LiveRecordingModel {
+    #if DEBUG
+    let preserveRawAudio = preferences.preserveRawAudio
+    #else
+    let preserveRawAudio = false
+    #endif
+    return LiveRecordingModel(
+      capture: capture,
+      settings: RecordingSession.Settings(
+        sensitivity: preferences.sensitivity, detectSleepTalking: preferences.detectSleepTalking,
+        preserveRawAudio: preserveRawAudio),
+      checkpoints: container.checkpointStore(),
+      rawLog: preserveRawAudio ? container.makeRawLogWriter()() : nil)
+  }
+
+  func makeCountdown(target: Date, routes: RecordingCountdownRoutes) -> UIViewController {
+    host(RecordingCountdownScreen(target: target, routes: routes))
   }
 
   func makeBedside(model: LiveRecordingModel, routes: BedsideClockRoutes) -> UIViewController {

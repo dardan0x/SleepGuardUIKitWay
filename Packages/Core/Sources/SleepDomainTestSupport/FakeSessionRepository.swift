@@ -56,6 +56,30 @@ public actor FakeSessionRepository: SessionRepository {
     return stream
   }
 
+  public func nightFiles() async throws -> [NightFiles] {
+    try throwIfFailing()
+    return sessions.values.sorted { $0.start < $1.start }.map {
+      NightFiles(id: $0.id, start: $0.start, clipFileNames: $0.events.compactMap(\.clipFileName))
+    }
+  }
+
+  public func removeClips(of id: Night.ID) async throws {
+    try throwIfFailing()
+    guard var session = sessions[id] else { throw SessionError.notFound(id) }
+    for index in session.events.indices {
+      session.events[index].clipFileName = nil
+    }
+    sessions[id] = session
+  }
+
+  public func deleteAll() async throws {
+    try throwIfFailing()
+    deletedIDs += sessions.keys
+    sessions = [:]
+    summaries = [:]
+    publish()
+  }
+
   private var sortedSummaries: [NightSummary] {
     summaries.values.sorted { $0.start > $1.start }
   }

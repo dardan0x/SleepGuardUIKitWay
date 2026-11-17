@@ -45,10 +45,18 @@ public enum AudioCaptureError: Error, Equatable {
 public protocol AudioCapturePort: AnyObject, Sendable {
   /// Asks for microphone access. `true` when granted.
   func requestPermission() async -> Bool
+  /// Keeps the audio session and the microphone running without listening,
+  /// during the start delay, so the app stays alive in the background until
+  /// the night starts. `start` or `coolDown` ends it.
+  func warmUp() throws
+  /// Ends a warm-up that didn't become a night.
+  func coolDown()
   /// Starts listening. One sample per buffer, in order, until `stop` ends
   /// the stream. An interruption (a call) or a route change pauses the
-  /// samples; listening resumes on its own when the system allows.
-  func start() throws -> AsyncStream<CaptureSample>
+  /// samples; listening resumes on its own when the system allows. With
+  /// `rawAudioFileName`, every buffer is also written to that file in the
+  /// clips folder (`RawRecording`).
+  func start(rawAudioFileName: String?) throws -> AsyncStream<CaptureSample>
   /// Writes the microphone into the clip for event `id` until `closeClip`
   /// or `discardClip`. A clip still open is discarded first.
   func startClip(id: UUID) throws
@@ -66,4 +74,11 @@ public protocol AudioCapturePort: AnyObject, Sendable {
   /// (nothing more is written to it) for `closeClip` or `discardClip`: the
   /// last event of the night is finalized after the microphone stops.
   func stop()
+}
+
+public extension AudioCapturePort {
+  /// Starts listening without keeping the raw audio.
+  func start() throws -> AsyncStream<CaptureSample> {
+    try start(rawAudioFileName: nil)
+  }
 }

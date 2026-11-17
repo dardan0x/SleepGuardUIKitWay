@@ -50,6 +50,28 @@ actor SwiftDataSessionStore: SessionRepository {
     return stream
   }
 
+  func nightFiles() async throws -> [NightFiles] {
+    try modelContext.fetch(FetchDescriptor<SessionRecord>(sortBy: [SortDescriptor(\.start)])).map { record in
+      NightFiles(id: record.id, start: record.start, clipFileNames: record.events.compactMap(\.clipFileName))
+    }
+  }
+
+  func removeClips(of id: Night.ID) async throws {
+    guard let record = try record(id: id) else { throw SessionError.notFound(id) }
+    for event in record.events {
+      event.clipFileName = nil
+    }
+    try modelContext.save()
+  }
+
+  func deleteAll() async throws {
+    for record in try modelContext.fetch(FetchDescriptor<SessionRecord>()) {
+      modelContext.delete(record) // events cascade
+    }
+    try modelContext.save()
+    try publish()
+  }
+
   // MARK: - Private
 
   private func record(id: UUID) throws -> SessionRecord? {

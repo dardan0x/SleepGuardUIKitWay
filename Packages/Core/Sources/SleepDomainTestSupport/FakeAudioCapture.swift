@@ -6,6 +6,8 @@ import SleepDomain
 @MainActor
 public final class FakeAudioCapture: AudioCapturePort {
   public enum Call: Equatable {
+    case warmUp
+    case coolDown
     case start
     case startClip(UUID)
     case closeClip
@@ -15,6 +17,8 @@ public final class FakeAudioCapture: AudioCapturePort {
   }
 
   public private(set) var calls: [Call] = []
+  /// The raw audio file the last `start` was asked to keep.
+  public private(set) var rawAudioFileName: String?
   public var permission = true
   /// Thrown by the next `start`.
   public var startError: AudioCaptureError?
@@ -29,8 +33,17 @@ public final class FakeAudioCapture: AudioCapturePort {
     permission
   }
 
-  public func start() throws -> AsyncStream<CaptureSample> {
+  public func warmUp() throws {
+    calls.append(.warmUp)
+  }
+
+  public func coolDown() {
+    calls.append(.coolDown)
+  }
+
+  public func start(rawAudioFileName: String?) throws -> AsyncStream<CaptureSample> {
     calls.append(.start)
+    self.rawAudioFileName = rawAudioFileName
     if let startError { throw startError }
     let (stream, continuation) = AsyncStream.makeStream(of: CaptureSample.self)
     self.continuation = continuation
