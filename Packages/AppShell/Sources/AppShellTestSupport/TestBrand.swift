@@ -1,4 +1,5 @@
 import AppShell
+import Foundation
 import SleepDomain
 import SleepGuardDesignKit
 
@@ -8,9 +9,10 @@ public nonisolated struct TestBrand: BrandComposition {
 
   public init(
     theme: Theme = .sleepGuard, tabs: [AppTab] = AppTab.allCases, health: (any HealthAccess)? = nil,
-    appStoreID: String? = nil, snoreInterrupter: Bool = false)
+    appStoreID: String? = nil, snoreInterrupter: Bool = false, learnURL: URL? = nil)
   {
     configuration = BrandConfiguration(
-      theme: theme, tabs: tabs, health: health, appStoreID: appStoreID, snoreInterrupter: snoreInterrupter)
+      theme: theme, tabs: tabs, health: health, appStoreID: appStoreID, snoreInterrupter: snoreInterrupter,
+      learnURL: learnURL)
   }
 }

@@ -10,7 +10,6 @@ protocol TabFlow: AnyObject {
 }
 
 /// The tab bar. Builds one flow per tab in the brand's `tabs`, in that order.
-/// Learn gets a placeholder flow until its feature exists (F8-T5).
 final class MainTabCoordinator {
   let tabBarController = UITabBarController()
   private(set) var flows: [any TabFlow] = []
@@ -18,7 +17,6 @@ final class MainTabCoordinator {
   /// `onStartRecording`: the recording flow is the app coordinator's, not a tab's.
   init(container: Container, onStartRecording: @escaping @MainActor () -> Void = {}) {
     let theme = container.theme()
-    let composer = PlaceholderScreenComposer(theme: theme)
 
     let navigationControllers = container.brand().configuration.tabs.map { tab in
       let navigator = NavigationControllerNavigator()
@@ -31,7 +29,7 @@ final class MainTabCoordinator {
       case .history: HistoryFlow(navigator: navigator, container: container)
       case .statistics: StatisticsFlow(navigator: navigator, container: container, onStartRecording: onStartRecording)
       case .settings: SettingsFlow(navigator: navigator, container: container)
-      case .learn: PlaceholderFlow(tab: tab, navigator: navigator, composer: composer)
+      case .learn: LearnFlow(navigator: navigator, container: container)
       }
       flow.start()
       flows.append(flow)
