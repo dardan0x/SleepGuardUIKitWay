@@ -33,6 +33,9 @@ final class RecordingFlow {
   private var warmCapture: (any AudioCapturePort)?
   /// The storage limits after a save, awaited by tests.
   private(set) var cleanup: Task<Void, Never>?
+  /// Opening the interrupter's settings, then saving them; awaited by tests.
+  private(set) var interrupterTask: Task<Void, Never>?
+  private let preferences: any PreferencesStore
 
   init(navigator: any Navigator, container: Container, compactHeight: Bool, onClose: @escaping @MainActor () -> Void) {
     self.navigator = navigator
@@ -41,6 +44,7 @@ final class RecordingFlow {
     discardRecording = container.discardRecording()
     enforceStorageLimits = container.enforceStorageLimits()
     device = container.deviceServices()
+    preferences = container.preferencesStore()
     self.onClose = onClose
   }
 
@@ -52,7 +56,53 @@ final class RecordingFlow {
     navigator.setRoot(composer.makePrestart(routes: RecordingPrestartRoutes(
       start: { [weak self] preferences in self?.begin(preferences) },
       cancel: { [weak self] in self?.onClose() },
-      openSettings: device.openSettings)))
+      openSettings: device.openSettings,
+      openInterrupter: { [weak self] saved in self?.openInterrupter(saved: saved) })))
+  }
+
+  // MARK: - Snore Interrupter
+
+  /// Its settings as a sheet over the prestart; Save keeps the choice and
+  /// hands it back to the prestart's row.
+  private func openInterrupter(saved: @escaping @MainActor (SnoreInterrupterChoice) -> Void) {
+    guard let store = composer.melodyStore else { return }
+    interrupterTask = Task { [preferences] in
+      let stored = await preferences.load()
+      let choice = SnoreInterrupterChoice(mode: stored.interrupterMode, melodyID: stored.melodyID)
+      navigator.present(composer.makeInterrupterSettings(choice: choice, store: store, routes: SnoreInterrupterRoutes(
+        chooseSound: { [weak self] current, picked in self?.chooseSound(current: current, store: store, picked: picked) },
+        save: { [weak self] choice in
+          self?.navigator.dismiss()
+          saved(choice)
+          self?.keep(choice)
+        },
+        cancel: { [weak self] in self?.navigator.dismiss() })), style: .sheet(detents: [.large]))
+    }
+  }
+
+  private func keep(_ choice: SnoreInterrupterChoice) {
+    interrupterTask = Task { [preferences] in
+      var stored = await preferences.load()
+      stored.interrupterMode = choice.mode
+      stored.melodyID = choice.melodyID
+      await preferences.save(stored)
+    }
+  }
+
+  private func chooseSound(current: Int, store: any MelodyStore, picked: @escaping @MainActor (Int) -> Void) {
+    navigator.present(composer.makeMelodyPicker(selectedID: current, store: store, routes: MelodyPickerRoutes(
+      record: { [weak self] saved in self?.recordMelody(store: store, saved: saved) },
+      done: { [weak self] id in
+        self?.navigator.dismiss()
+        picked(id)
+      })), style: .sheet(detents: [.large]))
+  }
+
+  private func recordMelody(store: any MelodyStore, saved: @escaping @MainActor (Melody) -> Void) {
+    navigator.present(composer.makeRecordMelody(store: store) { [weak self] melody in
+      self?.navigator.dismiss()
+      if let melody { saved(melody) }
+    }, style: .sheet(detents: [.large]))
   }
 
   /// A night the app didn't get to finish, offered at launch: its summary.

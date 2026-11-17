@@ -70,6 +70,12 @@ public protocol AudioCapturePort: AnyObject, Sendable {
   func compressClip(named name: String) async -> String
   /// Closes the open clip and deletes it.
   func discardClip()
+  /// Stops listening for a while, keeping the stream and any open files: no
+  /// samples until `resume`. The Snore Interrupter pauses the microphone while
+  /// its melody plays, so the app doesn't hear itself.
+  func pause()
+  /// Listening again after `pause`.
+  func resume()
   /// Stops listening and ends the sample stream. A clip still open stays open
   /// (nothing more is written to it) for `closeClip` or `discardClip`: the
   /// last event of the night is finalized after the microphone stops.

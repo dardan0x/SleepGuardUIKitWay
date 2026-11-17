@@ -23,6 +23,11 @@ nonisolated struct StorageLocation {
     root.appendingPathComponent("Profile.json")
   }
 
+  /// Sounds recorded for the Snore Interrupter (F8-T4).
+  var melodiesDirectory: URL {
+    root.appendingPathComponent("Melodies", isDirectory: true)
+  }
+
   /// The night in progress, while recording (F7-T7).
   var checkpointURL: URL {
     root.appendingPathComponent("Recording.json")

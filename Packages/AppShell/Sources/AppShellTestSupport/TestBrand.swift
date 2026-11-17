@@ -8,8 +8,9 @@ public nonisolated struct TestBrand: BrandComposition {
 
   public init(
     theme: Theme = .sleepGuard, tabs: [AppTab] = AppTab.allCases, health: (any HealthAccess)? = nil,
-    appStoreID: String? = nil)
+    appStoreID: String? = nil, snoreInterrupter: Bool = false)
   {
-    configuration = BrandConfiguration(theme: theme, tabs: tabs, health: health, appStoreID: appStoreID)
+    configuration = BrandConfiguration(
+      theme: theme, tabs: tabs, health: health, appStoreID: appStoreID, snoreInterrupter: snoreInterrupter)
   }
 }

@@ -18,6 +18,9 @@ public struct AppPreferences: Equatable, Sendable {
   public var syncToHealth = false
   public var briefingEnabled = true
   public var hasCompletedProfile = false
+  /// The Snore Interrupter (brands that have it): how long it plays, and which sound.
+  public var interrupterMode: SnoreInterrupterMode = .never
+  public var melodyID = Melody.defaultID
 
   public init() {}
 

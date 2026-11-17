@@ -234,6 +234,11 @@ extension Container {
     container.profileStore.register { profiles }
     container.makeRawLogWriter.register { { FakeRawLogWriter() } }
     container.makeAudioCapture.register { { FakeAudioCapture() } }
+    container.makeMelodyPlayer.register { { _ in FakeMelodyPlayer() } }
+    container.makeMelodyRecorder.register { { FakeMelodyRecorder() } }
+    if brand.configuration.snoreInterrupter {
+      container.makeMelodyStore.register { { FakeMelodyStore() } }
+    }
     container.deviceServices.register {
       DeviceServices(keepScreenOn: { _ in }, openSettings: {}, isCharging: { true }, batteryLevel: { nil })
     }

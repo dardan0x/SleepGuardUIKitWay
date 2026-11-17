@@ -3,13 +3,15 @@ import SleepGuardDesignKit
 import SwiftUI
 
 /// SleepGuard Lite: teal, three tabs (no Learn), no HealthKit (it doesn't link
-/// `SleepHealth`; see `Brand.usesHealthKit` in the Tuist brand list).
+/// `SleepHealth`; see `Brand.usesHealthKit` in the Tuist brand list), no
+/// Snore Interrupter.
 nonisolated struct SleepGuardLiteBrand: BrandComposition {
   let configuration = BrandConfiguration(
     theme: .lite,
     tabs: [.statistics, .history, .settings],
     health: nil,
-    appStoreID: nil)
+    appStoreID: nil,
+    snoreInterrupter: false)
 }
 
 let appBrand = SleepGuardLiteBrand()

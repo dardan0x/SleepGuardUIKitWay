@@ -9,7 +9,7 @@ public struct RecordingDraft: Sendable, Equatable {
   public let start: Date
   /// Detected events in the order they finished.
   public internal(set) var events: [NightEvent] = []
-  /// When the microphone was paused. Empty until the Snore Interrupter (F8).
+  /// When the microphone was paused for the Snore Interrupter's melody.
   public internal(set) var recordingGaps: [RecordingGap] = []
   /// Loudest RMS level heard, dBFS. The floor until the first sample.
   public internal(set) var peakDB = Double(AudioLevels.floorDB)
@@ -51,12 +51,15 @@ public struct LiveSnapshot: Sendable, Equatable {
   public let isSpeech: Bool
   /// Events saved so far.
   public let eventCount: Int
+  /// The Snore Interrupter's melody is playing (the microphone is paused).
+  public let melodyPlaying: Bool
 
-  public init(time: Date, db: Float, snoreState: DetectionState, isSpeech: Bool, eventCount: Int) {
+  public init(time: Date, db: Float, snoreState: DetectionState, isSpeech: Bool, eventCount: Int, melodyPlaying: Bool = false) {
     self.time = time
     self.db = db
     self.snoreState = snoreState
     self.isSpeech = isSpeech
     self.eventCount = eventCount
+    self.melodyPlaying = melodyPlaying
   }
 }

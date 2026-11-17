@@ -34,7 +34,7 @@ ALLOWED_IMPORTS = {
     "SleepDomain": {"SleepCore"},
     "SleepDomainTestSupport": {"SleepDomain", "SleepCore"},
     "SleepPersistence": {"SleepDomain", "SleepCore", "SwiftData"},
-    "SleepAudio": {"SleepDomain", "SleepCore", "AVFoundation", "AVFAudio", "SoundAnalysis", "Accelerate"},
+    "SleepAudio": {"SleepDomain", "SleepCore", "SleepMelodies", "AVFoundation", "AVFAudio", "SoundAnalysis", "Accelerate"},
     "SleepHealth": {"SleepDomain", "SleepCore", "HealthKit"},
     "ScreenKit": {"UIKit", "SwiftUI", "SleepGuardDesignKit"},
     "AppShell": {

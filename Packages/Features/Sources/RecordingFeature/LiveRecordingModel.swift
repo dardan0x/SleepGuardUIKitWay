@@ -22,17 +22,45 @@ public final class LiveRecordingModel {
   public private(set) var phase: Phase = .starting
   public private(set) var snapshot: LiveSnapshot?
   public let start: Date
+  /// Muted for the rest of the night (the bedside note goes away).
+  public private(set) var interrupterMuted = false
   @ObservationIgnored private let session: RecordingSession
+  @ObservationIgnored private let interrupter: SnoreInterrupter?
 
   public init(
     capture: any AudioCapturePort,
     settings: RecordingSession.Settings = .init(),
     checkpoints: (any RecordingCheckpointStore)? = nil,
     rawLog: (any RawLogWriter)? = nil,
+    interrupter: SnoreInterrupter? = nil,
     start: Date = Date())
   {
     self.start = start
-    session = RecordingSession(capture: capture, settings: settings, checkpoints: checkpoints, rawLog: rawLog, start: start)
+    self.interrupter = interrupter
+    session = RecordingSession(
+      capture: capture, settings: settings, checkpoints: checkpoints, rawLog: rawLog, interrupter: interrupter,
+      start: start)
+  }
+
+  /// The Snore Interrupter is on for this night and not muted.
+  public var interrupterArmed: Bool {
+    interrupter?.mode.isOn == true && !interrupterMuted
+  }
+
+  /// The melody playing now (the snapshot says when it starts and stops).
+  public var playingMelody: Melody? {
+    guard snapshot?.melodyPlaying == true else { return nil }
+    return interrupter?.playing
+  }
+
+  public func stopMelody() {
+    interrupter?.stop()
+  }
+
+  /// No more melodies tonight.
+  public func muteInterrupter() {
+    interrupter?.mute()
+    interrupterMuted = true
   }
 
   public var eventCount: Int {
