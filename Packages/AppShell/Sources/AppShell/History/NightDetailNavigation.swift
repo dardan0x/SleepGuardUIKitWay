@@ -12,12 +12,18 @@ final class NightDetailNavigation {
   private let navigator: any Navigator
   private let detail: SessionDetailComposer
   private let deleteSession: DeleteSession
+  private let nights: any SessionRepository
+  private let clipsDirectory: URL
   private var deleting: Task<Void, Never>?
+  /// Writing a report to share; awaited by tests.
+  private(set) var sharing: Task<Void, Never>?
 
   init(navigator: any Navigator, container: Container) {
     self.navigator = navigator
     detail = SessionDetailComposer(container: container)
     deleteSession = container.deleteSession()
+    nights = container.sessionRepository()
+    clipsDirectory = container.storageLocation().clipsDirectory
   }
 
   deinit {
@@ -27,11 +33,48 @@ final class NightDetailNavigation {
   func show(_ night: NightSummary) {
     navigator.push(detail.make(
       night: night,
+      onReport: { [weak self] in self?.shareReport(night.id) },
       onDelete: { [weak self] in self?.confirmDeleting(night.id) },
       routes: SessionDetailRoutes(
         showAllEvents: { [weak self] rows, events in self?.showEvents(rows, events) },
         playEvents: { [weak self] events, start in self?.play(events, from: start) },
-        showStagesInfo: { [weak self] stages in self?.showStagesInfo(stages) })))
+        showStagesInfo: { [weak self] stages in self?.showStagesInfo(stages) },
+        shareEvent: { [weak self] event in self?.shareClip(of: event) })))
+  }
+
+  // MARK: - Sharing
+
+  /// The night's PDF report, in the share sheet.
+  func shareReport(_ id: Night.ID) {
+    guard sharing == nil else { return }
+    sharing = Task { [weak self, nights] in
+      defer { self?.sharing = nil }
+      do {
+        let night = try await nights.session(id: id)
+        let url = try NightReportExport.write(night, appName: Self.appName, to: FileManager.default.temporaryDirectory)
+        self?.share(url)
+      } catch {
+        Log.storage.error("Report not made: \(error.localizedDescription, privacy: .public)")
+      }
+    }
+  }
+
+  /// One event's clip, when it has one on disk.
+  func shareClip(of event: NightEvent) {
+    guard let name = event.clipFileName else { return }
+    let url = clipsDirectory.appendingPathComponent(name)
+    guard FileManager.default.fileExists(atPath: url.path) else { return }
+    share(url)
+  }
+
+  private func share(_ url: URL) {
+    navigator.present(ShareSheet.make(url), style: .sheet(detents: [.medium, .large]))
+  }
+
+  /// The report's title and footer name the app (the brand's display name).
+  static var appName: String {
+    Bundle.main.object(forInfoDictionaryKey: "CFBundleDisplayName") as? String
+      ?? Bundle.main.object(forInfoDictionaryKey: "CFBundleName") as? String ?? "SleepGuard"
   }
 
   /// The sleep-stages sheet, from the detail or the dashboard; its own close

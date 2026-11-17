@@ -3,37 +3,6 @@ import SleepDomain
 import SleepGuardContentKit
 import SwiftUI
 
-public struct SessionDetailDependencies: Sendable {
-  public var nightID: Night.ID
-  /// Loads the night, adding sleep stages when available.
-  public var loadDetail: LoadSessionDetail
-
-  public init(nightID: Night.ID, loadDetail: LoadSessionDetail) {
-    self.nightID = nightID
-    self.loadDetail = loadDetail
-  }
-}
-
-public struct SessionDetailRoutes {
-  /// "Show all": every row under the current filter, and the night's events
-  /// (the sheet's Play needs them to find an episode's clips).
-  public var showAllEvents: @MainActor ([EventListRow], [NightEvent]) -> Void
-  /// Play: the events to play in order, starting with the given one.
-  public var playEvents: @MainActor ([NightEvent], NightEvent.ID) -> Void
-  /// The info button on the sleep stages: the stages sheet.
-  public var showStagesInfo: @MainActor (SleepStageBreakdown) -> Void
-
-  public init(
-    showAllEvents: @escaping @MainActor ([EventListRow], [NightEvent]) -> Void,
-    playEvents: @escaping @MainActor ([NightEvent], NightEvent.ID) -> Void,
-    showStagesInfo: @escaping @MainActor (SleepStageBreakdown) -> Void)
-  {
-    self.showAllEvents = showAllEvents
-    self.playEvents = playEvents
-    self.showStagesInfo = showStagesInfo
-  }
-}
-
 /// One night: loads it and hosts the shared `NightDetailContent` (score,
 /// stats, sleep stages when there are any, timeline, events with a filter; SleepCore's `EventFilter` and
 /// `EventListRow`). The title and the delete button belong to the navigation
@@ -61,6 +30,11 @@ public struct SessionDetailScreen: View {
             night: night, summary: detail.summary, filters: EventFilter.options(for: night.events), filter: $filter,
             onPlay: { row in routes.playEvents(row.playback(in: night.events), row.id) },
             onShowAll: { rows in routes.showAllEvents(rows, night.events) },
+            onShare: { row in
+              if let event = night.events.first(where: { $0.id == row.id }), event.clipFileName != nil {
+                routes.shareEvent(event)
+              }
+            },
             stages: {
               if let stages = SleepStageBreakdown(segments: night.sleepStages) {
                 SleepStagesCard(breakdown: stages, start: night.start, duration: night.duration) {

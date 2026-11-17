@@ -24,6 +24,11 @@ public enum SleepPersistence {
     FileProfileStore(url: url)
   }
 
+  /// The briefing survey's answers, one JSON file at `url`.
+  public static func makeLifestyleLogStore(url: URL) -> any LifestyleLogStore {
+    FileLifestyleLogStore(url: url)
+  }
+
   /// Raw recordings' sample logs, beside the clips in `directory`.
   public static func makeRawLogWriter(directory: URL) -> any RawLogWriter {
     FileRawLogWriter(directory: directory)

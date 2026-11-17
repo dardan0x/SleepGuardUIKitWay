@@ -3,36 +3,6 @@ import SleepDomain
 import SleepGuardContentKit
 import SwiftUI
 
-public struct StatisticsDependencies: Sendable {
-  public var nights: any SessionRepository
-
-  public init(nights: any SessionRepository) {
-    self.nights = nights
-  }
-}
-
-public struct StatisticsRoutes {
-  public var startRecording: @MainActor () -> Void
-  /// "View month": Trends.
-  public var showTrends: @MainActor () -> Void
-  /// "See all" on the 7-night chart.
-  public var showLastSevenNights: @MainActor () -> Void
-  /// The info button on the latest night's sleep stages: the stages sheet.
-  public var showStagesInfo: @MainActor (SleepStageBreakdown) -> Void
-
-  public init(
-    startRecording: @escaping @MainActor () -> Void,
-    showTrends: @escaping @MainActor () -> Void,
-    showLastSevenNights: @escaping @MainActor () -> Void,
-    showStagesInfo: @escaping @MainActor (SleepStageBreakdown) -> Void)
-  {
-    self.startRecording = startRecording
-    self.showTrends = showTrends
-    self.showLastSevenNights = showLastSevenNights
-    self.showStagesInfo = showStagesInfo
-  }
-}
-
 /// The dashboard: loads the nights live and hosts the shared content
 /// (`StatisticsDashboardContent`, same as SleepGuard's) with the latest
 /// night's sleep stages in its slot. Every number comes
@@ -42,6 +12,7 @@ public struct StatisticsScreen: View {
   let dependencies: StatisticsDependencies
   let routes: StatisticsRoutes
   @State private var viewState: ViewState = .loading
+  @State private var asksForProfile = false
 
   public init(dependencies: StatisticsDependencies, routes: StatisticsRoutes) {
     self.dependencies = dependencies
@@ -59,6 +30,19 @@ public struct StatisticsScreen: View {
       case let .loaded(dashboard, now):
         VStack(spacing: 0) {
           ScrollView {
+            if asksForProfile {
+              ProfilePromptCard(
+                onOpen: {
+                  asksForProfile = false
+                  routes.openProfile()
+                },
+                onDismiss: {
+                  withAnimation { asksForProfile = false }
+                  routes.dismissProfilePrompt()
+                })
+                .padding(.horizontal, 16)
+                .padding(.top, 12)
+            }
             StatisticsDashboardContent(
               dashboard: dashboard, latest: dashboard.latest, now: now,
               onShowTrends: routes.showTrends, onShowLastSevenNights: routes.showLastSevenNights)
@@ -71,6 +55,9 @@ public struct StatisticsScreen: View {
             .padding(.bottom, 8)
         }
       }
+    }
+    .task {
+      asksForProfile = await dependencies.asksForProfile()
     }
     .task {
       for await nights in await dependencies.nights.observeSummaries() {

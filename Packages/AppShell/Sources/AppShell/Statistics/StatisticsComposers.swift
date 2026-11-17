@@ -9,7 +9,8 @@ struct StatisticsComposer {
   let container: Container
 
   private var dependencies: StatisticsDependencies {
-    StatisticsDependencies(nights: container.sessionRepository())
+    let prompt = container.profilePromptCheck()
+    return StatisticsDependencies(nights: container.sessionRepository(), asksForProfile: { await prompt.shouldAsk() })
   }
 
   /// The dashboard, with the calendar button in the bar.

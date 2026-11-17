@@ -92,3 +92,20 @@ public actor FakeRawLogWriter: RawLogWriter {
     finished = true
   }
 }
+
+/// Survey answers in memory.
+public actor FakeLifestyleLogStore: LifestyleLogStore {
+  public private(set) var saved: [LifestyleLog]
+
+  public init(_ logs: [LifestyleLog] = []) {
+    saved = logs
+  }
+
+  public func logs() async -> [LifestyleLog] {
+    saved
+  }
+
+  public func save(_ log: LifestyleLog) async throws {
+    saved.append(log)
+  }
+}

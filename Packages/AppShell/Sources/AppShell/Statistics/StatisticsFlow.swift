@@ -1,5 +1,7 @@
 import FactoryKit
 import ScreenKit
+import SettingsFeature
+import SleepDomain
 import StatisticsFeature
 import UIKit
 
@@ -11,12 +13,18 @@ final class StatisticsFlow: TabFlow {
   let navigator: any Navigator
   let nightDetail: NightDetailNavigation
   private let screens: StatisticsComposer
+  private let settings: SettingsScreenComposer
+  private let profilePrompt: ProfilePromptCheck
   private let onStartRecording: @MainActor () -> Void
+  /// Counting a dismissed profile prompt; awaited by tests.
+  private(set) var dismissing: Task<Void, Never>?
 
   init(navigator: any Navigator, container: Container, onStartRecording: @escaping @MainActor () -> Void) {
     self.navigator = navigator
     self.onStartRecording = onStartRecording
     screens = StatisticsComposer(container: container)
+    settings = SettingsScreenComposer(container: container)
+    profilePrompt = container.profilePromptCheck()
     nightDetail = NightDetailNavigation(navigator: navigator, container: container)
   }
 
@@ -26,8 +34,21 @@ final class StatisticsFlow: TabFlow {
         startRecording: { [weak self] in self?.onStartRecording() },
         showTrends: { [weak self] in self?.showTrends() },
         showLastSevenNights: { [weak self] in self?.showLastSevenNights() },
-        showStagesInfo: { [weak self] stages in self?.nightDetail.showStagesInfo(stages) }),
+        showStagesInfo: { [weak self] stages in self?.nightDetail.showStagesInfo(stages) },
+        openProfile: { [weak self] in self?.openProfile() },
+        dismissProfilePrompt: { [weak self] in self?.dismissProfilePrompt() }),
       onCalendar: { [weak self] in self?.showCalendar() }))
+  }
+
+  /// The profile editor, as from Settings.
+  private func openProfile() {
+    navigator.present(
+      settings.makeProfileEditor(routes: ProfileEditorRoutes(close: { [weak self] in self?.navigator.dismiss() })),
+      style: .sheet(detents: [.large]))
+  }
+
+  private func dismissProfilePrompt() {
+    dismissing = Task { [profilePrompt] in await profilePrompt.dismissed() }
   }
 
   private func showTrends() {

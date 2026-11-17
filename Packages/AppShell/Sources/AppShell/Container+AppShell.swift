@@ -79,6 +79,22 @@ extension Container {
     self { SleepPersistence.makeProfileStore(url: self.storageLocation().profileURL) }.singleton
   }
 
+  var lifestyleLogStore: Factory<any LifestyleLogStore> {
+    self { SleepPersistence.makeLifestyleLogStore(url: self.storageLocation().lifestyleLogURL) }.singleton
+  }
+
+  var morningBriefing: Factory<MorningBriefing> {
+    self {
+      MorningBriefing(
+        nights: self.sessionRepository(), profiles: self.profileStore(), logs: self.lifestyleLogStore(),
+        preferences: self.preferencesStore())
+    }
+  }
+
+  var profilePromptCheck: Factory<ProfilePromptCheck> {
+    self { ProfilePromptCheck(nights: self.sessionRepository(), profiles: self.profileStore(), preferences: self.preferencesStore()) }
+  }
+
   /// The brand's Apple Health, or `nil` (Lite doesn't link HealthKit).
   var healthAccess: Factory<(any HealthAccess)?> {
     self { self.brand().configuration.health }

@@ -1,3 +1,4 @@
+import BriefingFeature
 import FactoryKit
 import ScreenKit
 import SleepAudio
@@ -19,19 +20,24 @@ public final class AppCoordinator {
   private var seeding: Task<Void, Never>?
   /// Looks for a night the app didn't get to finish; internal for tests.
   private(set) var recovery: Task<Void, Never>?
+  /// The morning briefing, after the tabs (and any recovered night); awaited by tests.
+  private(set) var briefing: Task<Void, Never>?
   /// Resolved at launch, used once the tabs are up.
   private let recoverInterruptedSession: RecoverInterruptedSession
   private let enforceStorageLimits: EnforceStorageLimits
+  private let morningBriefing: MorningBriefing
 
   init(container: Container) {
     self.container = container
     recoverInterruptedSession = container.recoverInterruptedSession()
     enforceStorageLimits = container.enforceStorageLimits()
+    morningBriefing = container.morningBriefing()
   }
 
   deinit {
     seeding?.cancel()
     recovery?.cancel()
+    briefing?.cancel()
   }
 
   /// The theme's background until the preferences say what comes first, so
@@ -73,7 +79,31 @@ public final class AppCoordinator {
     window?.rootViewController = mainTabs.tabBarController
     self.mainTabs = mainTabs
     offerInterruptedNight()
+    offerBriefing()
     seedSampleNightsInDebug()
+  }
+
+  /// The morning briefing as a sheet over the tabs, once per new night, when
+  /// nothing else is showing (a recovered night comes first). Shown counts
+  /// from when it opens, however it's closed.
+  private func offerBriefing() {
+    let morningBriefing = morningBriefing
+    briefing = Task { [weak self] in
+      await self?.recovery?.value
+      guard let due = await morningBriefing.due(), let self, self.recording == nil,
+            let tabs = self.mainTabs?.tabBarController, tabs.presentedViewController == nil else { return }
+      await morningBriefing.markShown()
+      let sheet = HostingScreen(
+        rootView: BriefingScreen(briefing: due.briefing, routes: BriefingRoutes(
+          answer: { [weak tabs] chip in
+            Task { try? await morningBriefing.answer(chip, for: due.night) }
+            tabs?.dismiss(animated: true)
+          },
+          close: { [weak tabs] in tabs?.dismiss(animated: true) })),
+        theme: self.container.theme(), chrome: ScreenChrome(hidesNavigationBar: true))
+      sheet.sheetPresentationController?.detents = [.large()]
+      tabs.present(sheet, animated: true)
+    }
   }
 
   /// "Start recording" from any screen: the recording flow, full screen over

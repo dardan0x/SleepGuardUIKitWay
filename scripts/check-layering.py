@@ -40,7 +40,7 @@ ALLOWED_IMPORTS = {
     "AppShell": {
         "UIKit", "SwiftUI", "FactoryKit", "SleepDomain", "SleepCore", "SleepPersistence", "SleepAudio",
         "ScreenKit", "SleepGuardDesignKit", "SleepStrings", "HistoryFeature", "SessionDetailFeature", "StatisticsFeature", "RecordingFeature",
-        "SettingsFeature", "OnboardingFeature", "LearnFeature",
+        "SettingsFeature", "OnboardingFeature", "LearnFeature", "BriefingFeature",
         # DeviceServices: the microphone permission and the start delay's notification.
         "AVFAudio", "UserNotifications",
     },
