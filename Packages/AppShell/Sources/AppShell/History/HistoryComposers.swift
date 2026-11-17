@@ -26,7 +26,10 @@ struct HistoryScreenComposer {
 struct SessionDetailComposer {
   let container: Container
 
-  func make(night: NightSummary, onDelete: @escaping @MainActor () -> Void, routes: SessionDetailRoutes) -> UIViewController {
+  func make(
+    night: NightSummary, onReport: @escaping @MainActor () -> Void, onDelete: @escaping @MainActor () -> Void,
+    routes: SessionDetailRoutes) -> UIViewController
+  {
     HostingScreen(
       rootView: SessionDetailScreen(
         dependencies: SessionDetailDependencies(nightID: night.id, loadDetail: container.loadSessionDetail()),
@@ -34,7 +37,10 @@ struct SessionDetailComposer {
       theme: container.theme(),
       chrome: ScreenChrome(
         title: night.start.formatted(.dateTime.weekday(.wide).month(.abbreviated).day()),
-        trailingItems: [BarItem(systemImage: "trash", accessibilityLabel: Strings.actionDelete, action: onDelete)]))
+        trailingItems: [
+          BarItem(systemImage: "doc.text", accessibilityLabel: Strings.a11yExportReport, action: onReport),
+          BarItem(systemImage: "trash", accessibilityLabel: Strings.actionDelete, action: onDelete),
+        ]))
   }
 
   /// The events sheet in its own navigation controller, for its title bar.

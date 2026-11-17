@@ -29,7 +29,7 @@ struct SessionsTabInAppTests {
     try list.rootView.content.routes.openNight(#require(nights.first))
 
     let detail = try #require(navigation.topViewController as? HostingScreen<SessionDetailScreen>)
-    #expect(detail.navigationItem.rightBarButtonItems?.count == 1)
+    #expect(detail.navigationItem.rightBarButtonItems?.count == 2)
     if let screenshots { try await capture(window, to: screenshots, name: "sessions-detail") }
 
     // "Show all": the events sheet at medium and large; close returns to the detail.

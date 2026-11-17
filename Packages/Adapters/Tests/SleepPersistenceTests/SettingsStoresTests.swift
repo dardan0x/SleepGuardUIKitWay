@@ -33,6 +33,8 @@ struct SettingsStoresTests {
     changed.hasCompletedOnboarding = true
     changed.interrupterMode = .thirtySeconds
     changed.melodyID = 3
+    changed.lastBriefingShown = Date(timeIntervalSinceReferenceDate: 815_000_000)
+    changed.profilePromptDismissCount = 2
     await store.save(changed)
 
     #expect(await store.load() == changed)
@@ -44,6 +46,16 @@ struct SettingsStoresTests {
     defer { defaults.removePersistentDomain(forName: suite) }
     defaults.set(20, forKey: "recordingDelayMinutes")
     #expect(await SleepPersistence.makePreferencesStore(suiteName: suite).load().recordingDelayMinutes == 0)
+  }
+
+  @Test func surveyAnswersComeBack() async throws {
+    let url = FileManager.default.temporaryDirectory.appendingPathComponent("logs-\(UUID().uuidString).json")
+    defer { try? FileManager.default.removeItem(at: url) }
+    let store = SleepPersistence.makeLifestyleLogStore(url: url)
+    #expect(await store.logs().isEmpty)
+    let answer = LifestyleLog(night: Date(timeIntervalSinceReferenceDate: 815_000_000), chips: [.sleptEarlier])
+    try await store.save(answer)
+    #expect(await SleepPersistence.makeLifestyleLogStore(url: url).logs() == [answer])
   }
 
   @Test func theProfileComesBackAndClears() async throws {

@@ -74,7 +74,7 @@ struct StatisticsFlowTests {
     let calendar = try #require(try lastPushed(spy) as? HostingScreen<CalendarScreen>)
     calendar.rootView.content.routes.openNight(night)
     let detail = try #require(try lastPushed(spy) as? HostingScreen<SessionDetailScreen>)
-    #expect(detail.navigationItem.rightBarButtonItems?.map(\.accessibilityLabel) == [Strings.actionDelete])
+    #expect(detail.navigationItem.rightBarButtonItems?.map(\.accessibilityLabel) == [Strings.actionDelete, Strings.a11yExportReport])
   }
 
   @Test func stagesInfoPresentsTheStagesSheet() throws {

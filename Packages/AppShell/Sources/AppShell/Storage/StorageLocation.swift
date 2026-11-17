@@ -23,6 +23,11 @@ nonisolated struct StorageLocation {
     root.appendingPathComponent("Profile.json")
   }
 
+  /// The briefing survey's answers (F8-T6).
+  var lifestyleLogURL: URL {
+    root.appendingPathComponent("LifestyleLogs.json")
+  }
+
   /// Sounds recorded for the Snore Interrupter (F8-T4).
   var melodiesDirectory: URL {
     root.appendingPathComponent("Melodies", isDirectory: true)

@@ -50,7 +50,7 @@ struct HistoryFlowTests {
     }
     let detail = try #require(pushed as? HostingScreen<SessionDetailScreen>)
     #expect(detail.navigationItem.title == night.start.formatted(.dateTime.weekday(.wide).month(.abbreviated).day()))
-    #expect(detail.navigationItem.rightBarButtonItems?.map(\.accessibilityLabel) == [Strings.actionDelete])
+    #expect(detail.navigationItem.rightBarButtonItems?.map(\.accessibilityLabel) == [Strings.actionDelete, Strings.a11yExportReport])
   }
 
   /// The trash button asks first; nothing is deleted until the user confirms.
@@ -234,6 +234,8 @@ extension Container {
     container.profileStore.register { profiles }
     container.makeRawLogWriter.register { { FakeRawLogWriter() } }
     container.makeAudioCapture.register { { FakeAudioCapture() } }
+    let logs = FakeLifestyleLogStore()
+    container.lifestyleLogStore.register { logs }
     container.makeMelodyPlayer.register { { _ in FakeMelodyPlayer() } }
     container.makeMelodyRecorder.register { { FakeMelodyRecorder() } }
     if brand.configuration.snoreInterrupter {

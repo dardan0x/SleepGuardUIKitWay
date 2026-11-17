@@ -20,6 +20,10 @@ public struct AppPreferences: Equatable, Sendable {
   public var hasCompletedProfile = false
   /// The first-launch onboarding was finished: the app opens on its tabs.
   public var hasCompletedOnboarding = false
+  /// When the morning briefing was last closed (it shows once per new night).
+  public var lastBriefingShown: Date?
+  /// Each dismissal of the profile prompt halves its chance of coming back.
+  public var profilePromptDismissCount = 0
   /// The Snore Interrupter (brands that have it): how long it plays, and which sound.
   public var interrupterMode: SnoreInterrupterMode = .never
   public var melodyID = Melody.defaultID

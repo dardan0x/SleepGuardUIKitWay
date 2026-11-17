@@ -16,10 +16,11 @@ let package = Package(
     .library(name: "SettingsFeature", targets: ["SettingsFeature"]),
     .library(name: "OnboardingFeature", targets: ["OnboardingFeature"]),
     .library(name: "LearnFeature", targets: ["LearnFeature"]),
+    .library(name: "BriefingFeature", targets: ["BriefingFeature"]),
   ],
   dependencies: [
     .package(path: "../Core"),
-    .package(url: "https://github.com/dardan0x/SleepGuardShared.git", exact: "0.26.0"),
+    .package(url: "https://github.com/dardan0x/SleepGuardShared.git", exact: "0.27.0"),
   ],
   targets: [
     .target(
@@ -82,6 +83,16 @@ let package = Package(
       ]),
     .target(
       name: "OnboardingFeature",
+      dependencies: [
+        .product(name: "SleepCore", package: "SleepGuardShared"),
+        .product(name: "SleepGuardContentKit", package: "SleepGuardShared"),
+      ],
+      swiftSettings: [
+        .swiftLanguageMode(.v6),
+        .defaultIsolation(MainActor.self),
+      ]),
+    .target(
+      name: "BriefingFeature",
       dependencies: [
         .product(name: "SleepCore", package: "SleepGuardShared"),
         .product(name: "SleepGuardContentKit", package: "SleepGuardShared"),
