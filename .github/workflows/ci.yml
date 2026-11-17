@@ -29,7 +29,7 @@ jobs:
           swiftformat Packages Apps Project.swift Tuist --lint
 
   build:
-    # All three brands, Release, unsigned.
+    # Every brand (each has Apps/<Brand>/Sources/Brand.swift), Release, unsigned.
     runs-on: macos-26
     timeout-minutes: 60
     steps:
@@ -42,7 +42,7 @@ jobs:
       - name: Build brands
         run: |
           set -o pipefail
-          for brand in SleepGuard SleepGuardLite Nocturne; do
+          for brand in $(for f in Apps/*/Sources/Brand.swift; do basename "$(dirname "$(dirname "$f")")"; done); do
             echo "::group::$brand"
             xcodebuild build -workspace SleepGuardUIKitWay.xcworkspace -scheme "$brand" \
               -configuration Release -destination 'generic/platform=iOS Simulator' \

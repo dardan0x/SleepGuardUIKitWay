@@ -17,12 +17,12 @@ Last updated: 2026-11-14
 | Blocked | 0 |
 | — | — |
 | Total Tasks | 62 |
-| Tasks Done | 59 |
+| Tasks Done | 60 |
 | Tasks In Progress | 0 |
 | Tasks Blocked | 0 |
-| Tasks Backlog | 3 |
+| Tasks Backlog | 2 |
 | — | — |
-| **Progress** | **95%** |
+| **Progress** | **97%** |
 
 ## Features
 
@@ -38,7 +38,7 @@ Last updated: 2026-11-14
 | F7 | Recording and detection | P1 | Done (device check open) | 7/7 | ██████████ 100% | [tracker](trackers/f7-recording-detection.md) |
 | F10 | Shared screen content | P1 | Done | 7/7 | ██████████ 100% | [tracker](trackers/f10-shared-screen-content.md) |
 | F8 | Remaining features | P2 | Done (device checks open) | 6/6 | ██████████ 100% | [tracker](trackers/f8-remaining-features.md) |
-| F9 | Showcase polish | P2 | In Progress | 1/4 | ███░░░░░░░ 25% | [tracker](trackers/f9-showcase-polish.md) |
+| F9 | Showcase polish | P2 | In Progress | 2/4 | █████░░░░░ 50% | [tracker](trackers/f9-showcase-polish.md) |
 
 ## Currently Active
 
@@ -47,7 +47,7 @@ Last updated: 2026-11-14
 
 ## Up Next
 
-1. **F9-T2** — Adding a brand: a fourth brand as a worked example. Then T3, T4.
+1. **F9-T3** — Comparison with SleepGuard. Then T4, the README.
 2. **F0** — Shared CI also builds SleepGuardUIKitWay (the open F0-T5 item).
 
 ## Blockers
@@ -60,6 +60,7 @@ Last updated: 2026-11-14
 
 | Date | Task | Event | Notes |
 |------|------|-------|-------|
+| 2026-11-17 | F9-T2 | Completed | Dawn, a fourth brand, added as the worked example in `docs/ADDING_A_BRAND.md`: one folder and one brand-list entry; the test script and CI now find brands by folder. Branch `feature/f9/t2-adding-a-brand` |
 | 2026-11-17 | F9-T1 | Completed | `docs/ARCHITECTURE.md`, checked against the code: module graph, layers with sizes, a screen end to end, brands, shared repo, recording, rules and their checks, tests, ADRs. Branch `feature/f9/t1-architecture-doc` |
 | 2026-11-17 | F8-T6 | Completed | Personalization: morning briefing (shared engine as values, survey with storage), profile prompt on the dashboard, PDF report and clip sharing (0.27.0). F8 done. Branch `feature/f8/t6-personalization` |
 | 2026-11-17 | F8-T5 | Completed | Learn tab: the shared Learn page or its empty state (0.26.0); `BrandConfiguration.learnURL` (nil until a page exists); placeholder flow removed. Branch `feature/f8/t5-learn` |

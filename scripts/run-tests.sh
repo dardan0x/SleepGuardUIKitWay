@@ -24,7 +24,8 @@ DERIVED_DATA="$ROOT/.build/test-derived-data"
 LOG_DIR="$DERIVED_DATA/logs"
 TIMEOUTS="-test-timeouts-enabled YES -default-test-execution-time-allowance 30 -maximum-test-execution-time-allowance 60"
 LANES=${*:-macos packages hosted}
-BRANDS="SleepGuard SleepGuardLite Nocturne"
+# Every brand: each has Apps/<Brand>/Sources/Brand.swift (and an entry in Brand.all).
+BRANDS=$(for f in Apps/*/Sources/Brand.swift; do basename "$(dirname "$(dirname "$f")")"; done)
 mkdir -p "$LOG_DIR"
 FAILED=""
 

@@ -22,7 +22,7 @@ public struct Brand: Sendable {
 }
 
 public extension Brand {
-  static let all: [Brand] = [sleepGuard, sleepGuardLite, nocturne]
+  static let all: [Brand] = [sleepGuard, sleepGuardLite, nocturne, dawn]
 
   static let sleepGuard = Brand(
     name: "SleepGuard",
@@ -43,5 +43,12 @@ public extension Brand {
     displayName: "Nocturne",
     bundleId: "com.dardan.sleepguardway.nocturne",
     urlScheme: "nocturne",
+    usesHealthKit: true)
+
+  static let dawn = Brand(
+    name: "Dawn",
+    displayName: "Dawn",
+    bundleId: "com.dardan.sleepguardway.dawn",
+    urlScheme: "dawn",
     usesHealthKit: true)
 }
