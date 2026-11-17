@@ -27,6 +27,7 @@ struct UserDefaultsPreferencesStore: PreferencesStore {
     static let health = "syncToHealthKit"
     static let briefing = "briefingEnabled"
     static let profile = "hasCompletedProfile"
+    static let onboarding = "hasCompletedOnboarding"
     // SleepGuard's names (the mode's key predates the feature's name).
     static let interrupterMode = "soothingMelodyMode"
     static let melody = "selectedMelodyID"
@@ -48,6 +49,7 @@ struct UserDefaultsPreferencesStore: PreferencesStore {
     preferences.syncToHealth = bool(Key.health) ?? preferences.syncToHealth
     preferences.briefingEnabled = bool(Key.briefing) ?? preferences.briefingEnabled
     preferences.hasCompletedProfile = bool(Key.profile) ?? preferences.hasCompletedProfile
+    preferences.hasCompletedOnboarding = bool(Key.onboarding) ?? preferences.hasCompletedOnboarding
     preferences.interrupterMode = SnoreInterrupterMode(stored: defaults.string(forKey: Key.interrupterMode))
     preferences.melodyID = int(Key.melody).flatMap { $0 > 0 ? $0 : nil } ?? preferences.melodyID
     return preferences
@@ -66,6 +68,7 @@ struct UserDefaultsPreferencesStore: PreferencesStore {
     defaults.set(preferences.syncToHealth, forKey: Key.health)
     defaults.set(preferences.briefingEnabled, forKey: Key.briefing)
     defaults.set(preferences.hasCompletedProfile, forKey: Key.profile)
+    defaults.set(preferences.hasCompletedOnboarding, forKey: Key.onboarding)
     defaults.set(preferences.interrupterMode.rawValue, forKey: Key.interrupterMode)
     defaults.set(preferences.melodyID, forKey: Key.melody)
   }

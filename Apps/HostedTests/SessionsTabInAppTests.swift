@@ -15,9 +15,8 @@ import UIKit
 @MainActor
 struct SessionsTabInAppTests {
   @Test func openingANightPushesItsDetail() async throws {
-    let scene = try #require(UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }.first)
-    let window = try #require(scene.windows.first { $0.rootViewController is UITabBarController })
-    let tabs = try #require(window.rootViewController as? UITabBarController)
+    let tabs = try await HostedApp.tabBar()
+    let window = try #require(tabs.view.window)
     let index = try #require(Container.shared.brand().configuration.tabs.firstIndex(of: .history))
     tabs.selectedIndex = index
     let navigation = try #require(tabs.selectedViewController as? UINavigationController)

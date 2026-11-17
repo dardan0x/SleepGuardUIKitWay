@@ -30,6 +30,9 @@ struct SettingsStoresTests {
     changed.maxDays = 7
     changed.syncToHealth = true
     changed.briefingEnabled = false
+    changed.hasCompletedOnboarding = true
+    changed.interrupterMode = .thirtySeconds
+    changed.melodyID = 3
     await store.save(changed)
 
     #expect(await store.load() == changed)
