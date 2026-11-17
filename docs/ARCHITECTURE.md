@@ -167,3 +167,4 @@ About 210 package tests and 9 in-app tests per brand, plus the shared repo's own
 - `Packages/Core/Sources/SleepDomain/Recording/RecordingSession.swift`: the recording actor.
 - `Apps/Nocturne/Sources/Brand.swift`: everything a brand is; [ADDING_A_BRAND.md](ADDING_A_BRAND.md) adds one.
 - `scripts/check-layering.py`: the boundaries, as code.
+- [COMPARISON.md](COMPARISON.md): the same feature in SleepGuard's SwiftUI shape, and what each shape costs.

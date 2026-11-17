@@ -22,7 +22,7 @@ Someone who opens the repo for ten minutes understands the architecture, why eac
 |----|------|------|--------|------------|--------------------|
 | F9-T1 | `docs/ARCHITECTURE.md`: verified against the code, with the module graph from `tuist graph` | Docs | Done | F3 | Every claim checked against source |
 | F9-T2 | `docs/ADDING_A_BRAND.md`: add a fourth brand as a worked example, with the diff | Docs | Done | F1 | The diff touches only the brand folder, the brand list and the bootstrap test |
-| F9-T3 | Comparison with SleepGuard: same feature in both architectures, what each costs and buys | Docs | Backlog | F3 | Honest about where the SwiftUI app is simpler |
+| F9-T3 | Comparison with SleepGuard: same feature in both architectures, what each costs and buys | Docs | Done | F3 | Honest about where the SwiftUI app is simpler |
 | F9-T4 | README: screenshots of the three brands, how to run, where to look first | Docs | Backlog | F7 | — |
 
 ## F9-T1 — Architecture doc (done 2026-11-17)
@@ -37,4 +37,10 @@ Someone who opens the repo for ten minutes understands the architecture, why eac
 - [x] Before it, so a brand needs nothing else: `run-tests.sh` and CI find brands by `Apps/<Name>/Sources/Brand.swift` instead of a hard-coded list
 - [x] `docs/ADDING_A_BRAND.md` with the real diff; `ARCHITECTURE.md`, `AGENTS.md` / `CLAUDE.md` say four brands
 - [x] All four brands' in-app tests pass (9 each)
+
+## F9-T3 — Comparison (done 2026-11-17)
+
+- [x] `docs/COMPARISON.md`: a night's detail in both apps, concern by concern (opening, loading, Health stages, saving, layout, chrome, sheets, delete, brand differences), with sizes and tests measured in both repos
+- [x] What the UIKit shape buys and costs, where SleepGuard's is simply better (small features, one team, reading the code), and where SleepGuard pays later
+- [x] Found on the way: SleepGuard deletes a night without asking; this app confirms. Left as a difference, noted in the doc
 
