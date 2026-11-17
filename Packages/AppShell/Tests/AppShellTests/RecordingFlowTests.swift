@@ -258,6 +258,10 @@ struct LaunchRecoveryTests {
 
   private func coordinator(checkpoint: Night?) -> AppCoordinator {
     let container = Container.test()
+    var onboarded = AppPreferences()
+    onboarded.hasCompletedOnboarding = true
+    let preferences = FakePreferencesStore(onboarded)
+    container.preferencesStore.register { preferences }
     container.checkpointStore.register { FakeRecordingCheckpointStore(checkpoint) }
     container.deviceServices.register {
       DeviceServices(keepScreenOn: { _ in }, openSettings: {}, isCharging: { true }, batteryLevel: { nil })
@@ -271,6 +275,7 @@ struct LaunchRecoveryTests {
       events: [NightEvent(start: start.addingTimeInterval(60), duration: 30, intensity: .light)])
     let app = coordinator(checkpoint: night)
     app.start(in: UIWindow())
+    await app.launch?.value
     await app.recovery?.value
     #expect(app.recording != nil)
   }
@@ -278,6 +283,7 @@ struct LaunchRecoveryTests {
   @Test func nothingOpensWithoutOne() async {
     let app = coordinator(checkpoint: nil)
     app.start(in: UIWindow())
+    await app.launch?.value
     await app.recovery?.value
     #expect(app.recording == nil)
   }

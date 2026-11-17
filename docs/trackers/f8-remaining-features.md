@@ -21,7 +21,7 @@ The rest of SleepGuard's product, three parts of it switched per brand.
 | ID | Task | Type | Status | Depends On | Brands | Acceptance (short) |
 |----|------|------|--------|------------|--------|--------------------|
 | F8-T1 | Settings: permissions, recording options, appearance, storage limits, delete all data | UI / Domain | Done | F7 | All | `EnforceStorageLimits` and delete-all are use cases |
-| F8-T2 | Onboarding flow | UI / Shell | Backlog | F1 | All | `OnboardingFlow`; shown once |
+| F8-T2 | Onboarding flow | UI / Shell | Done | F1 | All | `OnboardingFlow`; shown once |
 | F8-T3 | Sleep stages from HealthKit | Adapter / UI | Done | F3 | SleepGuard, Nocturne | Lite does not link `SleepHealth`; stage UI absent there |
 | F8-T4 | Snore Interrupter: melody playback, custom melody recording; prestart row, bedside overlay, melody gaps in detection | Adapter / UI | Done | F7 | SleepGuard, Nocturne | Capability off in Lite |
 | F8-T5 | Learn tab | UI / Shell | Backlog | F1 | SleepGuard, Nocturne | Tab absent in Lite |
@@ -55,6 +55,15 @@ The rest of SleepGuard's product, three parts of it switched per brand.
 - [x] Adapters: `AVMelodyPlayer` (haptic nudge from the shell), `FileMelodyStore` (recordings in `Melodies/`, a JSON list), `AVMelodyRecorder` (10 s cap)
 - [x] Prestart row and settings sheet, picker with preview, recorder, bedside note and overlay; `BrandConfiguration.snoreInterrupter` (off in Lite)
 - [ ] On a device: a melody over a sleeping phone, the microphone back after it, a recording made and played
+
+## F8-T2 — Onboarding (done 2026-11-17)
+
+- [x] Shared (0.25.0): SleepCore `OnboardingPages` (which pages, Next, Skip to the last, Back); content kit `OnboardingContent` with SleepGuard's six pages
+- [x] SleepGuard hosts the same content (its F26-T4); its Health page now follows the `healthSync` flag
+- [x] `OnboardingFeature` (`OnboardingScreen`): microphone and, in a Health brand, Apple Health; "granted" shows 0.8 s before the next page
+- [x] `OnboardingFlow`: finishing keeps `hasCompletedOnboarding` (SleepGuard's key) and turns on Health sync when allowed here; "Start recording" opens a night over the tabs
+- [x] `AppCoordinator`: the theme's background until the preferences are read, then the onboarding or the tabs; the unfinished-night offer and Debug sample nights wait for the tabs
+- [ ] By hand: the real microphone and Health prompts on a fresh install
 
 ## Notes
 

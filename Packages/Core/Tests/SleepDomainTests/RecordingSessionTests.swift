@@ -282,10 +282,10 @@ struct RecordingSessionTests {
   @Test func theSnapshotSaysWhileTheMelodyPlays() async throws {
     let harness = try await Harness(melody: .pausesMic)
     await harness.snore(1, db: -35, confidence: 0.6)
-    #expect(harness.latest?.melodyPlaying == true)
+    #expect(await harness.snapshot { $0.melodyPlaying }?.melodyPlaying == true)
     harness.interrupter?.stop()
     await harness.silence(0.05)
-    #expect(harness.latest?.melodyPlaying == false)
+    #expect(await harness.snapshot { !$0.melodyPlaying }?.melodyPlaying == false)
   }
 
   @Test func theRawLogNamesTheMode() async throws {
@@ -355,6 +355,16 @@ final class Harness {
         self?.latest = snapshot
       }
     }
+  }
+
+  /// The latest snapshot once one matches: the harness reads the stream on
+  /// its own task, a moment behind the session.
+  func snapshot(where matches: (LiveSnapshot) -> Bool) async -> LiveSnapshot? {
+    for _ in 0..<1000 {
+      if let latest, matches(latest) { return latest }
+      await Task.yield()
+    }
+    return latest
   }
 
   private var tick: Int {
