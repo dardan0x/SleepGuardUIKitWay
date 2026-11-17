@@ -6,8 +6,8 @@ import SleepDomain
 import SleepGuardDesignKit
 import UIKit
 
-/// Opening a night, from any tab: push its detail, present its events sheet,
-/// confirm and delete it, then go back. Owned by the tab's flow.
+/// Opening a night, from any tab: push its detail, present its events and
+/// sleep-stages sheets, confirm and delete it, then go back. Owned by the tab's flow.
 final class NightDetailNavigation {
   private let navigator: any Navigator
   private let detail: SessionDetailComposer
@@ -30,7 +30,16 @@ final class NightDetailNavigation {
       onDelete: { [weak self] in self?.confirmDeleting(night.id) },
       routes: SessionDetailRoutes(
         showAllEvents: { [weak self] rows, events in self?.showEvents(rows, events) },
-        playEvents: { [weak self] events, start in self?.play(events, from: start) })))
+        playEvents: { [weak self] events, start in self?.play(events, from: start) },
+        showStagesInfo: { [weak self] stages in self?.showStagesInfo(stages) })))
+  }
+
+  /// The sleep-stages sheet, from the detail or the dashboard; its own close
+  /// button dismisses it.
+  func showStagesInfo(_ stages: SleepStageBreakdown) {
+    navigator.present(
+      detail.makeStagesInfo(stages, onClose: { [weak self] in self?.navigator.dismiss() }),
+      style: .sheet(detents: [.large]))
   }
 
   /// Medium and large detents; the close button dismisses it.

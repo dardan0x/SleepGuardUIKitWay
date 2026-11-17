@@ -17,20 +17,25 @@ public struct StatisticsRoutes {
   public var showTrends: @MainActor () -> Void
   /// "See all" on the 7-night chart.
   public var showLastSevenNights: @MainActor () -> Void
+  /// The info button on the latest night's sleep stages: the stages sheet.
+  public var showStagesInfo: @MainActor (SleepStageBreakdown) -> Void
 
   public init(
     startRecording: @escaping @MainActor () -> Void,
     showTrends: @escaping @MainActor () -> Void,
-    showLastSevenNights: @escaping @MainActor () -> Void)
+    showLastSevenNights: @escaping @MainActor () -> Void,
+    showStagesInfo: @escaping @MainActor (SleepStageBreakdown) -> Void)
   {
     self.startRecording = startRecording
     self.showTrends = showTrends
     self.showLastSevenNights = showLastSevenNights
+    self.showStagesInfo = showStagesInfo
   }
 }
 
 /// The dashboard: loads the nights live and hosts the shared content
-/// (`StatisticsDashboardContent`, same as SleepGuard's). Every number comes
+/// (`StatisticsDashboardContent`, same as SleepGuard's) with the latest
+/// night's sleep stages in its slot. Every number comes
 /// from SleepCore's rules; the title and the calendar button belong to the
 /// navigation bar (shell).
 public struct StatisticsScreen: View {
@@ -57,6 +62,9 @@ public struct StatisticsScreen: View {
             StatisticsDashboardContent(
               dashboard: dashboard, latest: dashboard.latest, now: now,
               onShowTrends: routes.showTrends, onShowLastSevenNights: routes.showLastSevenNights)
+            {
+              LatestNightStages(latest: dashboard.latest, nights: dependencies.nights, onInfo: routes.showStagesInfo)
+            }
           }
           StartRecordingButton(height: 56, action: routes.startRecording)
             .padding(.horizontal, 20)

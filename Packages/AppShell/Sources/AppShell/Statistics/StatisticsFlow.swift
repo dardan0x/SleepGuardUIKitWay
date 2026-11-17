@@ -25,7 +25,8 @@ final class StatisticsFlow: TabFlow {
       routes: StatisticsRoutes(
         startRecording: { [weak self] in self?.onStartRecording() },
         showTrends: { [weak self] in self?.showTrends() },
-        showLastSevenNights: { [weak self] in self?.showLastSevenNights() }),
+        showLastSevenNights: { [weak self] in self?.showLastSevenNights() },
+        showStagesInfo: { [weak self] stages in self?.nightDetail.showStagesInfo(stages) }),
       onCalendar: { [weak self] in self?.showCalendar() }))
   }
 

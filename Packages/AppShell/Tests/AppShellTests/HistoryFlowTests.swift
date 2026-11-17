@@ -143,6 +143,44 @@ struct HistoryFlowTests {
     #expect(spy.calls.last == .dismiss)
   }
 
+  /// The stages' info button presents the stages sheet; its close dismisses it.
+  @Test func stagesInfoPresentsTheStagesSheet() throws {
+    let staged = Night(
+      start: night.start, end: night.end, sleepStages: [SleepStageSegment(stage: .deep, startOffset: 0, duration: 3600)])
+    let (flow, spy, _) = makeFlow([staged])
+    flow.start()
+    try #require(rootList(spy)).rootView.content.routes.openNight(staged.summary())
+    guard case let .push(pushed) = spy.calls.last else {
+      Issue.record("expected push, got \(spy.calls)")
+      return
+    }
+    let detail = try #require(pushed as? HostingScreen<SessionDetailScreen>)
+    let stages = try #require(SleepStageBreakdown(segments: staged.sleepStages))
+
+    detail.rootView.content.routes.showStagesInfo(stages)
+
+    guard case let .present(presented, style) = spy.calls.last else {
+      Issue.record("expected present, got \(spy.calls)")
+      return
+    }
+    #expect(style == .sheet(detents: [.large]))
+    let sheet = try #require(presented as? HostingScreen<SleepStagesInfoScreen>)
+    #expect(sheet.rootView.content.breakdown == stages)
+    sheet.rootView.content.close()
+    #expect(spy.calls.last == .dismiss)
+  }
+
+  /// Health brands read stages through their `HealthAccess`; Lite has none.
+  @Test func theStageSourceIsTheBrandsHealth() async throws {
+    let segment = SleepStageSegment(stage: .rem, startOffset: 0, duration: 600)
+    let withHealth = Container.test(brand: TestBrand(health: FakeHealthAccess(stages: [segment])))
+    withHealth.sleepStagePort.reset()
+    #expect(try await withHealth.sleepStagePort().stages(from: .now, to: .now) == [segment])
+    let without = Container.test()
+    without.sleepStagePort.reset()
+    #expect(without.sleepStagePort() is NoSleepStages)
+  }
+
   @Test func thePlayerIsTitledByTheKindOfEvent() {
     #expect(SessionDetailComposer.playerTitle(for: .sleepTalking) == Strings.eventPlayerSleepTalkingTitle)
     #expect(SessionDetailComposer.playerTitle(for: .coughing) == Strings.eventPlayerNoiseTitle)

@@ -77,6 +77,16 @@ struct StatisticsFlowTests {
     #expect(detail.navigationItem.rightBarButtonItems?.map(\.accessibilityLabel) == [Strings.actionDelete])
   }
 
+  @Test func stagesInfoPresentsTheStagesSheet() throws {
+    let (flow, spy) = makeFlow()
+    flow.start()
+    let stages = try #require(SleepStageBreakdown(segments: [SleepStageSegment(stage: .light, startOffset: 0, duration: 600)]))
+    try dashboard(spy).rootView.content.routes.showStagesInfo(stages)
+    guard case let .present(presented, style) = try #require(spy.calls.last) else { throw Failure.noRoot }
+    #expect(style == .sheet(detents: [.large]))
+    #expect((presented as? HostingScreen<SleepStagesInfoScreen>)?.rootView.content.breakdown == stages)
+  }
+
   @Test func startRecordingGoesToTheAppCoordinator() throws {
     var requests = 0
     let (flow, spy) = makeFlow { requests += 1 }
