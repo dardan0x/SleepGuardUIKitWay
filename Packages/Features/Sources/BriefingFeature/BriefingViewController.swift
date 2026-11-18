@@ -3,31 +3,20 @@ import SleepCore
 import SleepGuardContentKit
 import UIKit
 
-public struct BriefingRoutes {
-  /// A survey answer; the sheet then closes.
-  public var answer: @MainActor (LifestyleChip) -> Void
-  public var close: @MainActor () -> Void
-
-  public init(answer: @escaping @MainActor (LifestyleChip) -> Void, close: @escaping @MainActor () -> Void) {
-    self.answer = answer
-    self.close = close
-  }
-}
-
-/// The morning briefing sheet, hosting the shared `BriefingContent`.
+/// The morning briefing sheet, drawn from `BriefingViewModel` by the shared
+/// `BriefingContent`.
 public final class BriefingViewController: ScreenController {
-  let briefing: Briefing
-  let routes: BriefingRoutes
+  let viewModel: BriefingViewModel
 
-  public init(briefing: Briefing, routes: BriefingRoutes, theme: Theme, chrome: ScreenChrome = ScreenChrome()) {
-    self.briefing = briefing
-    self.routes = routes
+  public init(viewModel: BriefingViewModel, theme: Theme, chrome: ScreenChrome = ScreenChrome()) {
+    self.viewModel = viewModel
     super.init(theme: theme, chrome: chrome)
   }
 
   override public func viewDidLoad() {
     super.viewDidLoad()
-    let routes = routes
-    render(BriefingContent(briefing: briefing, onChip: { routes.answer($0) }, onClose: { routes.close() }))
+    let viewModel = viewModel
+    render(BriefingContent(
+      briefing: viewModel.briefing, onChip: { viewModel.answer($0) }, onClose: { viewModel.close() }))
   }
 }

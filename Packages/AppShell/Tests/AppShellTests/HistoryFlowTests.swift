@@ -105,7 +105,7 @@ struct HistoryFlowTests {
     #expect(style == .sheet(detents: [.medium, .large]))
     let navigation = try #require(presented as? UINavigationController)
     let sheet = try #require(navigation.viewControllers.first as? EventsSheetViewController)
-    #expect(sheet.rows == rows)
+    #expect(sheet.viewModel.rows == rows)
     #expect(sheet.navigationItem.title == Strings.recordingsDetailEventsLabel)
     let close = try #require(sheet.navigationItem.rightBarButtonItems?.first)
     #expect(close.accessibilityLabel == Strings.actionClose)
@@ -165,8 +165,8 @@ struct HistoryFlowTests {
     }
     #expect(style == .sheet(detents: [.large]))
     let sheet = try #require(presented as? SleepStagesInfoViewController)
-    #expect(sheet.breakdown == stages)
-    sheet.close()
+    #expect(sheet.viewModel.breakdown == stages)
+    sheet.viewModel.close()
     #expect(spy.calls.last == .dismiss)
   }
 

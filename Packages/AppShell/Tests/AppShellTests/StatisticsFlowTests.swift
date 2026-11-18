@@ -84,7 +84,7 @@ struct StatisticsFlowTests {
     try dashboard(spy).viewModel.routes.showStagesInfo(stages)
     guard case let .present(presented, style) = try #require(spy.calls.last) else { throw Failure.noRoot }
     #expect(style == .sheet(detents: [.large]))
-    #expect((presented as? SleepStagesInfoViewController)?.breakdown == stages)
+    #expect((presented as? SleepStagesInfoViewController)?.viewModel.breakdown == stages)
   }
 
   @Test func startRecordingGoesToTheAppCoordinator() throws {

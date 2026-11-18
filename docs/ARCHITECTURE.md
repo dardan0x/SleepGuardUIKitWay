@@ -67,7 +67,7 @@ The eight features are History, SessionDetail, Statistics, Recording, Settings, 
 | `SleepAudio` | 11 / 1,054 | AVAudioEngine capture and analysis, clip compression and playback, waveforms, the interrupter's player, store and recorder | |
 | `SleepHealth` | 1 / 87 | HealthKit: write a night, read its sleep stages | Be linked by Lite |
 | `ScreenKit` (Presentation) | 5 / 422 | `ScreenController` (every screen's base: chrome, background, theme, one state child), `ContentListController` (a self-sizing UIKit list), `ScreenChrome`, `Navigator`, theme fonts for UIKit | |
-| Features | 54 / 3,582 | 21 UIKit screens (ADR 0007): collection views, a page view controller, a segmented control and alerts around the shared SwiftUI content. The 14 with state or logic have a view model (ADR 0008) that holds it, calls the use cases and routes and says which alert is due, with no UI imports. Each screen has a `Dependencies` and a `Routes` value | Navigate, present anything but an alert, persist, inject, or touch `UIApplication`; import UI in a view model (checked) |
+| Features | 58 / 3,672 | 21 UIKit screens (ADR 0007): collection views, a page view controller, a segmented control and alerts around the shared SwiftUI content. Each has a view model (ADR 0008, checked) that holds its state, calls the use cases and routes and says which alert is due, with no UI imports. Each screen has a `Dependencies` and a `Routes` value | Navigate, present anything but an alert, persist, inject, or touch `UIApplication`; import UI in a view model (checked) |
 | `AppShell` | 22 / 1,771 | Launch, 9 flows and coordinators, factories, the Factory container (28 registrations), brand composition | Be imported by anything but the apps and its test support |
 | Apps | 4 brands | `Brand.swift`: one `BrandConfiguration` each; assets; Info.plist from the Tuist brand list | Contain logic |
 
@@ -160,7 +160,7 @@ About 210 package tests and 9 in-app tests per brand, plus the shared repo's own
 | [0005](adr/0005-shared-screen-content.md) | Screen layouts shared too; each app hosts them |
 | [0006](adr/0006-brand-capabilities.md) | A brand capability is a port it builds or a value it states |
 | [0007](adr/0007-uikit-screen-containers.md) | Every screen a UIKit controller; shared SwiftUI draws the cells and pages |
-| [0008](adr/0008-view-models.md) | View models for screens with state or logic; flows' factories build them |
+| [0008](adr/0008-view-models.md) | A view model for every screen (checked); flows' factories build them |
 
 ## Where to look first
 

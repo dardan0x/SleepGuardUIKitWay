@@ -21,6 +21,8 @@ So this script checks imports against the module table in AGENTS.md, plus:
   6. View models (`*ViewModel.swift` in a feature) import only Foundation,
      Observation, `SleepDomain` and `SleepCore`: no UIKit, SwiftUI or
      ScreenKit, so their logic is testable without a UI (ADR 0008).
+  7. Every screen has a view model: a feature class that subclasses
+     `ScreenController` declares `let viewModel` (ADR 0008).
 
 Lines starting with `//` are ignored. Exits 1 with a file:line listing.
 """
@@ -61,6 +63,9 @@ FEATURE_IMPORTS = {
 
 # A feature's `*ViewModel.swift`: state and intents only, no UI framework.
 VIEW_MODEL_IMPORTS = {"SleepDomain", "SleepCore"}
+
+SCREEN_CLASS = re.compile(r"\bclass\s+(\w+)\s*:\s*ScreenController\b")
+HAS_VIEW_MODEL = re.compile(r"\blet\s+viewModel\s*:")
 
 ESCAPE_HATCH = re.compile(
     r"@unchecked\s+Sendable|nonisolated\(unsafe\)|@preconcurrency|uncheckedState|withLockUnchecked")
@@ -121,6 +126,12 @@ def main() -> int:
             allowed = VIEW_MODEL_IMPORTS
         if module and allowed is None:
             violations.append(f"{rel}: module '{module}' is not in ALLOWED_IMPORTS; add it (and to AGENTS.md)")
+
+        if is_feature:
+            text = path.read_text(encoding="utf-8")
+            for screen in SCREEN_CLASS.findall(text):
+                if not HAS_VIEW_MODEL.search(text):
+                    violations.append(f"{rel}: screen '{screen}' has no `let viewModel` (ADR 0008)")
 
         for number, line in code_lines(path):
             if module and allowed is not None:

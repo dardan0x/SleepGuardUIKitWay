@@ -47,7 +47,7 @@ struct SessionDetailFactory {
   {
     let theme = container.theme()
     let screen = EventsSheetViewController(
-      rows: rows, events: events, playEvents: playEvents,
+      viewModel: EventsSheetViewModel(rows: rows, events: events, routes: EventsSheetRoutes(playEvents: playEvents)),
       theme: theme,
       chrome: ScreenChrome(
         title: Strings.recordingsDetailEventsLabel,
@@ -76,7 +76,9 @@ struct SessionDetailFactory {
   }
 
   func makeStagesInfo(_ stages: SleepStageBreakdown, onClose: @escaping @MainActor () -> Void) -> UIViewController {
-    SleepStagesInfoViewController(breakdown: stages, close: onClose, theme: container.theme())
+    SleepStagesInfoViewController(
+      viewModel: SleepStagesInfoViewModel(breakdown: stages, routes: SleepStagesInfoRoutes(close: onClose)),
+      theme: container.theme())
   }
 
   static func playerTitle(for category: SoundCategory) -> String {

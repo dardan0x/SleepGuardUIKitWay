@@ -1,4 +1,4 @@
-# ADR 0008: View models for stateful screens, built by factories
+# ADR 0008: A view model for every screen, built by factories
 
 - **Status:** Accepted
 - **Date:** 2026-11-18
@@ -11,7 +11,7 @@ ADR 0001 rejected view models: a SwiftUI screen's `@State` already held the stat
 
 ## Decision
 
-- **A screen with state or logic has a view model.** It is a `@MainActor @Observable final class …ViewModel` in the feature module. It holds:
+- **Every screen has a view model.** It is a `@MainActor @Observable final class …ViewModel` in the feature module. It holds:
   - the screen's state: one `State` enum, plus what is being edited
   - its intents: plain methods, or `async` ones for work
   - its routes
@@ -19,8 +19,8 @@ ADR 0001 rejected view models: a SwiftUI screen's `@State` already held the stat
 
   It imports only Foundation, Observation, `SleepDomain` and `SleepCore`. `check-layering.py` enforces this by file name, so no UIKit, no SwiftUI, no ScreenKit, and no `Strings`.
 - **The controller draws.** It redraws from the view model with `renderTracking`; forwards taps to it; runs its `async` work in tasks the controller owns (started on `viewIsAppearing`, cancelled on `viewDidDisappear`); and turns its `Alert` value into a `UIAlertController` with the text from `Strings` (`presentAlert(_:make:)`). It never calls a route.
-- **Display-only screens have no view model**: Learn, Briefing, the stages sheet and the events sheet. There, a view model would only forward values.
-- **The composers become factories.** One per flow in AppShell (`HistoryScreenFactory`, `SessionDetailFactory`, `StatisticsFactory`, `SettingsFactory`, `RecordingFactory`, `OnboardingFactory`, `LearnFactory`). Each builds `Dependencies`, then the view model, then the controller. They stay the only screen code that resolves from the container. There are no per-screen factory types.
+- **No exceptions, checked.** A screen that only shows values (Learn, Briefing, the stages sheet, the events sheet) has one too: it holds what the screen shows and is the only caller of its routes, so a controller never holds data or routes. `check-layering.py` fails any feature class that subclasses `ScreenController` without a `let viewModel`. The owner chose this over the first version of this ADR, which left those four screens without one.
+- **The composers become factories.** One per flow in AppShell (`HistoryScreenFactory`, `SessionDetailFactory`, `StatisticsFactory`, `SettingsFactory`, `RecordingFactory`, `OnboardingFactory`, `LearnFactory`, `BriefingFactory`; the briefing sheet was built in `AppCoordinator`). Each builds `Dependencies`, then the view model, then the controller. They stay the only screen code that resolves from the container. There are no per-screen factory types.
 - **The existing state owners fit the shape:**
   - `ClipPlaybackModel` is renamed `PlayerViewModel`.
   - `LiveRecordingModel` stays the live night, and `BedsideClockViewModel` decides over it.
@@ -37,7 +37,7 @@ ADR 0001 rejected view models: a SwiftUI screen's `@State` already held the stat
   - Settings: ordered writes, a lower limit asks, Health only when allowed
 
   These tests found a fake that disagreed with its adapter (`FakeMelodyRecorder` lost the take at the limit). The fake is fixed.
-- **One more type per stateful screen**, about 14. It's a deliberate cost: each has one job, deciding.
+- **One more type per screen**: 19 view models for 21 screens (Trends, Calendar and Last 7 Nights share one). It's a deliberate cost: each has one job, deciding. Four of them (Learn, Briefing, the two sheets) are thin: they hold values and pass taps on.
 - Flow tests reach routes through `controller.viewModel.routes`, so a view model's `routes` and `dependencies` are internal, read-only.
 - Bindings into shared content are built in the controller from view-model values. A value a binding reads lazily is read during rendering, so a change redraws (render tracking only sees what was read).
 - `Strings` stay in views and controllers, so a view model's alert is a case, not text.
@@ -46,5 +46,5 @@ ADR 0001 rejected view models: a SwiftUI screen's `@State` already held the stat
 ## Alternatives
 
 - **Keep the logic in the controllers.** One type fewer per screen, but decisions stay testable only through UIKit. Rejected.
-- **A view model for every screen.** Uniform, but adds four types that only forward. Rejected.
+- **View models only where there is state or logic.** Four fewer types, but two shapes of screen, and controllers that hold data and call routes. The first version of this ADR chose it; the owner preferred one shape, checked.
 - **A factory type per screen.** The same wiring in more types. Rejected: the flow's factory already has one job.

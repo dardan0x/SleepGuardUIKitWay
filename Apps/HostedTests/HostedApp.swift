@@ -34,7 +34,7 @@ enum HostedApp {
   private static func closeBriefing(over tabs: UITabBarController) async {
     for _ in 0..<40 {
       if let briefing = tabs.presentedViewController as? BriefingViewController {
-        briefing.routes.close()
+        briefing.viewModel.close()
         while tabs.presentedViewController != nil {
           try? await Task.sleep(for: .milliseconds(50))
         }

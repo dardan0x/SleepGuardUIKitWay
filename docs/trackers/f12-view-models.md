@@ -14,15 +14,15 @@
 
 ## Summary
 
-Every screen with state or logic now has a view model (ADR 0008): `@MainActor @Observable`, no UI imports (checked), tested with the fakes. It holds the state, calls the use cases and routes, and says which alert is due. The UIKit controller only draws it, forwards taps, runs its async work in tasks it owns, and presents its alerts. The flows' composers became factories that build the dependencies, then the view model, then the controller. Decided with the owner on 2026-11-18: view models only where there is state or logic, and the existing per-flow composers as the factories (no per-screen factory types). It reverses ADR 0001's "no view models", whose reason ended when the screens became UIKit (F11).
+Every screen now has a view model (ADR 0008; checked): `@MainActor @Observable`, no UI imports (checked), tested with the fakes. It holds the state, calls the use cases and routes, and says which alert is due. The UIKit controller only draws it, forwards taps, runs its async work in tasks it owns, and presents its alerts. The flows' composers became factories that build the dependencies, then the view model, then the controller. Decided with the owner on 2026-11-18: the existing per-flow composers as the factories (no per-screen factory types). First built with view models only where there was state or logic; the owner then asked for one on every screen, which the layering check now enforces. It reverses ADR 0001's "no view models", whose reason ended when the screens became UIKit (F11).
 
 ## Tasks
 
-One task, at the owner's request. Built on the F11 branch, which the owner chose.
+One task, at the owner's request. Started on the F11 branch, finished on `feature/f12/t1-view-models`.
 
 | ID | Task | Type | Status | Depends On | Where | Acceptance (short) |
 |----|------|------|--------|------------|-------|--------------------|
-| F12-T1 | View models for the stateful screens; composers become factories | Architecture / Refactor | Done | F11 | Features, AppShell, ScreenKit, scripts, docs | 14 view models; factories build them; every brand builds; tests and checks pass |
+| F12-T1 | A view model for every screen; composers become factories | Architecture / Refactor | Done | F11 | Features, AppShell, ScreenKit, scripts, docs | 19 view models for 21 screens (checked); factories build them; every brand builds; tests and checks pass |
 
 ## Task Details
 
@@ -31,7 +31,7 @@ One task, at the owner's request. Built on the F11 branch, which the owner chose
 | Field | Value |
 |-------|-------|
 | Arch Ref | ADR 0008, `docs/architecture/composition.md` |
-| Branch | `feature/f11/t1-uikit-screen-containers` |
+| Branch | `feature/f12/t1-view-models` (started on `feature/f11/t1-uikit-screen-containers`) |
 | Status | Done |
 | Started | 2026-11-18 |
 | Completed | 2026-11-18 |
@@ -40,7 +40,9 @@ One task, at the owner's request. Built on the F11 branch, which the owner chose
 - [x] ADR 0008; `AGENTS.md` and `CLAUDE.md` in sync: module table row for view models, the screen and factory rules, testing
 - [x] `check-layering.py`: a feature's `*ViewModel.swift` imports only Foundation, Observation, `SleepDomain`, `SleepCore`
 - [x] View models: History, Session Detail, Onboarding, Statistics, `NightsViewModel` (Trends, Calendar, Last 7 Nights), Settings, Profile editor, Prestart, Countdown, Bedside clock (over `LiveRecordingModel`), Summary, Record melody, Snore Interrupter, Melody picker. `ClipPlaybackModel` renamed `PlayerViewModel`
-- [x] Display-only screens have none: Learn, Briefing, stages sheet, events sheet
+- [x] The screens that only show values have one too: `LearnViewModel`, `BriefingViewModel`, `EventsSheetViewModel`, `SleepStagesInfoViewModel`; `BriefingFactory` replaces the inline build in `AppCoordinator`
+- [x] `check-layering.py`: a feature class subclassing `ScreenController` without `let viewModel` fails (checked against sample lines)
+- [x] No `@ObservationIgnored` (`let`s aren't tracked; renders read only what they draw)
 - [x] Controllers draw (`renderTracking`), forward, own the tasks, present alerts (`ScreenController.presentAlert`) and never call a route
 - [x] Composers renamed factories (`HistoryScreenFactory`, `SessionDetailFactory`, `StatisticsFactory`, `SettingsFactory`, `RecordingFactory`); the onboarding and Learn screens moved out of their flows into `OnboardingFactory` and `LearnFactory`
 - [x] View-model tests: History, Session Detail, Onboarding, Prestart, Countdown, Summary, Record melody, Melody picker, Settings (new `SettingsFeatureTests` target); flow and in-app tests go through `viewModel`

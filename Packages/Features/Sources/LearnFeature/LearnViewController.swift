@@ -2,18 +2,17 @@ import ScreenKit
 import SleepGuardContentKit
 import UIKit
 
-/// The Learn tab, hosting the shared `LearnContent`: the brand's Learn page,
-/// or "No content available" when it has none.
+/// The Learn tab, drawn from `LearnViewModel` by the shared `LearnContent`.
 public final class LearnViewController: ScreenController {
-  let url: URL?
+  let viewModel: LearnViewModel
 
-  public init(url: URL?, theme: Theme, chrome: ScreenChrome) {
-    self.url = url
+  public init(viewModel: LearnViewModel, theme: Theme, chrome: ScreenChrome) {
+    self.viewModel = viewModel
     super.init(theme: theme, chrome: chrome)
   }
 
   override public func viewDidLoad() {
     super.viewDidLoad()
-    render(LearnContent(url: url))
+    render(LearnContent(url: viewModel.url))
   }
 }
