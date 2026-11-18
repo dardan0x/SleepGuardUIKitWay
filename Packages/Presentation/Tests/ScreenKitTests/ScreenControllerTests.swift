@@ -47,6 +47,23 @@ struct ScreenControllerTests {
     #expect(screen.stateChild === loaded)
   }
 
+  @Test func aStateSitsBelowTheHeader() {
+    let screen = ScreenController(theme: .sleepGuard)
+    screen.loadViewIfNeeded()
+    screen.setHeader(Text("Title"))
+    let loaded = UIViewController()
+
+    screen.show(loaded)
+
+    #expect(screen.children.count == 2)
+    #expect(screen.stateChild === loaded)
+    let header = screen.children.first { $0 !== loaded }?.view
+    #expect(screen.view.constraints.contains { constraint in
+      constraint.firstItem === loaded.view && constraint.firstAttribute == .top
+        && constraint.secondItem === header && constraint.secondAttribute == .bottom
+    })
+  }
+
   @Test func renderingTheSameKindOfContentRedrawsInPlace() {
     let screen = ScreenController(theme: .sleepGuard)
     screen.loadViewIfNeeded()

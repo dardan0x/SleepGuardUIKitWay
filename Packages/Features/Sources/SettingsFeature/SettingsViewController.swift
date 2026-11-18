@@ -2,10 +2,11 @@ import ScreenKit
 import SleepCore
 import SleepDomain
 import SleepGuardContentKit
+import SwiftUI
 import UIKit
 
-/// Settings, drawn from `SettingsViewModel` by the shared `SettingsContent`;
-/// the confirmations and reports are UIKit alerts. The values handed to the
+/// Settings, drawn from `SettingsViewModel` by the shared `SettingsContent`
+/// under the shared title row (the bar is hidden); the confirmations and reports are UIKit alerts. The values handed to the
 /// content are built in `SettingsViewController+Values.swift`.
 public final class SettingsViewController: ScreenController {
   let viewModel: SettingsViewModel
@@ -22,6 +23,7 @@ public final class SettingsViewController: ScreenController {
 
   override public func viewDidLoad() {
     super.viewDidLoad()
+    setHeader(SettingsTitleRow().padding(.horizontal, 20).padding(.top, 10))
     renderTracking { [weak self] in self?.redraw() }
     loading = Task { [viewModel] in await viewModel.load() }
   }

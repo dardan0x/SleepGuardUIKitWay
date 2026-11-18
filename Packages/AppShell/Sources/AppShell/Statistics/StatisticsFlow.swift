@@ -33,11 +33,11 @@ final class StatisticsFlow: TabFlow {
       routes: StatisticsRoutes(
         startRecording: { [weak self] in self?.onStartRecording() },
         showTrends: { [weak self] in self?.showTrends() },
+        showCalendar: { [weak self] in self?.showCalendar() },
         showLastSevenNights: { [weak self] in self?.showLastSevenNights() },
         showStagesInfo: { [weak self] stages in self?.nightDetail.showStagesInfo(stages) },
         openProfile: { [weak self] in self?.openProfile() },
-        dismissProfilePrompt: { [weak self] in self?.dismissProfilePrompt() }),
-      onCalendar: { [weak self] in self?.showCalendar() }))
+        dismissProfilePrompt: { [weak self] in self?.dismissProfilePrompt() })))
   }
 
   /// The profile editor, as from Settings.

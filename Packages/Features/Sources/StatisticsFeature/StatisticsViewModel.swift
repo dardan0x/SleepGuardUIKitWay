@@ -62,6 +62,10 @@ public final class StatisticsViewModel {
     routes.showTrends()
   }
 
+  public func showCalendar() {
+    routes.showCalendar()
+  }
+
   public func showLastSevenNights() {
     routes.showLastSevenNights()
   }
