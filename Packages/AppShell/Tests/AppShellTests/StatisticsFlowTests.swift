@@ -23,9 +23,9 @@ struct StatisticsFlowTests {
     return (StatisticsFlow(navigator: spy, container: .test(), onStartRecording: onStartRecording), spy)
   }
 
-  private func dashboard(_ spy: NavigatorSpy) throws -> HostingScreen<StatisticsScreen> {
+  private func dashboard(_ spy: NavigatorSpy) throws -> StatisticsViewController {
     guard case let .setRoot(root) = try #require(spy.calls.first) else { throw Failure.noRoot }
-    return try #require(root as? HostingScreen<StatisticsScreen>)
+    return try #require(root as? StatisticsViewController)
   }
 
   private func lastPushed(_ spy: NavigatorSpy) throws -> UIViewController {
@@ -48,32 +48,32 @@ struct StatisticsFlowTests {
     let (flow, spy) = makeFlow()
     flow.start()
     try dashboard(spy).navigationItem.rightBarButtonItems?.first?.primaryAction?.performWithSender(nil, target: nil)
-    let calendar = try #require(try lastPushed(spy) as? HostingScreen<CalendarScreen>)
+    let calendar = try #require(try lastPushed(spy) as? CalendarViewController)
     #expect(calendar.navigationItem.title == Strings.watchCalendar)
   }
 
   @Test func routesPushTrendsAndLastSevenNights() throws {
     let (flow, spy) = makeFlow()
     flow.start()
-    let routes = try dashboard(spy).rootView.content.routes
+    let routes = try dashboard(spy).routes
     routes.showTrends()
-    #expect(try (lastPushed(spy) as? HostingScreen<TrendsScreen>)?.navigationItem.title == Strings.statsTrendsTitle)
+    #expect(try (lastPushed(spy) as? TrendsViewController)?.navigationItem.title == Strings.statsTrendsTitle)
     routes.showLastSevenNights()
-    #expect(try (lastPushed(spy) as? HostingScreen<LastSevenNightsScreen>)?.navigationItem.title == Strings.statsTrendsLastSevenNights)
+    #expect(try (lastPushed(spy) as? LastSevenNightsViewController)?.navigationItem.title == Strings.statsTrendsLastSevenNights)
   }
 
   @Test func aNightFromLastSevenNightsOrTheCalendarOpensItsDetail() throws {
     let (flow, spy) = makeFlow()
     flow.start()
-    try dashboard(spy).rootView.content.routes.showLastSevenNights()
-    let list = try #require(try lastPushed(spy) as? HostingScreen<LastSevenNightsScreen>)
-    list.rootView.content.routes.openNight(night)
-    #expect(try lastPushed(spy) is HostingScreen<SessionDetailScreen>)
+    try dashboard(spy).routes.showLastSevenNights()
+    let list = try #require(try lastPushed(spy) as? LastSevenNightsViewController)
+    list.routes.openNight(night)
+    #expect(try lastPushed(spy) is SessionDetailViewController)
 
     try dashboard(spy).navigationItem.rightBarButtonItems?.first?.primaryAction?.performWithSender(nil, target: nil)
-    let calendar = try #require(try lastPushed(spy) as? HostingScreen<CalendarScreen>)
-    calendar.rootView.content.routes.openNight(night)
-    let detail = try #require(try lastPushed(spy) as? HostingScreen<SessionDetailScreen>)
+    let calendar = try #require(try lastPushed(spy) as? CalendarViewController)
+    calendar.routes.openNight(night)
+    let detail = try #require(try lastPushed(spy) as? SessionDetailViewController)
     #expect(detail.navigationItem.rightBarButtonItems?.map(\.accessibilityLabel) == [Strings.actionDelete, Strings.a11yExportReport])
   }
 
@@ -81,17 +81,17 @@ struct StatisticsFlowTests {
     let (flow, spy) = makeFlow()
     flow.start()
     let stages = try #require(SleepStageBreakdown(segments: [SleepStageSegment(stage: .light, startOffset: 0, duration: 600)]))
-    try dashboard(spy).rootView.content.routes.showStagesInfo(stages)
+    try dashboard(spy).routes.showStagesInfo(stages)
     guard case let .present(presented, style) = try #require(spy.calls.last) else { throw Failure.noRoot }
     #expect(style == .sheet(detents: [.large]))
-    #expect((presented as? HostingScreen<SleepStagesInfoScreen>)?.rootView.content.breakdown == stages)
+    #expect((presented as? SleepStagesInfoViewController)?.breakdown == stages)
   }
 
   @Test func startRecordingGoesToTheAppCoordinator() throws {
     var requests = 0
     let (flow, spy) = makeFlow { requests += 1 }
     flow.start()
-    try dashboard(spy).rootView.content.routes.startRecording()
+    try dashboard(spy).routes.startRecording()
     #expect(requests == 1)
     #expect(spy.calls.count == 1) // nothing pushed or presented by the tab
   }

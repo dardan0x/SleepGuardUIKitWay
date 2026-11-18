@@ -2,13 +2,13 @@
 
 > A bedside sleep and snoring tracker for iOS. It listens while you sleep, detects snoring and sleep talking on the device, scores your night, and shows how your sleep trends over time.
 
-Under the hood it's built the way a large UIKit team would build it: a **UIKit shell with coordinators** hosts **SwiftUI screens** on a **hexagonal core**, and **four white-label apps** ship from one codebase.
+Under the hood it's built the way a large UIKit team would build it: **UIKit screens and coordinators**, with the shared **SwiftUI** views as their cells and pages, on a **hexagonal core**, and **four white-label apps** ship from one codebase.
 
 **One product, two architectures.** This is the UIKit-first sibling of [SleepGuard](https://github.com/dardan0x/SleepGuard), the same app built in pure SwiftUI. Both build against [SleepGuardShared](https://github.com/dardan0x/SleepGuardShared), which holds the domain rules, strings, design system and screen layouts. A night recorded here yields the same events, score and screens as in SleepGuard. Navigation, dependency injection, persistence boundaries, project generation and white-labelling are built differently, on purpose.
 
 ![Platform](https://img.shields.io/badge/platform-iOS%2017%2B-blue)
 ![Language](https://img.shields.io/badge/Swift-6.2%20%C2%B7%20strict%20concurrency-orange)
-![Architecture](https://img.shields.io/badge/architecture-UIKit%20shell%20%C2%B7%20SwiftUI%20%C2%B7%20hexagonal-green)
+![Architecture](https://img.shields.io/badge/architecture-UIKit%20%C2%B7%20SwiftUI%20content%20%C2%B7%20hexagonal-green)
 ![Build](https://img.shields.io/badge/project-Tuist-purple)
 ![Privacy](https://img.shields.io/badge/privacy-on--device-brightgreen)
 
@@ -63,7 +63,7 @@ It also reflects how large iOS codebases tend to be organised: a UI layer that c
 │   coordinators, flows,   │  calls     │   use cases: LoadSessionDetail,  │  ports     │   SwiftData @ModelActor,       │
 │   composers              │ ─────────► │   CommitSession, DeleteSession,  │ ─────────► │   file stores                  │
 │ Features                 │            │   MorningBriefing, …             │            │ SleepAudio                     │
-│   SwiftUI screens via    │            │   RecordingSession (actor)       │            │   AVAudioEngine, SoundAnalysis │
+│   UIKit screens via      │            │   RecordingSession (actor)       │            │   AVAudioEngine, SoundAnalysis │
 │   Dependencies closures  │            │ ──────────────────────────────── │            │ SleepHealth                    │
 └──────────────────────────┘            │ SleepCore (shared; domain model) │            │   HealthKit                    │
                                         │   Night, rules, DetectionEngine  │            └────────────────────────────────┘
@@ -102,8 +102,8 @@ public struct LoadSessionDetail: Sendable {
 ```
 Apps/<Brand>             Brand.swift: BrandConfiguration (theme, tabs, Health port, capabilities)
 └─► AppShell             composition root: coordinators, flows, composers, Factory container
-    ├─► Features         8 modules of SwiftUI screens: Dependencies in, Routes out
-    ├─► ScreenKit        HostingScreen, ScreenChrome, Navigator
+    ├─► Features         8 modules of UIKit screens hosting the shared content: Dependencies in, Routes out
+    ├─► ScreenKit        ScreenController, ContentListController, ScreenChrome, Navigator
     ├─► Adapters         SleepPersistence · SleepAudio · SleepHealth
     └─► SleepDomain      ports, use cases, RecordingSession actor
             └─► SleepCore and the kits (SleepGuardShared, pinned release)
@@ -115,8 +115,8 @@ Apps/<Brand>             Brand.swift: BrandConfiguration (theme, tabs, Health po
 | Adapters | `SleepPersistence` | 0.6k | SwiftData behind `SessionRepository` (`@ModelActor`); file stores for clips, checkpoint, profile, survey | Expose a `@Model` beyond its port |
 | | `SleepAudio` | 1.1k | AVAudioEngine capture and analysis, clip compression and playback, melody player and recorder | |
 | | `SleepHealth` | 87 | HealthKit read and write | Be linked by Lite |
-| Presentation | `ScreenKit` | 0.2k | Hosts a SwiftUI screen in a themed `UIHostingController`; bar chrome; the `Navigator` abstraction | |
-| Features | 8 modules | 2.0k | 21 SwiftUI screens: History, SessionDetail, Statistics, Recording, Settings, Onboarding, Briefing, Learn | Navigate, present, persist, resolve dependencies, use `UIApplication` |
+| Presentation | `ScreenKit` | 0.4k | `ScreenController`, every screen's base (theme, chrome, one state child, hosting the shared views); a self-sizing UIKit list; the `Navigator` abstraction | |
+| Features | 8 modules | 3.0k | 21 UIKit screens (collection views, a page view controller, alerts) around the shared SwiftUI content: History, SessionDetail, Statistics, Recording, Settings, Onboarding, Briefing, Learn | Navigate, present anything but an alert, persist, resolve dependencies, use `UIApplication` |
 | Shell | `AppShell` | 1.8k | `AppCoordinator`, `MainTabCoordinator`, 9 flows, composers, 28 container registrations | Be imported by anything but the brand targets |
 
 Dependencies point inwards. The domain knows no framework; adapters implement its ports; features know the domain's types and the shared content but not how they are presented; only `AppShell` knows everything.
@@ -137,30 +137,29 @@ A feature never calls another feature, the shell, or an adapter. Every interacti
 Opening a night from History exercises all four:
 
 ```
-HistoryScreen ── routes.openNight(summary) ──► HistoryFlow
+HistoryViewController ── routes.openNight(summary) ──► HistoryFlow
                                                   │
                                                   ▼
                                       NightDetailNavigation.show(summary)
                                                   │  SessionDetailComposer resolves LoadSessionDetail,
-                                                  │  builds SessionDetailScreen(dependencies:routes:),
-                                                  │  wraps it in HostingScreen (theme, title, bar items)
+                                                  │  builds SessionDetailViewController(dependencies:routes:
+                                                  │  theme:chrome:) (title, bar items in the chrome)
                                                   ▼
                                       navigator.push(controller)
                                                   │
-SessionDetailScreen ── await loadDetail(id) ──► LoadSessionDetail ──► SessionRepository ──► SleepPersistence
+SessionDetailViewController ── await loadDetail(id) ──► LoadSessionDetail ──► SessionRepository ──► SleepPersistence
                                                                   └─► SleepStagePort    ──► SleepHealth, or none (Lite)
          │
-         └─ hosts NightDetailContent (SleepGuardShared); Play / Share / Show all ──► SessionDetailRoutes ──► flow
+         └─ a UIKit collection view of shared pieces (SleepGuardShared); Play / Share / Show all ──► SessionDetailRoutes ──► flow
 ```
 
 The composer and the navigation object, from the source:
 
 ```swift
-// AppShell: wiring only. Resolve, build the screen, host it.
-HostingScreen(
-  rootView: SessionDetailScreen(
-    dependencies: SessionDetailDependencies(nightID: night.id, loadDetail: container.loadSessionDetail()),
-    routes: routes),
+// AppShell: wiring only. Resolve, build the screen.
+SessionDetailViewController(
+  dependencies: SessionDetailDependencies(nightID: night.id, loadDetail: container.loadSessionDetail()),
+  routes: routes,
   theme: container.theme(),
   chrome: ScreenChrome(title: …, trailingItems: [reportItem, deleteItem]))
 
@@ -194,8 +193,8 @@ Each module imports the narrowest shared product it needs (from the manifests), 
 | `SleepPersistence` | SleepCore | `Night`, `NightSummary`, `RecordingGap`, `SleepStageSegment`, `SleepProfile`, `LifestyleLog`, `RawLog` | **Mapping target.** Records are this module's own; it converts them to and from shared values at the port. The summary is stored next to the night, so lists never load events |
 | `SleepAudio` | SleepCore, SleepMelodies | `AudioLevels`, `SpectralFeatures`, `SoundClassLabels`, `PlaybackGain`, `PlaybackEnhancement`, `WaveformAccumulator`, `Melody`, `CustomMelodies` | **Inputs and parameters.** The tap computes the shared detection inputs; playback uses the shared gain and filter settings; melodies resolve through the shared catalog and bundled files |
 | `SleepHealth` | SleepCore | `SleepStageSegment`, `Night` | **Mapping target** for HealthKit samples, in both directions |
-| `ScreenKit` | DesignKit | `Theme` | **Theming.** `HostingScreen` sets the brand's `Theme` in the environment of every hosted hierarchy |
-| Features | ContentKit, SleepCore | 27 content views (`NightDetailContent`, `StatisticsDashboardContent`, `BedsideClockContent`, `BriefingContent`, `SettingsContent`, …) | **Layout.** Each screen owns loading, `ViewState` and its `Routes`, and draws through a shared content view |
+| `ScreenKit` | DesignKit | `Theme` | **Theming.** `ScreenController` sets the brand's `Theme` in the environment of everything a screen hosts, and gives UIKit text the theme's font |
+| Features | ContentKit, SleepCore | Content views and pieces (`NightDayCard`, `NightDetailHeader`, `OnboardingPageView`, `StatisticsDashboardContent`, `BedsideClockContent`, `SettingsContent`, …) | **Drawing.** Each UIKit screen owns loading, state, alerts and its `Routes`, and hosts shared views as cells, pages or its whole content (ADR 0007) |
 | `AppShell` | DesignKit, SleepCore | `Theme`, `Night`, `SleepStageSegment`, `RecordingGap`, `RecordingDelay` | **Composition.** Builds each brand's `Theme` and styles UIKit bars from its tokens; passes shared values between flows (a recovered night, a delay choice) |
 
 ### What stays here
@@ -268,8 +267,8 @@ Testing follows the architecture: every boundary is a seam where a test double f
 |---|---|---|---|---:|
 | **Domain** (`SleepDomain`) | Fakes from `SleepDomainTestSupport`: one per port (repository, file store, capture, stage source, checkpoint store, players, settings) | Commit and delete ordering (a failed delete keeps the clips); the recording actor's events, gaps and checkpoints from scripted samples; briefing and storage rules over the shared engine | macOS, `swift test` | 65 |
 | **Adapters** | Real infrastructure, isolated: in-memory or on-disk SwiftData, temporary directories, generated audio buffers | Session store round trip, replacement and observed summaries; checkpoint and settings stores; levels, classifier scores and clip compression on generated tones; clip player; HealthKit stage mapping | Simulator, per package | 40 |
-| **Presentation** (`ScreenKit`) | Real UIKit, no window | `HostingScreen` applies theme and chrome; `Navigator` push, present and dismiss | Simulator | 13 |
-| **Features** | State owners with fake ports | `LiveRecordingModel` through a night; `ClipPlaybackModel` sequencing; onboarding paging | Simulator | 22 |
+| **Presentation** (`ScreenKit`) | Real UIKit, no window | `ScreenController` applies theme and chrome and swaps state; the content list; redraw on observed change; `Navigator` push, present and dismiss | Simulator | 17 |
+| **Features** | Controllers and state owners with fake ports | History's empty and list states and deleting a day; the detail's and the list's item builders; onboarding paging and permissions; a short night not saved; `LiveRecordingModel`, `ClipPlaybackModel` | Simulator | 36 |
 | **Shell** (`AppShell`) | `NavigatorSpy` + `TestBrand` from `AppShellTestSupport`; a container with fakes registered | Every flow: what each route pushes or presents, titles and bar items, confirmation before deleting, the briefing opening once per new night, a brand without the Interrupter getting no row and no melody at night | Simulator, no UI | 70 |
 | **In-app** | The real app, per brand | Bootstrap, tabs, a night's detail, the player, the recording flow | Each brand's host app | 9 × 4 |
 
@@ -291,9 +290,9 @@ A flow against a navigator spy. The screen's route is invoked directly, and the 
 @Test func openingANightPushesItsDetail() throws {
   let (flow, spy, _) = makeFlow([night])
   flow.start()
-  try #require(rootList(spy)).rootView.content.routes.openNight(night.summary())
+  try #require(rootList(spy)).routes.openNight(night.summary())
   guard case let .push(pushed) = spy.calls.last else { Issue.record("expected push"); return }
-  let detail = try #require(pushed as? HostingScreen<SessionDetailScreen>)
+  let detail = try #require(pushed as? SessionDetailViewController)
   #expect(detail.navigationItem.rightBarButtonItems?.map(\.accessibilityLabel) == [Strings.actionDelete, Strings.a11yExportReport])
 }
 ```

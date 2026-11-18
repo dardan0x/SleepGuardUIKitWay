@@ -4,10 +4,9 @@ import ScreenKit
 import SleepCore
 import SleepDomain
 import SleepGuardDesignKit
-import SwiftUI
 import UIKit
 
-/// Builds the recording screens. Wiring only: resolve, build, host. They show
+/// Builds the recording screens. Wiring only: resolve, build. They show
 /// no navigation bar: the flow is a full-screen modal with its own buttons.
 struct RecordingComposer {
   let container: Container
@@ -18,7 +17,7 @@ struct RecordingComposer {
     let capture = container.makeAudioCapture()()
     let device = container.deviceServices()
     let preferences = container.preferencesStore()
-    return host(RecordingPrestartScreen(
+    return RecordingPrestartViewController(
       dependencies: RecordingPrestartDependencies(
         compactHeight: compactHeight,
         requestPermission: { await capture.requestPermission() },
@@ -32,7 +31,7 @@ struct RecordingComposer {
           }
         },
         hasInterrupter: melodyStore != nil),
-      routes: routes))
+      routes: routes, theme: theme, chrome: chrome)
   }
 
   /// The Snore Interrupter's sounds; `nil` in a brand without it.
@@ -43,18 +42,19 @@ struct RecordingComposer {
   func makeInterrupterSettings(
     choice: SnoreInterrupterChoice, store: any MelodyStore, routes: SnoreInterrupterRoutes) -> UIViewController
   {
-    host(SnoreInterrupterScreen(choice: choice, store: store, routes: routes))
+    SnoreInterrupterViewController(choice: choice, store: store, routes: routes, theme: theme, chrome: chrome)
   }
 
   func makeMelodyPicker(selectedID: Int, store: any MelodyStore, routes: MelodyPickerRoutes) -> UIViewController {
-    host(MelodyPickerScreen(
-      selectedID: selectedID, store: store, preview: container.makeMelodyPlayer()(true), routes: routes))
+    MelodyPickerViewController(
+      selectedID: selectedID, store: store, preview: container.makeMelodyPlayer()(true), routes: routes, theme: theme,
+      chrome: chrome)
   }
 
   func makeRecordMelody(store: any MelodyStore, done: @escaping @MainActor (Melody?) -> Void) -> UIViewController {
-    host(RecordMelodyScreen(
+    RecordMelodyViewController(
       store: store, recorder: container.makeMelodyRecorder()(), playback: container.makeMelodyPlayer()(true),
-      done: done))
+      done: done, theme: theme, chrome: chrome)
   }
 
   /// A new microphone capture for one night (warmed up first when the night
@@ -87,15 +87,15 @@ struct RecordingComposer {
   }
 
   func makeCountdown(target: Date, routes: RecordingCountdownRoutes) -> UIViewController {
-    host(RecordingCountdownScreen(target: target, routes: routes))
+    RecordingCountdownViewController(target: target, routes: routes, theme: theme, chrome: chrome)
   }
 
   func makeBedside(model: LiveRecordingModel, routes: BedsideClockRoutes) -> UIViewController {
-    host(BedsideClockScreen(model: model, routes: routes))
+    BedsideClockViewController(model: model, routes: routes, theme: theme, chrome: chrome)
   }
 
   func makeSummary(night: Night, routes: SessionSummaryRoutes) -> UIViewController {
-    host(SessionSummaryScreen(night: night, routes: routes))
+    SessionSummaryViewController(night: night, routes: routes, theme: theme, chrome: chrome)
   }
 
   /// "Couldn't save", with OK.
@@ -105,7 +105,12 @@ struct RecordingComposer {
     return alert
   }
 
-  private func host(_ screen: some View) -> UIViewController {
-    HostingScreen(rootView: screen, theme: container.theme(), chrome: ScreenChrome(hidesNavigationBar: true))
+  private var theme: Theme {
+    container.theme()
+  }
+
+  /// No bar: the flow is a full-screen modal with its own buttons.
+  private var chrome: ScreenChrome {
+    ScreenChrome(hidesNavigationBar: true)
   }
 }

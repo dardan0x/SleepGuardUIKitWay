@@ -4,7 +4,7 @@ import SleepGuardDesignKit
 import StatisticsFeature
 import UIKit
 
-/// Builds the Statistics screens. Wiring only: resolve, build the screen, host it.
+/// Builds the Statistics screens. Wiring only: resolve, build the screen.
 struct StatisticsComposer {
   let container: Container
 
@@ -15,29 +15,28 @@ struct StatisticsComposer {
 
   /// The dashboard, with the calendar button in the bar.
   func makeDashboard(routes: StatisticsRoutes, onCalendar: @escaping @MainActor () -> Void) -> UIViewController {
-    HostingScreen(
-      rootView: StatisticsScreen(dependencies: dependencies, routes: routes),
-      theme: container.theme(),
+    StatisticsViewController(
+      dependencies: dependencies, routes: routes, theme: container.theme(),
       chrome: ScreenChrome(
         title: Strings.tabStatistics, largeTitle: true,
         trailingItems: [BarItem(systemImage: "calendar", accessibilityLabel: Strings.watchCalendar, action: onCalendar)]))
   }
 
   func makeTrends() -> UIViewController {
-    HostingScreen(
-      rootView: TrendsScreen(dependencies: dependencies), theme: container.theme(),
+    TrendsViewController(
+      dependencies: dependencies, theme: container.theme(),
       chrome: ScreenChrome(title: Strings.statsTrendsTitle))
   }
 
   func makeLastSevenNights(routes: NightListRoutes) -> UIViewController {
-    HostingScreen(
-      rootView: LastSevenNightsScreen(dependencies: dependencies, routes: routes), theme: container.theme(),
+    LastSevenNightsViewController(
+      dependencies: dependencies, routes: routes, theme: container.theme(),
       chrome: ScreenChrome(title: Strings.statsTrendsLastSevenNights))
   }
 
   func makeCalendar(routes: NightListRoutes) -> UIViewController {
-    HostingScreen(
-      rootView: CalendarScreen(dependencies: dependencies, routes: routes), theme: container.theme(),
+    CalendarViewController(
+      dependencies: dependencies, routes: routes, theme: container.theme(),
       chrome: ScreenChrome(title: Strings.watchCalendar))
   }
 }

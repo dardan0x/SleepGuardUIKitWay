@@ -35,10 +35,10 @@ struct OnboardingFlowTests {
     return Harness(flow: flow, spy: spy, preferences: preferences, finished: { finished })
   }
 
-  private func screen(_ h: Harness) throws -> OnboardingScreen {
+  private func screen(_ h: Harness) throws -> OnboardingViewController {
     guard case let .setRoot(controller) = h.spy.calls.first,
-          let screen = controller as? HostingScreen<OnboardingScreen> else { throw Unexpected() }
-    return screen.rootView.content
+          let screen = controller as? OnboardingViewController else { throw Unexpected() }
+    return screen
   }
 
   private struct Unexpected: Error {}

@@ -90,17 +90,18 @@ public final class AppCoordinator {
     let morningBriefing = morningBriefing
     briefing = Task { [weak self] in
       await self?.recovery?.value
-      guard let due = await morningBriefing.due(), let self, self.recording == nil,
-            let tabs = self.mainTabs?.tabBarController, tabs.presentedViewController == nil else { return }
+      guard let due = await morningBriefing.due(), let self, recording == nil,
+            let tabs = mainTabs?.tabBarController, tabs.presentedViewController == nil else { return }
       await morningBriefing.markShown()
-      let sheet = HostingScreen(
-        rootView: BriefingScreen(briefing: due.briefing, routes: BriefingRoutes(
+      let sheet = BriefingViewController(
+        briefing: due.briefing,
+        routes: BriefingRoutes(
           answer: { [weak tabs] chip in
             Task { try? await morningBriefing.answer(chip, for: due.night) }
             tabs?.dismiss(animated: true)
           },
-          close: { [weak tabs] in tabs?.dismiss(animated: true) })),
-        theme: self.container.theme(), chrome: ScreenChrome(hidesNavigationBar: true))
+          close: { [weak tabs] in tabs?.dismiss(animated: true) }),
+        theme: container.theme(), chrome: ScreenChrome(hidesNavigationBar: true))
       sheet.sheetPresentationController?.detents = [.large()]
       tabs.present(sheet, animated: true)
     }

@@ -14,8 +14,10 @@ So this script checks imports against the module table in AGENTS.md, plus:
   4. No `.shared` singletons in packages (Factory's `Container.shared` in
      AppShell's bootstrap is the one exception).
   5. Feature modules (Packages/Features/) don't use SwiftUI navigation or
-     persistence APIs, DI property wrappers, or UIKit globals: UIKit owns
-     navigation, adapters own persistence, composers own DI.
+     persistence APIs, DI property wrappers, UIKit globals, or UIKit
+     navigation: coordinators own navigation (a screen presents only a
+     `UIAlertController`, named `…alert` or `…Alert()`), adapters own
+     persistence, composers own DI (ADR 0007).
 
 Lines starting with `//` are ignored. Exits 1 with a file:line listing.
 """
@@ -47,9 +49,11 @@ ALLOWED_IMPORTS = {
     "AppShellTestSupport": {"AppShell", "UIKit", "SwiftUI", "ScreenKit", "SleepGuardDesignKit", "SleepDomain"},
 }
 
-# Every module under Packages/Features/ (they don't exist yet; F3 adds the first).
+# Every module under Packages/Features/. Screens are UIKit controllers on
+# ScreenKit that host the shared SwiftUI content (ADR 0007).
 FEATURE_IMPORTS = {
-    "SwiftUI", "Charts", "SleepDomain", "SleepCore", "SleepGuardContentKit", "SleepGuardDesignKit", "SleepStrings",
+    "UIKit", "SwiftUI", "ScreenKit", "SleepDomain", "SleepCore", "SleepGuardContentKit", "SleepGuardDesignKit",
+    "SleepStrings",
 }
 
 ESCAPE_HATCH = re.compile(
@@ -74,7 +78,10 @@ FEATURE_BANNED = re.compile(
     r"|\.(navigationDestination|sheet|fullScreenCover|popover|navigationTitle|toolbar)\b"
     r"|@(Query|Injected|LazyInjected)\b"
     r"|\bmodelContext\b"
-    r"|\b(UIApplication|UIDevice)\b"
+    r"|\b(UIApplication|UIDevice|UINavigationController|Navigator)\b"
+    r"|\bnavigationController\b|\b(pushViewController|popViewController|showDetailViewController)\b"
+    # Only alerts: `present(alert, …)`, `present(someAlert(), …)`, `present(confirmation(…), …)`.
+    r"|\bpresent\((?!\w*[aA]lert\b|\w*Alert\(|\w*[cC]onfirmation\()"
 )
 
 IMPORT = re.compile(r"^\s*(?:@testable\s+|@_exported\s+)?import\s+(?:(?:struct|class|enum|protocol|func|var|let)\s+)?([\w]+)")

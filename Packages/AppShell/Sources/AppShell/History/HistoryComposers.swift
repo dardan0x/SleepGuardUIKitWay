@@ -6,18 +6,16 @@ import SleepCore
 import SleepGuardDesignKit
 import UIKit
 
-/// Builds the History list. Wiring only: resolve, build the screen, host it.
+/// Builds the History list (a UIKit screen, ADR 0007). Wiring only: resolve,
+/// build the screen.
 struct HistoryScreenComposer {
   let container: Container
 
   func make(routes: HistoryRoutes) -> UIViewController {
-    HostingScreen(
-      rootView: HistoryScreen(
-        dependencies: HistoryDependencies(nights: container.sessionRepository(), deleteNight: container.deleteSession()),
-        routes: routes),
+    HistoryViewController(
+      dependencies: HistoryDependencies(nights: container.sessionRepository(), deleteNight: container.deleteSession()),
+      routes: routes,
       theme: container.theme(),
-      // Inline: UIKit doesn't create the large title over a hosted SwiftUI
-      // List (no large-title view in the bar, checked on iOS 26.2).
       chrome: ScreenChrome(title: Strings.tabSessions))
   }
 }
@@ -30,10 +28,9 @@ struct SessionDetailComposer {
     night: NightSummary, onReport: @escaping @MainActor () -> Void, onDelete: @escaping @MainActor () -> Void,
     routes: SessionDetailRoutes) -> UIViewController
   {
-    HostingScreen(
-      rootView: SessionDetailScreen(
-        dependencies: SessionDetailDependencies(nightID: night.id, loadDetail: container.loadSessionDetail()),
-        routes: routes),
+    SessionDetailViewController(
+      dependencies: SessionDetailDependencies(nightID: night.id, loadDetail: container.loadSessionDetail()),
+      routes: routes,
       theme: container.theme(),
       chrome: ScreenChrome(
         title: night.start.formatted(.dateTime.weekday(.wide).month(.abbreviated).day()),
@@ -49,8 +46,8 @@ struct SessionDetailComposer {
     onClose: @escaping @MainActor () -> Void) -> UIViewController
   {
     let theme = container.theme()
-    let screen = HostingScreen(
-      rootView: EventsSheetScreen(rows: rows, events: events, playEvents: playEvents),
+    let screen = EventsSheetViewController(
+      rows: rows, events: events, playEvents: playEvents,
       theme: theme,
       chrome: ScreenChrome(
         title: Strings.recordingsDetailEventsLabel,
@@ -67,8 +64,8 @@ struct SessionDetailComposer {
     let model = ClipPlaybackModel(
       events: events, startEvent: start, player: container.makeClipPlayer()(), files: container.sessionFileStore(),
       waveforms: container.clipWaveformSource())
-    let screen = HostingScreen(
-      rootView: PlayerScreen(model: model),
+    let screen = PlayerViewController(
+      model: model,
       theme: theme,
       chrome: ScreenChrome(
         title: Self.playerTitle(for: events.first { $0.id == start }?.category ?? .snoring),
@@ -79,7 +76,7 @@ struct SessionDetailComposer {
   }
 
   func makeStagesInfo(_ stages: SleepStageBreakdown, onClose: @escaping @MainActor () -> Void) -> UIViewController {
-    HostingScreen(rootView: SleepStagesInfoScreen(breakdown: stages, close: onClose), theme: container.theme())
+    SleepStagesInfoViewController(breakdown: stages, close: onClose, theme: container.theme())
   }
 
   static func playerTitle(for category: SoundCategory) -> String {

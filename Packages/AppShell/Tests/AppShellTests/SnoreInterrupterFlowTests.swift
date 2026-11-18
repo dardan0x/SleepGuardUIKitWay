@@ -4,8 +4,8 @@ import Foundation
 import SleepCore
 import SleepDomain
 import SleepDomainTestSupport
-import Testing
 import SwiftUI
+import Testing
 import UIKit
 @testable import AppShell
 @testable import RecordingFeature
@@ -34,16 +34,16 @@ struct SnoreInterrupterFlowTests {
     return Harness(flow: flow, spy: spy, container: container, preferences: stored)
   }
 
-  private func prestart(_ h: Harness) throws -> RecordingPrestartScreen {
+  private func prestart(_ h: Harness) throws -> RecordingPrestartViewController {
     guard case let .setRoot(controller) = h.spy.calls.first,
-          let screen = controller as? HostingScreen<RecordingPrestartScreen> else { throw Unexpected() }
-    return screen.rootView.content
+          let screen = controller as? RecordingPrestartViewController else { throw Unexpected() }
+    return screen
   }
 
-  private func presented<Screen: View>(_ h: Harness, as _: Screen.Type) throws -> Screen {
+  private func presented<Screen: UIViewController>(_ h: Harness, as _: Screen.Type) throws -> Screen {
     guard case let .present(controller, style) = h.spy.calls.last, style == .sheet(detents: [.large]),
-          let screen = controller as? HostingScreen<Screen> else { throw Unexpected() }
-    return screen.rootView.content
+          let screen = controller as? Screen else { throw Unexpected() }
+    return screen
   }
 
   private struct Unexpected: Error {}
@@ -77,7 +77,7 @@ struct SnoreInterrupterFlowTests {
     var handedBack: SnoreInterrupterChoice?
     try prestart(h).routes.openInterrupter { handedBack = $0 }
     await h.flow.interrupterTask?.value
-    let settings = try presented(h, as: SnoreInterrupterScreen.self)
+    let settings = try presented(h, as: SnoreInterrupterViewController.self)
     let choice = SnoreInterrupterChoice(mode: .thirtySeconds, melodyID: 3)
     settings.routes.save(choice)
     await h.flow.interrupterTask?.value
@@ -93,12 +93,12 @@ struct SnoreInterrupterFlowTests {
     try prestart(h).routes.openInterrupter { _ in }
     await h.flow.interrupterTask?.value
     var picked: Int?
-    try presented(h, as: SnoreInterrupterScreen.self).routes.chooseSound(6) { picked = $0 }
-    let picker = try presented(h, as: MelodyPickerScreen.self)
+    try presented(h, as: SnoreInterrupterViewController.self).routes.chooseSound(6) { picked = $0 }
+    let picker = try presented(h, as: MelodyPickerViewController.self)
 
     var recorded: Melody?
     picker.routes.record { recorded = $0 }
-    let recorder = try presented(h, as: RecordMelodyScreen.self)
+    let recorder = try presented(h, as: RecordMelodyViewController.self)
     let mine = Melody(id: 100, filename: "custom_100.m4a", customName: "Mine")
     recorder.done(mine)
     #expect(h.spy.calls.last == .dismiss)

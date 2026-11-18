@@ -1,6 +1,6 @@
 # Same feature, two architectures
 
-SleepGuard and this app are the same product. SleepGuard is SwiftUI with the MV pattern: views load their own data from SwiftData and navigate with `NavigationStack`. This app is a UIKit shell with SwiftUI screens and a hexagonal core. Since F10 both apps draw their screens with the same shared layouts and compute with the same shared rules, so what remains different is only the architecture around them.
+SleepGuard and this app are the same product. SleepGuard is SwiftUI with the MV pattern: views load their own data from SwiftData and navigate with `NavigationStack`. This app is UIKit screens and coordinators on a hexagonal core. Since F10 both apps compute with the same shared rules and draw with the same shared views; since F11 (ADR 0007) this app's screens are UIKit controllers that host those views as cells and pages, so for History, the night detail and onboarding the container layout is UIKit here and SwiftUI there.
 
 This compares one feature, **a night's detail**: open a night, load it, read its sleep stages from Apple Health if it has none, show the shared layout, filter events, play, share, delete. Line counts are from both repos on 2026-11-17.
 

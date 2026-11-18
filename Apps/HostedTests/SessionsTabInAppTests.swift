@@ -21,24 +21,24 @@ struct SessionsTabInAppTests {
     tabs.selectedIndex = index
     let navigation = try #require(tabs.selectedViewController as? UINavigationController)
     navigation.popToRootViewController(animated: false)
-    let list = try #require(navigation.viewControllers.first as? HostingScreen<HistoryScreen>)
+    let list = try #require(navigation.viewControllers.first as? HistoryViewController)
     let nights = await firstNonEmptyList()
     let screenshots = ProcessInfo.processInfo.environment["SCREENSHOT_DIR"]
     if let screenshots { try await capture(window, to: screenshots, name: "sessions-list") }
 
-    try list.rootView.content.routes.openNight(#require(nights.first))
+    try list.routes.openNight(#require(nights.first))
 
-    let detail = try #require(navigation.topViewController as? HostingScreen<SessionDetailScreen>)
+    let detail = try #require(navigation.topViewController as? SessionDetailViewController)
     #expect(detail.navigationItem.rightBarButtonItems?.count == 2)
     if let screenshots { try await capture(window, to: screenshots, name: "sessions-detail") }
 
     // "Show all": the events sheet at medium and large; close returns to the detail.
     let loaded = try await Container.shared.loadSessionDetail()(#require(nights.first).id)
     let rows = EventListRow.rows(for: loaded.session)
-    detail.rootView.content.routes.showAllEvents(rows, loaded.session.events)
+    detail.routes.showAllEvents(rows, loaded.session.events)
     let sheet = try #require(await until { navigation.presentedViewController as? UINavigationController })
     #expect(sheet.sheetPresentationController?.detents.map(\.identifier) == [.medium, .large])
-    let events = try #require(sheet.viewControllers.first as? HostingScreen<EventsSheetScreen>)
+    let events = try #require(sheet.viewControllers.first as? EventsSheetViewController)
     if let screenshots { try await capture(window, to: screenshots, name: "sessions-events") }
 
     events.navigationItem.rightBarButtonItems?.first?.primaryAction?.performWithSender(nil, target: nil)

@@ -17,11 +17,11 @@ struct StatisticsTabInAppTests {
     tabs.selectedIndex = index
     let navigation = try #require(tabs.selectedViewController as? UINavigationController)
     navigation.popToRootViewController(animated: false)
-    let dashboard = try #require(navigation.viewControllers.first as? HostingScreen<StatisticsScreen>)
+    let dashboard = try #require(navigation.viewControllers.first as? StatisticsViewController)
     try await hold()
 
     dashboard.navigationItem.rightBarButtonItems?.first?.primaryAction?.performWithSender(nil, target: nil)
-    let calendar = await until { navigation.topViewController as? HostingScreen<CalendarScreen> }
+    let calendar = await until { navigation.topViewController as? CalendarViewController }
     #expect(calendar != nil)
     try await hold()
     navigation.popToRootViewController(animated: false)

@@ -62,13 +62,13 @@ struct PersonalizationFlowTests {
     let spy = NavigatorSpy()
     let flow = StatisticsFlow(navigator: spy, container: container, onStartRecording: {})
     flow.start()
-    guard case let .setRoot(root) = spy.calls.first, let dashboard = root as? HostingScreen<StatisticsScreen> else {
+    guard case let .setRoot(root) = spy.calls.first, let dashboard = root as? StatisticsViewController else {
       throw Unexpected()
     }
-    dashboard.rootView.content.routes.openProfile()
+    dashboard.routes.openProfile()
     guard case let .present(sheet, _) = spy.calls.last else { throw Unexpected() }
-    #expect(sheet is HostingScreen<ProfileEditorScreen>)
-    dashboard.rootView.content.routes.dismissProfilePrompt()
+    #expect(sheet is ProfileEditorViewController)
+    dashboard.routes.dismissProfilePrompt()
     await flow.dismissing?.value
     #expect(await preferences.load().profilePromptDismissCount == 1)
   }

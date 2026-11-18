@@ -1,8 +1,9 @@
 // swift-tools-version: 6.2
 import PackageDescription
 
-/// The UIKit ↔ SwiftUI bridge: the one hosting controller, screen chrome, and
-/// the `Navigator` that coordinators drive. Knows nothing about the domain,
+/// The UIKit ↔ SwiftUI bridge: the screens' base controller (which hosts the
+/// shared SwiftUI content), screen chrome, the content list, and the
+/// `Navigator` that coordinators drive. Knows nothing about the domain,
 /// features or DI.
 let package = Package(
   name: "Presentation",
@@ -11,7 +12,7 @@ let package = Package(
     .library(name: "ScreenKit", targets: ["ScreenKit"]),
   ],
   dependencies: [
-    .package(url: "https://github.com/dardan0x/SleepGuardShared.git", exact: "0.27.0"),
+    .package(url: "https://github.com/dardan0x/SleepGuardShared.git", exact: "0.28.0"),
   ],
   targets: [
     .target(

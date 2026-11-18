@@ -29,15 +29,17 @@ final class OnboardingFlow {
     if let health = container.healthAccess() {
       requestHealth = { await health.requestAuthorization() }
     }
-    let screen = OnboardingScreen(
+    let screen = OnboardingViewController(
       dependencies: OnboardingDependencies(
         microphoneGranted: { device.microphone() == .granted },
         requestMicrophone: { await capture.requestPermission() },
         requestHealth: requestHealth),
       routes: OnboardingRoutes(finish: { [weak self] healthGranted, startRecording in
         self?.finish(healthGranted: healthGranted, startRecording: startRecording)
-      }))
-    navigator.setRoot(HostingScreen(rootView: screen, theme: container.theme(), chrome: ScreenChrome(hidesNavigationBar: true)))
+      }),
+      theme: container.theme(),
+      chrome: ScreenChrome(hidesNavigationBar: true))
+    navigator.setRoot(screen)
   }
 
   /// What the screen's finish route does; internal for tests.
