@@ -4,24 +4,18 @@ import SleepGuardContentKit
 import SwiftUI
 import UIKit
 
-/// The screen left on the nightstand while recording, in the shared
-/// `BedsideClockContent`: events so far, a dim clock, how long it has been
-/// recording with a level meter, the current snoring tier, and Stop. Redraws
-/// every second and whenever the model changes. Stopping before
-/// `Night.minimumSaveDuration` asks first, as SleepGuard's does. With the
-/// Snore Interrupter on, a note to mute it for the night, and the melody's
-/// controls while it plays.
+/// The screen left on the nightstand while recording, drawn from
+/// `BedsideClockViewModel` in the shared `BedsideClockContent`: redraws every
+/// second and whenever the night changes. With the Snore Interrupter on, a
+/// note to mute it for the night, and the melody's controls while it plays.
 public final class BedsideClockViewController: ScreenController {
-  let model: LiveRecordingModel
-  let routes: BedsideClockRoutes
+  let viewModel: BedsideClockViewModel
   private var running: Task<Void, Never>?
   private var ticking: Task<Void, Never>?
   private var stopping: Task<Void, Never>?
-  private var showedFailure = false
 
-  public init(model: LiveRecordingModel, routes: BedsideClockRoutes, theme: Theme, chrome: ScreenChrome) {
-    self.model = model
-    self.routes = routes
+  public init(viewModel: BedsideClockViewModel, theme: Theme, chrome: ScreenChrome) {
+    self.viewModel = viewModel
     super.init(theme: theme, chrome: chrome)
   }
 
@@ -34,7 +28,7 @@ public final class BedsideClockViewController: ScreenController {
   override public func viewDidLoad() {
     super.viewDidLoad()
     renderTracking { [weak self] in self?.redraw() }
-    running = Task { [model] in await model.run() }
+    running = Task { [viewModel] in await viewModel.run() }
     ticking = Task { [weak self] in
       while !Task.isCancelled {
         try? await Task.sleep(for: .seconds(1))
@@ -44,59 +38,52 @@ public final class BedsideClockViewController: ScreenController {
   }
 
   private func redraw(now: Date = Date()) {
-    let model = model
+    let live = viewModel.live
     render(BedsideClockContent(
-      time: now, elapsed: now.timeIntervalSince(model.start), eventCount: model.eventCount, db: model.db,
-      snoreState: model.snoreState, canStop: model.phase == .recording,
-      onStop: { [weak self] in self?.stopTapped() },
+      time: now, elapsed: now.timeIntervalSince(live.start), eventCount: live.eventCount, db: live.db,
+      snoreState: live.snoreState, canStop: live.phase == .recording,
+      onStop: { [weak self] in self?.perform { await $0.stop() } },
       banner: {
-        if model.interrupterArmed {
-          BedsideMelodyDisclaimer(onMute: model.muteInterrupter)
+        if live.interrupterArmed {
+          BedsideMelodyDisclaimer(onMute: live.muteInterrupter)
             .padding(.top, 10)
             .padding(.horizontal, 20)
         }
       },
       overlay: {
-        if let melody = model.playingMelody {
-          BedsideMelodyOverlay(melodyName: melody.name, onMute: model.muteInterrupter, onStop: model.stopMelody)
+        if let melody = live.playingMelody {
+          BedsideMelodyOverlay(melodyName: melody.name, onMute: live.muteInterrupter, onStop: live.stopMelody)
         }
       }))
-    if model.phase == .failed, !showedFailure {
-      showedFailure = true
-      present(startFailedAlert(), animated: true)
+    presentAlert(viewModel.alert, make: alert(for:))
+  }
+
+  private func perform(_ work: @escaping @MainActor (BedsideClockViewModel) async -> Void) {
+    guard stopping == nil else { return }
+    stopping = Task { [weak self, viewModel] in
+      await work(viewModel)
+      self?.stopping = nil
     }
   }
 
-  /// Internal for tests.
-  func stopTapped(at now: Date = Date()) {
-    if model.isTooShort(at: now) { return present(earlyStopAlert(), animated: true) }
-    stop(then: routes.finished)
-  }
-
-  private func stop(then route: @escaping @MainActor (Night) -> Void) {
-    guard stopping == nil else { return }
-    stopping = Task { [model] in await route(model.stop()) }
-  }
-
-  func earlyStopAlert() -> UIAlertController {
-    let alert = UIAlertController(
-      title: Strings.sessionSummaryTooShortTitle,
-      message: String(format: Strings.sessionSummaryTooShortMessageFormat, Int(Night.minimumSaveDuration / 60)),
-      preferredStyle: .alert)
-    alert.addAction(UIAlertAction(title: Strings.actionKeepRecording, style: .cancel))
-    alert.addAction(UIAlertAction(title: Strings.actionStopAnyway, style: .default) { [weak self] _ in
-      guard let self else { return }
-      let discarded = routes.discarded
-      stop { discarded($0) }
-    })
-    return alert
-  }
-
-  func startFailedAlert() -> UIAlertController {
-    let alert = UIAlertController(
-      title: Strings.sessionStartFailedAlertTitle, message: Strings.sessionStartFailedAlertMessage, preferredStyle: .alert)
-    let discarded = routes.discarded
-    alert.addAction(UIAlertAction(title: Strings.actionOk, style: .cancel) { _ in discarded(nil) })
-    return alert
+  func alert(for due: BedsideClockViewModel.Alert) -> UIAlertController {
+    let viewModel = viewModel
+    switch due {
+    case .earlyStop:
+      let alert = UIAlertController(
+        title: Strings.sessionSummaryTooShortTitle,
+        message: String(format: Strings.sessionSummaryTooShortMessageFormat, Int(Night.minimumSaveDuration / 60)),
+        preferredStyle: .alert)
+      alert.addAction(UIAlertAction(title: Strings.actionKeepRecording, style: .cancel) { _ in viewModel.keepRecording() })
+      alert.addAction(UIAlertAction(title: Strings.actionStopAnyway, style: .default) { [weak self] _ in
+        self?.perform { await $0.stopAnyway() }
+      })
+      return alert
+    case .startFailed:
+      let alert = UIAlertController(
+        title: Strings.sessionStartFailedAlertTitle, message: Strings.sessionStartFailedAlertMessage, preferredStyle: .alert)
+      alert.addAction(UIAlertAction(title: Strings.actionOk, style: .cancel) { _ in viewModel.acknowledgeFailure() })
+      return alert
+    }
   }
 }

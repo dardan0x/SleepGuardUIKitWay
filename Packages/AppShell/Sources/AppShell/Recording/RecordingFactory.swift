@@ -6,9 +6,10 @@ import SleepDomain
 import SleepGuardDesignKit
 import UIKit
 
-/// Builds the recording screens. Wiring only: resolve, build. They show
+/// Builds the recording screens: dependencies, then the view model, then the
+/// screen (ADR 0008). Wiring only. They show
 /// no navigation bar: the flow is a full-screen modal with its own buttons.
-struct RecordingComposer {
+struct RecordingFactory {
   let container: Container
   /// SleepGuard's compact layout for screens up to 874 pt tall.
   let compactHeight: Bool
@@ -17,21 +18,21 @@ struct RecordingComposer {
     let capture = container.makeAudioCapture()()
     let device = container.deviceServices()
     let preferences = container.preferencesStore()
+    let dependencies = RecordingPrestartDependencies(
+      compactHeight: compactHeight,
+      requestPermission: { await capture.requestPermission() },
+      isCharging: device.isCharging,
+      loadPreferences: { await preferences.load() },
+      saveDelay: { minutes in
+        Task {
+          var stored = await preferences.load()
+          stored.recordingDelayMinutes = minutes
+          await preferences.save(stored)
+        }
+      },
+      hasInterrupter: melodyStore != nil)
     return RecordingPrestartViewController(
-      dependencies: RecordingPrestartDependencies(
-        compactHeight: compactHeight,
-        requestPermission: { await capture.requestPermission() },
-        isCharging: device.isCharging,
-        loadPreferences: { await preferences.load() },
-        saveDelay: { minutes in
-          Task {
-            var stored = await preferences.load()
-            stored.recordingDelayMinutes = minutes
-            await preferences.save(stored)
-          }
-        },
-        hasInterrupter: melodyStore != nil),
-      routes: routes, theme: theme, chrome: chrome)
+      viewModel: RecordingPrestartViewModel(dependencies: dependencies, routes: routes), theme: theme, chrome: chrome)
   }
 
   /// The Snore Interrupter's sounds; `nil` in a brand without it.
@@ -42,19 +43,20 @@ struct RecordingComposer {
   func makeInterrupterSettings(
     choice: SnoreInterrupterChoice, store: any MelodyStore, routes: SnoreInterrupterRoutes) -> UIViewController
   {
-    SnoreInterrupterViewController(choice: choice, store: store, routes: routes, theme: theme, chrome: chrome)
+    SnoreInterrupterViewController(
+      viewModel: SnoreInterrupterViewModel(choice: choice, store: store, routes: routes), theme: theme, chrome: chrome)
   }
 
   func makeMelodyPicker(selectedID: Int, store: any MelodyStore, routes: MelodyPickerRoutes) -> UIViewController {
-    MelodyPickerViewController(
-      selectedID: selectedID, store: store, preview: container.makeMelodyPlayer()(true), routes: routes, theme: theme,
-      chrome: chrome)
+    let viewModel = MelodyPickerViewModel(
+      selectedID: selectedID, store: store, preview: container.makeMelodyPlayer()(true), routes: routes)
+    return MelodyPickerViewController(viewModel: viewModel, theme: theme, chrome: chrome)
   }
 
   func makeRecordMelody(store: any MelodyStore, done: @escaping @MainActor (Melody?) -> Void) -> UIViewController {
-    RecordMelodyViewController(
-      store: store, recorder: container.makeMelodyRecorder()(), playback: container.makeMelodyPlayer()(true),
-      done: done, theme: theme, chrome: chrome)
+    let viewModel = RecordMelodyViewModel(
+      store: store, recorder: container.makeMelodyRecorder()(), playback: container.makeMelodyPlayer()(true), done: done)
+    return RecordMelodyViewController(viewModel: viewModel, theme: theme, chrome: chrome)
   }
 
   /// A new microphone capture for one night (warmed up first when the night
@@ -87,15 +89,18 @@ struct RecordingComposer {
   }
 
   func makeCountdown(target: Date, routes: RecordingCountdownRoutes) -> UIViewController {
-    RecordingCountdownViewController(target: target, routes: routes, theme: theme, chrome: chrome)
+    RecordingCountdownViewController(
+      viewModel: RecordingCountdownViewModel(target: target, routes: routes), theme: theme, chrome: chrome)
   }
 
   func makeBedside(model: LiveRecordingModel, routes: BedsideClockRoutes) -> UIViewController {
-    BedsideClockViewController(model: model, routes: routes, theme: theme, chrome: chrome)
+    BedsideClockViewController(
+      viewModel: BedsideClockViewModel(live: model, routes: routes), theme: theme, chrome: chrome)
   }
 
   func makeSummary(night: Night, routes: SessionSummaryRoutes) -> UIViewController {
-    SessionSummaryViewController(night: night, routes: routes, theme: theme, chrome: chrome)
+    SessionSummaryViewController(
+      viewModel: SessionSummaryViewModel(night: night, routes: routes), theme: theme, chrome: chrome)
   }
 
   /// "Couldn't save", with OK.

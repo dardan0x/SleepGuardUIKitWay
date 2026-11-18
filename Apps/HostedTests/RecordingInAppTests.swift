@@ -22,7 +22,7 @@ struct RecordingInAppTests {
     navigation.popToRootViewController(animated: false)
     let dashboard = try #require(navigation.viewControllers.first as? StatisticsViewController)
 
-    dashboard.routes.startRecording()
+    dashboard.viewModel.routes.startRecording()
 
     let modal = try #require(await until { tabs.presentedViewController as? UINavigationController })
     #expect(modal.modalPresentationStyle == .fullScreen)
@@ -31,7 +31,7 @@ struct RecordingInAppTests {
     #expect(modal.isNavigationBarHidden)
     try await hold()
 
-    prestart.routes.cancel()
+    prestart.viewModel.routes.cancel()
     let gone = await until { tabs.presentedViewController == nil ? true : nil }
     #expect(gone == true)
   }

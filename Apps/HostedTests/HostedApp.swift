@@ -22,7 +22,7 @@ enum HostedApp {
         if let navigation = window.rootViewController as? UINavigationController,
            let onboarding = navigation.viewControllers.first as? OnboardingViewController
         {
-          onboarding.routes.finish(false, false)
+          onboarding.viewModel.routes.finish(false, false)
         }
       }
       try await Task.sleep(for: .milliseconds(50))

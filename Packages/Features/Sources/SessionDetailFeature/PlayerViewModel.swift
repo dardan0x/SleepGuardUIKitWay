@@ -9,7 +9,7 @@ import SleepDomain
 /// step (position, auto-advance, seeking, interruptions).
 @MainActor
 @Observable
-public final class ClipPlaybackModel {
+public final class PlayerViewModel {
   public let events: [NightEvent]
   public private(set) var playlist: ClipPlaylist
   public private(set) var isPlaying = false
@@ -23,14 +23,14 @@ public final class ClipPlaybackModel {
     didSet { player.isEnhanced = isEnhanced }
   }
 
-  @ObservationIgnored private let player: any ClipPlayer
-  @ObservationIgnored private let files: any SessionFileStore
-  @ObservationIgnored private let waveforms: any ClipWaveformSource
+  private let player: any ClipPlayer
+  private let files: any SessionFileStore
+  private let waveforms: any ClipWaveformSource
   /// Reading the current clip's waveform; internal so tests can await it.
-  @ObservationIgnored private(set) var waveformLoading: Task<Void, Never>?
-  @ObservationIgnored private let firstIndex: Int
-  @ObservationIgnored private var fileDuration: TimeInterval = 0
-  @ObservationIgnored private var ticking: Task<Void, Never>?
+  private(set) var waveformLoading: Task<Void, Never>?
+  private let firstIndex: Int
+  private var fileDuration: TimeInterval = 0
+  private var ticking: Task<Void, Never>?
 
   /// `events` in play order; playback starts at `startEvent` (or the first).
   public init(

@@ -6,31 +6,31 @@ import SleepCore
 import SleepGuardDesignKit
 import UIKit
 
-/// Builds the History list (a UIKit screen, ADR 0007). Wiring only: resolve,
-/// build the screen.
-struct HistoryScreenComposer {
+/// Builds the History list: dependencies, then its view model, then the
+/// screen (ADR 0008). Wiring only.
+struct HistoryScreenFactory {
   let container: Container
 
   func make(routes: HistoryRoutes) -> UIViewController {
-    HistoryViewController(
-      dependencies: HistoryDependencies(nights: container.sessionRepository(), deleteNight: container.deleteSession()),
-      routes: routes,
+    let dependencies = HistoryDependencies(nights: container.sessionRepository(), deleteNight: container.deleteSession())
+    return HistoryViewController(
+      viewModel: HistoryViewModel(dependencies: dependencies, routes: routes),
       theme: container.theme(),
       chrome: ScreenChrome(title: Strings.tabSessions))
   }
 }
 
 /// Builds a night's detail, with its date as the title and delete in the bar.
-struct SessionDetailComposer {
+struct SessionDetailFactory {
   let container: Container
 
   func make(
     night: NightSummary, onReport: @escaping @MainActor () -> Void, onDelete: @escaping @MainActor () -> Void,
     routes: SessionDetailRoutes) -> UIViewController
   {
-    SessionDetailViewController(
-      dependencies: SessionDetailDependencies(nightID: night.id, loadDetail: container.loadSessionDetail()),
-      routes: routes,
+    let dependencies = SessionDetailDependencies(nightID: night.id, loadDetail: container.loadSessionDetail())
+    return SessionDetailViewController(
+      viewModel: SessionDetailViewModel(dependencies: dependencies, routes: routes),
       theme: container.theme(),
       chrome: ScreenChrome(
         title: night.start.formatted(.dateTime.weekday(.wide).month(.abbreviated).day()),
@@ -61,11 +61,11 @@ struct SessionDetailComposer {
   /// event, with a close button.
   func makePlayer(events: [NightEvent], start: NightEvent.ID, onClose: @escaping @MainActor () -> Void) -> UIViewController {
     let theme = container.theme()
-    let model = ClipPlaybackModel(
+    let viewModel = PlayerViewModel(
       events: events, startEvent: start, player: container.makeClipPlayer()(), files: container.sessionFileStore(),
       waveforms: container.clipWaveformSource())
     let screen = PlayerViewController(
-      model: model,
+      viewModel: viewModel,
       theme: theme,
       chrome: ScreenChrome(
         title: Self.playerTitle(for: events.first { $0.id == start }?.category ?? .snoring),

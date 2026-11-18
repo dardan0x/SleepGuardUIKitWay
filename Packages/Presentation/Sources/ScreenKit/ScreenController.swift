@@ -85,6 +85,14 @@ open class ScreenController: UIViewController {
     UIHostingConfiguration { content().environment(\.theme, theme) }.margins(.all, 0)
   }
 
+  /// Presents the alert for a view model's due `alert`, unless one is
+  /// already showing. Its actions answer the view model, which clears it;
+  /// call this from `render` so a newly due alert comes up.
+  public func presentAlert<Due>(_ due: Due?, make: (Due) -> UIAlertController) {
+    guard let due, !(presentedViewController is UIAlertController) else { return }
+    present(make(due), animated: viewIfLoaded?.window != nil)
+  }
+
   /// Runs `render` now, and again after any `@Observable` value it read
   /// changes (a state owner such as the player's model). Stops when the
   /// screen is gone.

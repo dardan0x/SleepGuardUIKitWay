@@ -17,7 +17,10 @@ So this script checks imports against the module table in AGENTS.md, plus:
      persistence APIs, DI property wrappers, UIKit globals, or UIKit
      navigation: coordinators own navigation (a screen presents only a
      `UIAlertController`, named `…alert` or `…Alert()`), adapters own
-     persistence, composers own DI (ADR 0007).
+     persistence, factories own DI (ADR 0007).
+  6. View models (`*ViewModel.swift` in a feature) import only Foundation,
+     Observation, `SleepDomain` and `SleepCore`: no UIKit, SwiftUI or
+     ScreenKit, so their logic is testable without a UI (ADR 0008).
 
 Lines starting with `//` are ignored. Exits 1 with a file:line listing.
 """
@@ -55,6 +58,9 @@ FEATURE_IMPORTS = {
     "UIKit", "SwiftUI", "ScreenKit", "SleepDomain", "SleepCore", "SleepGuardContentKit", "SleepGuardDesignKit",
     "SleepStrings",
 }
+
+# A feature's `*ViewModel.swift`: state and intents only, no UI framework.
+VIEW_MODEL_IMPORTS = {"SleepDomain", "SleepCore"}
 
 ESCAPE_HATCH = re.compile(
     r"@unchecked\s+Sendable|nonisolated\(unsafe\)|@preconcurrency|uncheckedState|withLockUnchecked")
@@ -111,6 +117,8 @@ def main() -> int:
         module = module_of(rel)
         is_feature = rel.startswith("Packages/Features/") and module is not None
         allowed = FEATURE_IMPORTS if is_feature else ALLOWED_IMPORTS.get(module) if module else None
+        if is_feature and path.name.endswith("ViewModel.swift"):
+            allowed = VIEW_MODEL_IMPORTS
         if module and allowed is None:
             violations.append(f"{rel}: module '{module}' is not in ALLOWED_IMPORTS; add it (and to AGENTS.md)")
 

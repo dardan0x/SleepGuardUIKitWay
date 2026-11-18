@@ -42,7 +42,7 @@ struct HistoryFlowTests {
     flow.start()
     let list = try #require(rootList(spy))
 
-    list.routes.openNight(night.summary())
+    list.viewModel.routes.openNight(night.summary())
 
     guard case let .push(pushed) = spy.calls.last else {
       Issue.record("expected push, got \(spy.calls)")
@@ -57,7 +57,7 @@ struct HistoryFlowTests {
   @Test func theDeleteButtonAsksForConfirmation() async throws {
     let (flow, spy, repository) = makeFlow([night])
     flow.start()
-    try #require(rootList(spy)).routes.openNight(night.summary())
+    try #require(rootList(spy)).viewModel.routes.openNight(night.summary())
     guard case let .push(pushed) = spy.calls.last else {
       Issue.record("expected push, got \(spy.calls)")
       return
@@ -89,14 +89,14 @@ struct HistoryFlowTests {
     let rows = EventListRow.rows(for: noisy)
     let (flow, spy, _) = makeFlow([noisy])
     flow.start()
-    try #require(rootList(spy)).routes.openNight(noisy.summary())
+    try #require(rootList(spy)).viewModel.routes.openNight(noisy.summary())
     guard case let .push(pushed) = spy.calls.last else {
       Issue.record("expected push, got \(spy.calls)")
       return
     }
     let detail = try #require(pushed as? SessionDetailViewController)
 
-    detail.routes.showAllEvents(rows, noisy.events)
+    detail.viewModel.routes.showAllEvents(rows, noisy.events)
 
     guard case let .present(presented, style) = spy.calls.last else {
       Issue.record("expected present, got \(spy.calls)")
@@ -121,14 +121,14 @@ struct HistoryFlowTests {
     let noisy = Night(start: start, end: night.end, events: [snore])
     let (flow, spy, _) = makeFlow([noisy])
     flow.start()
-    try #require(rootList(spy)).routes.openNight(noisy.summary())
+    try #require(rootList(spy)).viewModel.routes.openNight(noisy.summary())
     guard case let .push(pushed) = spy.calls.last else {
       Issue.record("expected push, got \(spy.calls)")
       return
     }
     let detail = try #require(pushed as? SessionDetailViewController)
 
-    detail.routes.playEvents([snore], snore.id)
+    detail.viewModel.routes.playEvents([snore], snore.id)
 
     guard case let .present(presented, style) = spy.calls.last else {
       Issue.record("expected present, got \(spy.calls)")
@@ -138,7 +138,7 @@ struct HistoryFlowTests {
     let navigation = try #require(presented as? UINavigationController)
     let player = try #require(navigation.viewControllers.first as? PlayerViewController)
     #expect(player.navigationItem.title == Strings.eventPlayerNavigationTitle)
-    #expect(player.model.events == [snore])
+    #expect(player.viewModel.events == [snore])
     player.navigationItem.rightBarButtonItems?.first?.primaryAction?.performWithSender(nil, target: nil)
     #expect(spy.calls.last == .dismiss)
   }
@@ -149,7 +149,7 @@ struct HistoryFlowTests {
       start: night.start, end: night.end, sleepStages: [SleepStageSegment(stage: .deep, startOffset: 0, duration: 3600)])
     let (flow, spy, _) = makeFlow([staged])
     flow.start()
-    try #require(rootList(spy)).routes.openNight(staged.summary())
+    try #require(rootList(spy)).viewModel.routes.openNight(staged.summary())
     guard case let .push(pushed) = spy.calls.last else {
       Issue.record("expected push, got \(spy.calls)")
       return
@@ -157,7 +157,7 @@ struct HistoryFlowTests {
     let detail = try #require(pushed as? SessionDetailViewController)
     let stages = try #require(SleepStageBreakdown(segments: staged.sleepStages))
 
-    detail.routes.showStagesInfo(stages)
+    detail.viewModel.routes.showStagesInfo(stages)
 
     guard case let .present(presented, style) = spy.calls.last else {
       Issue.record("expected present, got \(spy.calls)")
@@ -182,8 +182,8 @@ struct HistoryFlowTests {
   }
 
   @Test func thePlayerIsTitledByTheKindOfEvent() {
-    #expect(SessionDetailComposer.playerTitle(for: .sleepTalking) == Strings.eventPlayerSleepTalkingTitle)
-    #expect(SessionDetailComposer.playerTitle(for: .coughing) == Strings.eventPlayerNoiseTitle)
+    #expect(SessionDetailFactory.playerTitle(for: .sleepTalking) == Strings.eventPlayerSleepTalkingTitle)
+    #expect(SessionDetailFactory.playerTitle(for: .coughing) == Strings.eventPlayerNoiseTitle)
   }
 
   @Test func deletingANightRemovesItThenPops() async {

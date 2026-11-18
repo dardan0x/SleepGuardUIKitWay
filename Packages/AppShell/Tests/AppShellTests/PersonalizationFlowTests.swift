@@ -65,10 +65,10 @@ struct PersonalizationFlowTests {
     guard case let .setRoot(root) = spy.calls.first, let dashboard = root as? StatisticsViewController else {
       throw Unexpected()
     }
-    dashboard.routes.openProfile()
+    dashboard.viewModel.routes.openProfile()
     guard case let .present(sheet, _) = spy.calls.last else { throw Unexpected() }
     #expect(sheet is ProfileEditorViewController)
-    dashboard.routes.dismissProfilePrompt()
+    dashboard.viewModel.routes.dismissProfilePrompt()
     await flow.dismissing?.value
     #expect(await preferences.load().profilePromptDismissCount == 1)
   }

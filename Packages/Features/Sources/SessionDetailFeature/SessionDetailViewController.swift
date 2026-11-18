@@ -4,23 +4,20 @@ import SleepDomain
 import SleepGuardContentKit
 import UIKit
 
-/// One night: loads it and shows it in `NightDetailController`, a UIKit
-/// layout of the shared detail pieces (score, stats, sleep stages when there
-/// are any, timeline, events with a filter; SleepCore's `EventFilter` and
-/// `EventListRow`). The title and the delete button belong to the navigation
-/// bar, owned by the shell.
+/// One night, drawn from `SessionDetailViewModel`: a UIKit layout of the
+/// shared detail pieces (`NightDetailController`), or UIKit placeholders
+/// while loading and on error. The title and the delete button belong to
+/// the navigation bar, owned by the shell.
 public final class SessionDetailViewController: ScreenController {
-  let dependencies: SessionDetailDependencies
-  let routes: SessionDetailRoutes
+  let viewModel: SessionDetailViewModel
   private var loadingTask: Task<Void, Never>?
   /// The loaded night's layout, once there is one.
   private(set) var loaded: NightDetailController?
   private lazy var loadingView = Self.controller(SessionDetailLoadingView(theme: theme))
   private lazy var errorView = Self.controller(SessionDetailErrorView(theme: theme) { [weak self] in self?.retry() })
 
-  public init(dependencies: SessionDetailDependencies, routes: SessionDetailRoutes, theme: Theme, chrome: ScreenChrome) {
-    self.dependencies = dependencies
-    self.routes = routes
+  public init(viewModel: SessionDetailViewModel, theme: Theme, chrome: ScreenChrome) {
+    self.viewModel = viewModel
     super.init(theme: theme, chrome: chrome)
   }
 
@@ -30,26 +27,13 @@ public final class SessionDetailViewController: ScreenController {
 
   override public func viewDidLoad() {
     super.viewDidLoad()
-    show(loadingView)
+    renderTracking { [weak self] in self?.render() }
   }
 
   /// Loads once: coming back from a sheet or a pushed screen keeps the night.
   override public func viewIsAppearing(_ animated: Bool) {
     super.viewIsAppearing(animated)
-    if loaded == nil, stateChild !== errorView { load() }
-  }
-
-  private func load() {
-    guard loadingTask == nil else { return }
-    let loadDetail = dependencies.loadDetail
-    let id = dependencies.nightID
-    loadingTask = Task { [weak self] in
-      let detail = try? await loadDetail(id)
-      // Cancelled on disappearing: the next appearance loads again.
-      guard !Task.isCancelled, let self else { return }
-      loadingTask = nil
-      if let detail { show(detail) } else { show(errorView) }
-    }
+    load()
   }
 
   override public func viewDidDisappear(_ animated: Bool) {
@@ -58,30 +42,45 @@ public final class SessionDetailViewController: ScreenController {
     loadingTask = nil
   }
 
-  /// Internal for tests.
-  func show(_ detail: SessionDetail) {
-    let night = detail.session
+  private func load() {
+    guard viewModel.needsLoading, loadingTask == nil else { return }
+    loadingTask = Task { [weak self, viewModel] in
+      await viewModel.load()
+      if !Task.isCancelled { self?.loadingTask = nil }
+    }
+  }
+
+  private func retry() {
+    viewModel.retry()
+    load()
+  }
+
+  private func render() {
+    switch viewModel.state {
+    case .loading: show(loadingView)
+    case .error: show(errorView)
+    case let .loaded(detail):
+      let controller = loaded ?? makeLoaded(detail)
+      controller.show(filter: viewModel.filter)
+      show(controller)
+    }
+  }
+
+  private func makeLoaded(_ detail: SessionDetail) -> NightDetailController {
+    let viewModel = viewModel
     let controller = NightDetailController(detail: detail, theme: theme, actions: .init(
-      play: { [weak self] row in self?.routes.playEvents(row.playback(in: night.events), row.id) },
-      showAll: { [weak self] rows in self?.routes.showAllEvents(rows, night.events) },
-      share: { [weak self] row in
-        if let event = night.events.first(where: { $0.id == row.id }), event.clipFileName != nil {
-          self?.routes.shareEvent(event)
-        }
-      },
-      stagesInfo: { [weak self] stages in self?.routes.showStagesInfo(stages) }))
+      play: { viewModel.play($0) },
+      showAll: { viewModel.showAll($0) },
+      share: { viewModel.share($0) },
+      stagesInfo: { viewModel.showStagesInfo($0) },
+      select: { viewModel.select($0) }))
     loaded = controller
-    show(controller)
+    return controller
   }
 
   private static func controller(_ view: UIView) -> UIViewController {
     let controller = UIViewController()
     controller.view = view
     return controller
-  }
-
-  private func retry() {
-    show(loadingView)
-    load()
   }
 }

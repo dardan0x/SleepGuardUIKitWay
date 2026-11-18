@@ -7,13 +7,13 @@ import Testing
 /// The playback state owner against a fake player: what plays, auto-advance,
 /// seeking, interruptions, release.
 @MainActor
-struct ClipPlaybackModelTests {
+struct PlayerViewModelTests {
   private let start = Date(timeIntervalSinceReferenceDate: 0)
   private let waveforms = FakeClipWaveformSource(bars: [0.25, 1, 0.5])
 
   /// Three clips of 10, 20 and 30 s; files `a`, `b`, `c` of the same length.
   private func make(startAt: Int? = nil, missing: Set<String> = [], fileDurations: [String: TimeInterval]? = nil)
-    -> (ClipPlaybackModel, FakeClipPlayer)
+    -> (PlayerViewModel, FakeClipPlayer)
   {
     let names = ["a", "b", "c"]
     let events = zip(names, [10.0, 20, 30]).enumerated().map { offset, pair in
@@ -23,7 +23,7 @@ struct ClipPlaybackModelTests {
       ("\($0).m4a", URL(fileURLWithPath: "/clips/\($0).m4a"))
     })
     let player = FakeClipPlayer(durations: fileDurations ?? ["a.m4a": 10, "b.m4a": 20, "c.m4a": 30])
-    let model = ClipPlaybackModel(
+    let model = PlayerViewModel(
       events: events, startEvent: startAt.map { events[$0].id }, player: player,
       files: FakeSessionFileStore(urls: urls), waveforms: waveforms)
     return (model, player)

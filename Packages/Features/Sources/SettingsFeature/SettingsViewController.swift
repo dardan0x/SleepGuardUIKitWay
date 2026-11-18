@@ -4,122 +4,69 @@ import SleepDomain
 import SleepGuardContentKit
 import UIKit
 
-/// Settings, drawn by the shared `SettingsContent`. Holds the preferences
-/// while shown and writes each change back; asks before deleting everything
-/// and before lowering the storage limit (which removes audio at once).
-/// Rows for what the brand lacks (Apple Health, a Watch, an App Store page)
-/// aren't shown. The values handed to the content are built in
-/// `SettingsViewController+Values.swift`.
+/// Settings, drawn from `SettingsViewModel` by the shared `SettingsContent`;
+/// the confirmations and reports are UIKit alerts. The values handed to the
+/// content are built in `SettingsViewController+Values.swift`.
 public final class SettingsViewController: ScreenController {
-  let dependencies: SettingsDependencies
-  let routes: SettingsRoutes
-  var preferences: AppPreferences?
-  var microphone: PermissionState = .notDetermined
-  var notifications: PermissionState = .notDetermined
-  /// The last write or cleanup, awaited by tests.
-  private(set) var working: Task<Void, Never>?
+  let viewModel: SettingsViewModel
+  private var loading: Task<Void, Never>?
 
-  public init(dependencies: SettingsDependencies, routes: SettingsRoutes, theme: Theme, chrome: ScreenChrome) {
-    self.dependencies = dependencies
-    self.routes = routes
+  public init(viewModel: SettingsViewModel, theme: Theme, chrome: ScreenChrome) {
+    self.viewModel = viewModel
     super.init(theme: theme, chrome: chrome)
+  }
+
+  deinit {
+    loading?.cancel()
   }
 
   override public func viewDidLoad() {
     super.viewDidLoad()
-    run { [dependencies] screen in
-      screen.preferences = await dependencies.preferences.load()
-      await screen.refreshPermissions()
-    }
+    renderTracking { [weak self] in self?.redraw() }
+    loading = Task { [viewModel] in await viewModel.load() }
   }
 
-  func redraw() {
-    guard preferences != nil else { return }
+  private func redraw() {
+    guard let preferences = viewModel.preferences else { return }
     render(SettingsContent(
-      permissions: permissions, recording: recording, profile: profile, watch: nil,
-      storage: storage, data: data, about: about))
+      permissions: permissions, recording: recording(preferences), profile: profile(preferences), watch: nil,
+      storage: storage(preferences), data: data(preferences), about: about))
+    presentAlert(viewModel.alert, make: alert(for:))
   }
 
-  /// Runs `work` for this screen, after the work before it.
-  func run(_ work: @escaping @MainActor (SettingsViewController) async -> Void) {
-    let previous = working
-    working = Task { [weak self] in
-      await previous?.value
-      guard let self else { return }
-      await work(self)
-      redraw()
+  func alert(for due: SettingsViewModel.Alert) -> UIAlertController {
+    let viewModel = viewModel
+    switch due {
+    case .confirmDeleteAll:
+      return confirmation(
+        Strings.settingsDeleteAllConfirmTitle, Strings.settingsDeleteAllConfirmMessage, action: Strings.actionDeleteAll)
+      { viewModel.confirmDeleteAll() }
+    case .confirmLowerLimit:
+      return confirmation(
+        Strings.settingsLowerStorageLimitTitle, Strings.settingsLowerStorageLimitMessage, action: Strings.actionDelete)
+      { viewModel.confirmLowerLimit() }
+    case let .cleanup(report):
+      return notice(Strings.settingsTestCleanup, String(
+        format: Strings.settingsTestCleanupResultFormat, report.filesRemoved, Int(report.bytesRemoved / 1_024 / 1_024),
+        report.nightsAffected, report.dayLimitNights, report.sizeLimitNights))
+    case .failed:
+      return notice(Strings.recordingsErrorTitle, Strings.recordingsErrorMessage)
     }
-  }
-
-  func refreshPermissions() async {
-    microphone = dependencies.microphone()
-    notifications = await dependencies.notifications()
-  }
-
-  /// Writes a change, here and in the store.
-  func change(_ update: (inout AppPreferences) -> Void) {
-    guard var preferences else { return }
-    update(&preferences)
-    self.preferences = preferences
-    redraw()
-    let (store, saved) = (dependencies.preferences, preferences)
-    run { _ in await store.save(saved) }
-  }
-
-  func deleteAll() {
-    run { [dependencies] screen in
-      do {
-        try await dependencies.deleteAllData()
-      } catch {
-        screen.alert(Strings.recordingsErrorTitle, Strings.recordingsErrorMessage)
-      }
-    }
-  }
-
-  /// After the new limit is saved (`change` queues the write first).
-  func enforceLimits(showingReport: Bool) {
-    run { [dependencies] screen in
-      do {
-        let report = try await dependencies.enforceStorageLimits()
-        if showingReport {
-          screen.alert(Strings.settingsTestCleanup, String(
-            format: Strings.settingsTestCleanupResultFormat, report.filesRemoved, Int(report.bytesRemoved / 1_024 / 1_024),
-            report.nightsAffected, report.dayLimitNights, report.sizeLimitNights))
-        }
-      } catch {
-        screen.alert(Strings.recordingsErrorTitle, Strings.recordingsErrorMessage)
-      }
-    }
-  }
-
-  // MARK: - Alerts
-
-  func confirmDeleteAll() {
-    present(confirmation(
-      Strings.settingsDeleteAllConfirmTitle, Strings.settingsDeleteAllConfirmMessage, action: Strings.actionDeleteAll)
-    { [weak self] in self?.deleteAll() }, animated: true)
-  }
-
-  func confirmLowerLimit(to megabytes: Int) {
-    present(confirmation(
-      Strings.settingsLowerStorageLimitTitle, Strings.settingsLowerStorageLimitMessage, action: Strings.actionDelete)
-    { [weak self] in
-      self?.change { $0.storageLimitMB = megabytes }
-      self?.enforceLimits(showingReport: false)
-    }, animated: true)
   }
 
   /// Cancel and a destructive `action`.
-  func confirmation(_ title: String, _ message: String, action: String, perform: @escaping () -> Void) -> UIAlertController {
+  private func confirmation(
+    _ title: String, _ message: String, action: String, perform: @escaping @MainActor () -> Void) -> UIAlertController
+  {
     let alert = UIAlertController(title: title, message: message, preferredStyle: .alert)
-    alert.addAction(UIAlertAction(title: Strings.actionCancel, style: .cancel))
+    alert.addAction(UIAlertAction(title: Strings.actionCancel, style: .cancel) { [viewModel] _ in viewModel.dismissAlert() })
     alert.addAction(UIAlertAction(title: action, style: .destructive) { _ in perform() })
     return alert
   }
 
-  private func alert(_ title: String, _ message: String) {
+  private func notice(_ title: String, _ message: String) -> UIAlertController {
     let alert = UIAlertController(title: title, message: message, preferredStyle: .alert)
-    alert.addAction(UIAlertAction(title: Strings.actionOk, style: .default))
-    present(alert, animated: true)
+    alert.addAction(UIAlertAction(title: Strings.actionOk, style: .default) { [viewModel] _ in viewModel.dismissAlert() })
+    return alert
   }
 }

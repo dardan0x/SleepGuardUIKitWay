@@ -61,7 +61,7 @@ It also reflects how large iOS codebases tend to be organised: a UI layer that c
 ┌──────────────────────────┐            ┌──────────────────────────────────┐            ┌────────────────────────────────┐
 │ AppShell                 │            │ SleepDomain (application layer)  │            │ SleepPersistence               │
 │   coordinators, flows,   │  calls     │   use cases: LoadSessionDetail,  │  ports     │   SwiftData @ModelActor,       │
-│   composers              │ ─────────► │   CommitSession, DeleteSession,  │ ─────────► │   file stores                  │
+│   factories              │ ─────────► │   CommitSession, DeleteSession,  │ ─────────► │   file stores                  │
 │ Features                 │            │   MorningBriefing, …             │            │ SleepAudio                     │
 │   UIKit screens via      │            │   RecordingSession (actor)       │            │   AVAudioEngine, SoundAnalysis │
 │   Dependencies closures  │            │ ──────────────────────────────── │            │ SleepHealth                    │
@@ -101,7 +101,7 @@ public struct LoadSessionDetail: Sendable {
 
 ```
 Apps/<Brand>             Brand.swift: BrandConfiguration (theme, tabs, Health port, capabilities)
-└─► AppShell             composition root: coordinators, flows, composers, Factory container
+└─► AppShell             composition root: coordinators, flows, factories, Factory container
     ├─► Features         8 modules of UIKit screens hosting the shared content: Dependencies in, Routes out
     ├─► ScreenKit        ScreenController, ContentListController, ScreenChrome, Navigator
     ├─► Adapters         SleepPersistence · SleepAudio · SleepHealth
@@ -116,8 +116,8 @@ Apps/<Brand>             Brand.swift: BrandConfiguration (theme, tabs, Health po
 | | `SleepAudio` | 1.1k | AVAudioEngine capture and analysis, clip compression and playback, melody player and recorder | |
 | | `SleepHealth` | 87 | HealthKit read and write | Be linked by Lite |
 | Presentation | `ScreenKit` | 0.4k | `ScreenController`, every screen's base (theme, chrome, one state child, hosting the shared views); a self-sizing UIKit list; the `Navigator` abstraction | |
-| Features | 8 modules | 3.0k | 21 UIKit screens (collection views, a page view controller, alerts) around the shared SwiftUI content: History, SessionDetail, Statistics, Recording, Settings, Onboarding, Briefing, Learn | Navigate, present anything but an alert, persist, resolve dependencies, use `UIApplication` |
-| Shell | `AppShell` | 1.8k | `AppCoordinator`, `MainTabCoordinator`, 9 flows, composers, 28 container registrations | Be imported by anything but the brand targets |
+| Features | 8 modules | 3.6k | 21 UIKit screens (collection views, a page view controller, alerts) around the shared SwiftUI content; the 14 with state or logic have a view model (ADR 0008): History, SessionDetail, Statistics, Recording, Settings, Onboarding, Briefing, Learn | Navigate, present anything but an alert, persist, resolve dependencies, use `UIApplication`; a view model imports no UI |
+| Shell | `AppShell` | 1.8k | `AppCoordinator`, `MainTabCoordinator`, 9 flows, factories, 28 container registrations | Be imported by anything but the brand targets |
 
 Dependencies point inwards. The domain knows no framework; adapters implement its ports; features know the domain's types and the shared content but not how they are presented; only `AppShell` knows everything.
 
@@ -131,35 +131,35 @@ A feature never calls another feature, the shell, or an adapter. Every interacti
 |---|---|---|---|
 | **Port** | domain → infrastructure | `SleepDomain` (`SessionRepository`, `AudioCapturePort`, `SleepStagePort`, …) | Adapters |
 | **Use case** | screen → domain | `SleepDomain` (`LoadSessionDetail`, `CommitSession`, `MorningBriefing`, …) | Itself; composed from ports |
-| **`Dependencies`** | shell → screen (data in) | Each feature | `AppShell` composers |
+| **`Dependencies`** | shell → screen (data in) | Each feature | `AppShell` factories |
 | **`Routes`** | screen → shell (intent out) | Each feature | `AppShell` flows |
 
 Opening a night from History exercises all four:
 
 ```
-HistoryViewController ── routes.openNight(summary) ──► HistoryFlow
+HistoryViewController ── viewModel.open(summary) ── routes.openNight(summary) ──► HistoryFlow
                                                   │
                                                   ▼
                                       NightDetailNavigation.show(summary)
-                                                  │  SessionDetailComposer resolves LoadSessionDetail,
-                                                  │  builds SessionDetailViewController(dependencies:routes:
-                                                  │  theme:chrome:) (title, bar items in the chrome)
+                                                  │  SessionDetailFactory resolves LoadSessionDetail,
+                                                  │  builds SessionDetailViewModel(dependencies:routes:), then
+                                                  │  SessionDetailViewController(viewModel:theme:chrome:)
                                                   ▼
                                       navigator.push(controller)
                                                   │
-SessionDetailViewController ── await loadDetail(id) ──► LoadSessionDetail ──► SessionRepository ──► SleepPersistence
+SessionDetailViewModel ── await loadDetail(id) ──► LoadSessionDetail ──► SessionRepository ──► SleepPersistence
                                                                   └─► SleepStagePort    ──► SleepHealth, or none (Lite)
          │
          └─ a UIKit collection view of shared pieces (SleepGuardShared); Play / Share / Show all ──► SessionDetailRoutes ──► flow
 ```
 
-The composer and the navigation object, from the source:
+The factory and the navigation object, from the source:
 
 ```swift
-// AppShell: wiring only. Resolve, build the screen.
-SessionDetailViewController(
-  dependencies: SessionDetailDependencies(nightID: night.id, loadDetail: container.loadSessionDetail()),
-  routes: routes,
+// AppShell: wiring only. Resolve, then the view model, then the screen.
+let dependencies = SessionDetailDependencies(nightID: night.id, loadDetail: container.loadSessionDetail())
+return SessionDetailViewController(
+  viewModel: SessionDetailViewModel(dependencies: dependencies, routes: routes),
   theme: container.theme(),
   chrome: ScreenChrome(title: …, trailingItems: [reportItem, deleteItem]))
 
@@ -268,7 +268,7 @@ Testing follows the architecture: every boundary is a seam where a test double f
 | **Domain** (`SleepDomain`) | Fakes from `SleepDomainTestSupport`: one per port (repository, file store, capture, stage source, checkpoint store, players, settings) | Commit and delete ordering (a failed delete keeps the clips); the recording actor's events, gaps and checkpoints from scripted samples; briefing and storage rules over the shared engine | macOS, `swift test` | 65 |
 | **Adapters** | Real infrastructure, isolated: in-memory or on-disk SwiftData, temporary directories, generated audio buffers | Session store round trip, replacement and observed summaries; checkpoint and settings stores; levels, classifier scores and clip compression on generated tones; clip player; HealthKit stage mapping | Simulator, per package | 40 |
 | **Presentation** (`ScreenKit`) | Real UIKit, no window | `ScreenController` applies theme and chrome and swaps state; the content list; redraw on observed change; `Navigator` push, present and dismiss | Simulator | 17 |
-| **Features** | Controllers and state owners with fake ports | History's empty and list states and deleting a day; the detail's and the list's item builders; onboarding paging and permissions; a short night not saved; `LiveRecordingModel`, `ClipPlaybackModel` | Simulator | 36 |
+| **Features** | View models with fake ports (no UIKit) | History's states and deleting a day; the detail's load, error, retry and sharing; onboarding permissions; prestart's microphone and charging checks; the countdown; a short night not saved; recording and picking a melody; Settings' ordered writes and confirmations; the list and detail item builders; `LiveRecordingModel`, `PlayerViewModel` | Simulator | 53 |
 | **Shell** (`AppShell`) | `NavigatorSpy` + `TestBrand` from `AppShellTestSupport`; a container with fakes registered | Every flow: what each route pushes or presents, titles and bar items, confirmation before deleting, the briefing opening once per new night, a brand without the Interrupter getting no row and no melody at night | Simulator, no UI | 70 |
 | **In-app** | The real app, per brand | Bootstrap, tabs, a night's detail, the player, the recording flow | Each brand's host app | 9 × 4 |
 
@@ -290,7 +290,7 @@ A flow against a navigator spy. The screen's route is invoked directly, and the 
 @Test func openingANightPushesItsDetail() throws {
   let (flow, spy, _) = makeFlow([night])
   flow.start()
-  try #require(rootList(spy)).routes.openNight(night.summary())
+  try #require(rootList(spy)).viewModel.routes.openNight(night.summary())
   guard case let .push(pushed) = spy.calls.last else { Issue.record("expected push"); return }
   let detail = try #require(pushed as? SessionDetailViewController)
   #expect(detail.navigationItem.rightBarButtonItems?.map(\.accessibilityLabel) == [Strings.actionDelete, Strings.a11yExportReport])
@@ -317,7 +317,7 @@ Run a brand's scheme (`SleepGuard`, `Nocturne`, `SleepGuardLite`, `Dawn`) on a s
 
 **Where to look first:**
 
-1. [`Packages/AppShell/Sources/AppShell/History/`](Packages/AppShell/Sources/AppShell/History/): a flow, its composers and a navigation object.
+1. [`Packages/AppShell/Sources/AppShell/History/`](Packages/AppShell/Sources/AppShell/History/): a flow, its factories and a navigation object.
 2. [`Packages/Core/Sources/SleepDomain/`](Packages/Core/Sources/SleepDomain/): ports, use cases, the recording actor.
 3. [`Apps/Dawn/Sources/Brand.swift`](Apps/Dawn/Sources/Brand.swift): everything a brand is.
 4. [`scripts/check-layering.py`](scripts/check-layering.py): the boundaries, as code.

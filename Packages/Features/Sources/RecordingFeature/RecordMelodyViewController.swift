@@ -4,28 +4,15 @@ import SleepDomain
 import SleepGuardContentKit
 import UIKit
 
-/// Recording a sound of one's own, in the shared `RecordMelodyContent`:
-/// record (up to SleepCore's maximum), play it back, then Save as "My Sound
-/// N" or try again. Redraws ten times a second for the elapsed time. `done`
-/// with the saved recording, or `nil` when backed out.
+/// Recording a sound of one's own, drawn from `RecordMelodyViewModel` in the
+/// shared `RecordMelodyContent`; redraws ten times a second for the elapsed
+/// time while shown.
 public final class RecordMelodyViewController: ScreenController {
-  let store: any MelodyStore
-  let recorder: any MelodyRecorder
-  let playback: any MelodyPlayer
-  let done: @MainActor (Melody?) -> Void
-  private(set) var state: MelodyRecordingState = .idle
-  private var canRecord = false
-  private var take: URL?
+  let viewModel: RecordMelodyViewModel
   private var ticking: Task<Void, Never>?
 
-  public init(
-    store: any MelodyStore, recorder: any MelodyRecorder, playback: any MelodyPlayer,
-    done: @escaping @MainActor (Melody?) -> Void, theme: Theme, chrome: ScreenChrome)
-  {
-    self.store = store
-    self.recorder = recorder
-    self.playback = playback
-    self.done = done
+  public init(viewModel: RecordMelodyViewModel, theme: Theme, chrome: ScreenChrome) {
+    self.viewModel = viewModel
     super.init(theme: theme, chrome: chrome)
   }
 
@@ -35,16 +22,14 @@ public final class RecordMelodyViewController: ScreenController {
 
   override public func viewDidLoad() {
     super.viewDidLoad()
-    redraw()
+    renderTracking { [weak self] in self?.redraw() }
   }
 
   override public func viewIsAppearing(_ animated: Bool) {
     super.viewIsAppearing(animated)
     guard ticking == nil else { return }
-    let recorder = recorder
-    ticking = Task { [weak self] in
-      let allowed = await recorder.requestPermission()
-      self?.canRecord = allowed
+    ticking = Task { [weak self, viewModel] in
+      await viewModel.requestPermission()
       while !Task.isCancelled {
         self?.redraw()
         try? await Task.sleep(for: .milliseconds(100))
@@ -59,67 +44,18 @@ public final class RecordMelodyViewController: ScreenController {
   }
 
   private func redraw() {
+    let viewModel = viewModel
     render(RecordMelodyContent(
-      state: state, elapsed: recorder.elapsed, canRecord: canRecord,
-      onRecordToggle: { [weak self] in self?.toggleRecording() },
-      onPlayToggle: { [weak self] in self?.togglePlayback() },
-      onSave: { [weak self] in self?.save() },
-      onReRecord: { [weak self] in self?.reRecord() },
-      onBack: { [weak self] in self?.back() }))
+      state: Self.content(viewModel.state), elapsed: viewModel.elapsed, canRecord: viewModel.canRecord,
+      onRecordToggle: { viewModel.toggleRecording() }, onPlayToggle: { viewModel.togglePlayback() },
+      onSave: { viewModel.save() }, onReRecord: { viewModel.reRecord() }, onBack: { viewModel.back() }))
   }
 
-  private func set(_ state: MelodyRecordingState) {
-    self.state = state
-    redraw()
-  }
-
-  func toggleRecording() {
-    if state == .recording { return finishTake() }
-    playback.stop()
-    do {
-      try recorder.start { [weak self] in self?.finishTake() }
-      set(.recording)
-    } catch {
-      set(.idle)
-    }
-  }
-
-  private func finishTake() {
-    take = recorder.stop()
-    set(take == nil ? .idle : .recorded(isPlaying: false))
-  }
-
-  private func togglePlayback() {
-    guard case let .recorded(isPlaying) = state, let take else { return }
-    if isPlaying {
-      playback.stop()
-      set(.recorded(isPlaying: false))
-    } else if playback.play(take, loops: false, duration: nil, onFinish: { [weak self] in
-      self?.set(.recorded(isPlaying: false))
-    }) {
-      set(.recorded(isPlaying: true))
-    }
-  }
-
-  private func reRecord() {
-    playback.stop()
-    recorder.discard()
-    take = nil
-    set(.idle)
-  }
-
-  private func back() {
-    playback.stop()
-    recorder.discard()
-    done(nil)
-  }
-
-  private func save() {
-    guard let take else { return }
-    playback.stop()
-    let name = Melody.customName(number: CustomMelodies.nameNumber(existing: store.recordings()))
-    if let melody = store.save(take: take, name: name) {
-      done(melody)
+  private static func content(_ state: RecordMelodyViewModel.State) -> MelodyRecordingState {
+    switch state {
+    case .idle: .idle
+    case .recording: .recording
+    case let .recorded(isPlaying): .recorded(isPlaying: isPlaying)
     }
   }
 }

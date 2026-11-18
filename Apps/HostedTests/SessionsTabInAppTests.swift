@@ -26,7 +26,7 @@ struct SessionsTabInAppTests {
     let screenshots = ProcessInfo.processInfo.environment["SCREENSHOT_DIR"]
     if let screenshots { try await capture(window, to: screenshots, name: "sessions-list") }
 
-    try list.routes.openNight(#require(nights.first))
+    try list.viewModel.routes.openNight(#require(nights.first))
 
     let detail = try #require(navigation.topViewController as? SessionDetailViewController)
     #expect(detail.navigationItem.rightBarButtonItems?.count == 2)
@@ -35,7 +35,7 @@ struct SessionsTabInAppTests {
     // "Show all": the events sheet at medium and large; close returns to the detail.
     let loaded = try await Container.shared.loadSessionDetail()(#require(nights.first).id)
     let rows = EventListRow.rows(for: loaded.session)
-    detail.routes.showAllEvents(rows, loaded.session.events)
+    detail.viewModel.routes.showAllEvents(rows, loaded.session.events)
     let sheet = try #require(await until { navigation.presentedViewController as? UINavigationController })
     #expect(sheet.sheetPresentationController?.detents.map(\.identifier) == [.medium, .large])
     let events = try #require(sheet.viewControllers.first as? EventsSheetViewController)

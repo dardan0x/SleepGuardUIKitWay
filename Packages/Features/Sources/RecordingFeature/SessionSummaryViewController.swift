@@ -3,45 +3,34 @@ import SleepCore
 import SleepGuardContentKit
 import UIKit
 
-/// The night just recorded, in the shared `SessionSummaryContent`: how long,
-/// its score, snoring share and events, the banners that explain gaps, its
-/// timeline, then Save or Discard. A night under `Night.minimumSaveDuration`
-/// can't be saved, as in SleepGuard.
+/// The night just recorded, drawn from `SessionSummaryViewModel` in the
+/// shared `SessionSummaryContent`; the too-short alert is UIKit.
 public final class SessionSummaryViewController: ScreenController {
-  let night: Night
-  let scoreConfig: SleepScoreConfig
-  let routes: SessionSummaryRoutes
+  let viewModel: SessionSummaryViewModel
 
-  public init(
-    night: Night, scoreConfig: SleepScoreConfig = .default, routes: SessionSummaryRoutes, theme: Theme,
-    chrome: ScreenChrome)
-  {
-    self.night = night
-    self.scoreConfig = scoreConfig
-    self.routes = routes
+  public init(viewModel: SessionSummaryViewModel, theme: Theme, chrome: ScreenChrome) {
+    self.viewModel = viewModel
     super.init(theme: theme, chrome: chrome)
   }
 
   override public func viewDidLoad() {
     super.viewDidLoad()
-    let (night, routes) = (night, routes)
+    let viewModel = viewModel
     render(SessionSummaryContent(
-      night: night, summary: night.summary(using: scoreConfig),
-      onSave: { [weak self] in self?.saveTapped() }, onDiscard: { routes.discard(night) }))
+      night: viewModel.night, summary: viewModel.summary,
+      onSave: { viewModel.save() }, onDiscard: { viewModel.discard() }))
+    renderTracking { [weak self] in
+      guard let self else { return }
+      presentAlert(viewModel.alert, make: alert(for:))
+    }
   }
 
-  /// Internal for tests.
-  func saveTapped() {
-    guard night.duration >= Night.minimumSaveDuration else { return present(tooShortAlert(), animated: true) }
-    routes.save(night)
-  }
-
-  func tooShortAlert() -> UIAlertController {
+  func alert(for _: SessionSummaryViewModel.Alert) -> UIAlertController {
     let alert = UIAlertController(
       title: Strings.sessionSummaryTooShortTitle,
       message: String(format: Strings.sessionSummaryTooShortInfoFormat, Int(Night.minimumSaveDuration / 60)),
       preferredStyle: .alert)
-    alert.addAction(UIAlertAction(title: Strings.actionOk, style: .cancel))
+    alert.addAction(UIAlertAction(title: Strings.actionOk, style: .cancel) { [viewModel] _ in viewModel.dismissAlert() })
     return alert
   }
 }

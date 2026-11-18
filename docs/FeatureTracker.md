@@ -10,14 +10,14 @@ Last updated: 2026-11-18
 
 | Metric | Count |
 |--------|-------|
-| Features | 12 |
-| Done | 10 |
+| Features | 13 |
+| Done | 11 |
 | In Progress | 2 |
 | Backlog | 0 |
 | Blocked | 0 |
 | — | — |
-| Total Tasks | 63 |
-| Tasks Done | 62 |
+| Total Tasks | 64 |
+| Tasks Done | 63 |
 | Tasks In Progress | 1 |
 | Tasks Blocked | 0 |
 | Tasks Backlog | 0 |
@@ -40,6 +40,7 @@ Last updated: 2026-11-18
 | F8 | Remaining features | P2 | Done (device checks open) | 6/6 | ██████████ 100% | [tracker](trackers/f8-remaining-features.md) |
 | F9 | Showcase polish | P2 | In Progress (T4: screenshots after the UI polish) | 3/4 | ████████░░ 75% | [tracker](trackers/f9-showcase-polish.md) |
 | F11 | UIKit screen containers | P2 | Done | 1/1 | ██████████ 100% | [tracker](trackers/f11-uikit-screen-containers.md) |
+| F12 | View models and factories | P2 | Done | 1/1 | ██████████ 100% | [tracker](trackers/f12-view-models.md) |
 
 ## Currently Active
 
@@ -62,6 +63,7 @@ Last updated: 2026-11-18
 
 | Date | Task | Event | Notes |
 |------|------|-------|-------|
+| 2026-11-18 | F12-T1 | Completed | View models for the 14 screens with state or logic (ADR 0008; no UI imports, checked), tested with fakes; controllers only draw, forward and present; composers renamed factories and build dependencies, view model, controller. `FakeMelodyRecorder` fixed to keep its take at the limit. Planned with the owner as one task on the F11 branch `feature/f11/t1-uikit-screen-containers` |
 | 2026-11-18 | F11-T1 | Completed | Shared 0.28.0 tagged by the owner and pinned (`bump-shared.sh`); all lanes pass and all four brands build on the release (`TUIST_SHARED_RELEASE=1`). F11 done. Branch `feature/f11/t1-uikit-screen-containers` |
 | 2026-11-18 | F11-T1 | In progress | Every screen a UIKit `ScreenController` hosting the shared content (ADR 0007; scope widened by the owner from three screens to all): History collection view, Onboarding page view controller, Session Detail compositional layout with a segmented filter, the rest in hosted children or `ContentListController`; `HostingScreen` removed; shared pieces made public on a local branch (0.28.0). All brands build, all lanes pass against the local shared repo. Waits for the release. Branch `feature/f11/t1-uikit-screen-containers` |
 | 2026-11-18 | F11 | Planned | UIKit screen containers planned with the owner as one task: History (collection view), Onboarding (page view controller), Session Detail (compositional collection view) host shared content via `UIHostingConfiguration`; features may use UIKit, navigation stays with coordinators (ADR 0007 to come) |

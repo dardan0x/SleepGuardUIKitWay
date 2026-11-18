@@ -24,8 +24,8 @@ public final class LiveRecordingModel {
   public let start: Date
   /// Muted for the rest of the night (the bedside note goes away).
   public private(set) var interrupterMuted = false
-  @ObservationIgnored private let session: RecordingSession
-  @ObservationIgnored private let interrupter: SnoreInterrupter?
+  private let session: RecordingSession
+  private let interrupter: SnoreInterrupter?
 
   public init(
     capture: any AudioCapturePort,

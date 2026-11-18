@@ -18,7 +18,7 @@ final class RecordingFlow {
   static let batteryCheckInterval: Duration = .seconds(30)
 
   private let navigator: any Navigator
-  private let composer: RecordingComposer
+  private let factory: RecordingFactory
   private let commit: CommitSession
   private let discardRecording: DiscardRecording
   private let enforceStorageLimits: EnforceStorageLimits
@@ -39,7 +39,7 @@ final class RecordingFlow {
 
   init(navigator: any Navigator, container: Container, compactHeight: Bool, onClose: @escaping @MainActor () -> Void) {
     self.navigator = navigator
-    composer = RecordingComposer(container: container, compactHeight: compactHeight)
+    factory = RecordingFactory(container: container, compactHeight: compactHeight)
     commit = container.commitSession()
     discardRecording = container.discardRecording()
     enforceStorageLimits = container.enforceStorageLimits()
@@ -53,7 +53,7 @@ final class RecordingFlow {
   }
 
   func start() {
-    navigator.setRoot(composer.makePrestart(routes: RecordingPrestartRoutes(
+    navigator.setRoot(factory.makePrestart(routes: RecordingPrestartRoutes(
       start: { [weak self] preferences in self?.begin(preferences) },
       cancel: { [weak self] in self?.onClose() },
       openSettings: device.openSettings,
@@ -65,11 +65,11 @@ final class RecordingFlow {
   /// Its settings as a sheet over the prestart; Save keeps the choice and
   /// hands it back to the prestart's row.
   private func openInterrupter(saved: @escaping @MainActor (SnoreInterrupterChoice) -> Void) {
-    guard let store = composer.melodyStore else { return }
+    guard let store = factory.melodyStore else { return }
     interrupterTask = Task { [preferences] in
       let stored = await preferences.load()
       let choice = SnoreInterrupterChoice(mode: stored.interrupterMode, melodyID: stored.melodyID)
-      navigator.present(composer.makeInterrupterSettings(choice: choice, store: store, routes: SnoreInterrupterRoutes(
+      navigator.present(factory.makeInterrupterSettings(choice: choice, store: store, routes: SnoreInterrupterRoutes(
         chooseSound: { [weak self] current, picked in self?.chooseSound(current: current, store: store, picked: picked) },
         save: { [weak self] choice in
           self?.navigator.dismiss()
@@ -90,7 +90,7 @@ final class RecordingFlow {
   }
 
   private func chooseSound(current: Int, store: any MelodyStore, picked: @escaping @MainActor (Int) -> Void) {
-    navigator.present(composer.makeMelodyPicker(selectedID: current, store: store, routes: MelodyPickerRoutes(
+    navigator.present(factory.makeMelodyPicker(selectedID: current, store: store, routes: MelodyPickerRoutes(
       record: { [weak self] saved in self?.recordMelody(store: store, saved: saved) },
       done: { [weak self] id in
         self?.navigator.dismiss()
@@ -99,7 +99,7 @@ final class RecordingFlow {
   }
 
   private func recordMelody(store: any MelodyStore, saved: @escaping @MainActor (Melody) -> Void) {
-    navigator.present(composer.makeRecordMelody(store: store) { [weak self] melody in
+    navigator.present(factory.makeRecordMelody(store: store) { [weak self] melody in
       self?.navigator.dismiss()
       if let melody { saved(melody) }
     }, style: .sheet(detents: [.large]))
@@ -126,7 +126,7 @@ final class RecordingFlow {
   /// Now, or after the start delay.
   private func begin(_ preferences: AppPreferences) {
     let minutes = RecordingDelay.valid(preferences.recordingDelayMinutes)
-    guard minutes > 0 else { return startNight(capture: composer.makeCapture(), preferences: preferences) }
+    guard minutes > 0 else { return startNight(capture: factory.makeCapture(), preferences: preferences) }
     showCountdown(minutes: minutes, preferences: preferences)
   }
 
@@ -134,7 +134,7 @@ final class RecordingFlow {
   /// with the screen locked), a notification says when the night starts, and
   /// the screen stays on as on the bedside clock.
   private func showCountdown(minutes: Int, preferences: AppPreferences) {
-    let capture = composer.makeCapture()
+    let capture = factory.makeCapture()
     do {
       try capture.warmUp()
     } catch {
@@ -144,7 +144,7 @@ final class RecordingFlow {
     let target = Date().addingTimeInterval(TimeInterval(minutes * 60))
     device.scheduleStartNotification(target)
     device.keepScreenOn(true)
-    navigator.setRoot(composer.makeCountdown(target: target, routes: RecordingCountdownRoutes(
+    navigator.setRoot(factory.makeCountdown(target: target, routes: RecordingCountdownRoutes(
       cancel: { [weak self] in self?.cancelCountdown() },
       start: { [weak self] in self?.endCountdown(preferences: preferences) })))
   }
@@ -165,7 +165,7 @@ final class RecordingFlow {
   }
 
   private func startNight(capture: any AudioCapturePort, preferences: AppPreferences) {
-    let model = composer.makeModel(capture: capture, preferences: preferences)
+    let model = factory.makeModel(capture: capture, preferences: preferences)
     self.model = model
     device.keepScreenOn(true)
     batteryWatch = Task { [weak self] in
@@ -174,14 +174,14 @@ final class RecordingFlow {
         self?.checkBattery()
       }
     }
-    navigator.setRoot(composer.makeBedside(model: model, routes: BedsideClockRoutes(
+    navigator.setRoot(factory.makeBedside(model: model, routes: BedsideClockRoutes(
       finished: { [weak self] night in self?.showSummary(night) },
       discarded: { [weak self] night in self?.discard(night) })))
   }
 
   private func showSummary(_ night: Night) {
     stopWatching()
-    navigator.setRoot(composer.makeSummary(night: night, routes: SessionSummaryRoutes(
+    navigator.setRoot(factory.makeSummary(night: night, routes: SessionSummaryRoutes(
       save: { [weak self] night in self?.save(night) },
       discard: { [weak self] night in self?.discard(night) })))
   }
@@ -190,7 +190,7 @@ final class RecordingFlow {
   /// Save can be tried again.
   private func save(_ night: Night) {
     guard finishing == nil else { return }
-    finishing = Task { [commit, composer] in
+    finishing = Task { [commit, factory] in
       do {
         try await commit(night)
         enforceLimits()
@@ -198,7 +198,7 @@ final class RecordingFlow {
       } catch {
         Log.storage.error("Saving the night failed: \(error.localizedDescription, privacy: .public)")
         finishing = nil
-        navigator.present(composer.makeSaveFailedAlert(), style: .alert)
+        navigator.present(factory.makeSaveFailedAlert(), style: .alert)
       }
     }
   }

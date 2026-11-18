@@ -8,13 +8,15 @@ import UIKit
 /// A loaded night in a UIKit compositional layout: the shared header, sleep
 /// stages, timeline, banners and event rows are hosted cells; the event
 /// filter is a native segmented control, the events title and "Show all" are
-/// UIKit text. Owns the filter. What an action means is its owner's call.
+/// UIKit text. Shows the filter it's given; what an action means, choosing
+/// a filter included, is its owner's call.
 final class NightDetailController: UICollectionViewController {
   struct Actions {
     let play: (EventListRow) -> Void
     let showAll: ([EventListRow]) -> Void
     let share: (EventListRow) -> Void
     let stagesInfo: (SleepStageBreakdown) -> Void
+    let select: (EventFilter) -> Void
   }
 
   private typealias Section = NightDetailItems.Section
@@ -48,11 +50,12 @@ final class NightDetailController: UICollectionViewController {
     apply(animated: false)
   }
 
-  /// Internal for tests: what choosing a filter does.
-  func select(_ filter: EventFilter) {
+  /// Shows the rows under `filter`.
+  func show(filter: EventFilter) {
+    guard filter != self.filter else { return }
     self.filter = filter
     items = NightDetailItems(night: detail.session, filter: filter)
-    apply(animated: true)
+    if isViewLoaded { apply(animated: true) }
   }
 
   private func apply(animated: Bool) {
@@ -95,7 +98,7 @@ final class NightDetailController: UICollectionViewController {
       guard let self else { return }
       cell.configure(
         options: EventFilter.options(for: detail.session.events), selected: self.filter, theme: theme,
-        onSelect: { [weak self] in self?.select($0) })
+        onSelect: { [actions] in actions.select($0) })
     }
     return UICollectionViewDiffableDataSource(collectionView: collectionView) { collectionView, indexPath, item in
       switch item {

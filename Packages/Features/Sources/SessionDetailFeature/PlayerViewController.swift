@@ -4,16 +4,16 @@ import SleepGuardContentKit
 import SwiftUI
 import UIKit
 
-/// Plays a night's event clips (`ClipPlaybackModel`, built by the shell) in
+/// Plays a night's event clips (`PlayerViewModel`, built by the shell) in
 /// the shared `PlayerContent`: the playing event with its waveform, back /
 /// play / forward, enhanced audio, and the events to pick from. Redraws as
 /// the model changes; starts when shown, releases the player when gone.
 public final class PlayerViewController: ScreenController {
-  let model: ClipPlaybackModel
+  let viewModel: PlayerViewModel
   private let list = ContentListController(insets: NSDirectionalEdgeInsets(top: 20, leading: 20, bottom: 20, trailing: 20))
 
-  public init(model: ClipPlaybackModel, theme: Theme, chrome: ScreenChrome) {
-    self.model = model
+  public init(viewModel: PlayerViewModel, theme: Theme, chrome: ScreenChrome) {
+    self.viewModel = viewModel
     super.init(theme: theme, chrome: chrome)
   }
 
@@ -25,16 +25,16 @@ public final class PlayerViewController: ScreenController {
 
   override public func viewIsAppearing(_ animated: Bool) {
     super.viewIsAppearing(animated)
-    model.start()
+    viewModel.start()
   }
 
   override public func viewDidDisappear(_ animated: Bool) {
     super.viewDidDisappear(animated)
-    model.close()
+    viewModel.close()
   }
 
   private func render() {
-    let model = model
+    let model = viewModel
     if model.currentEvent != nil, model.hasAudio {
       let playlist = model.playlist
       let clips = model.events.map {

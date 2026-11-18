@@ -37,6 +37,7 @@ Vertical slices: the architecture and all three brands first, then one complete 
 | F10 | Shared screen content | Done | 7/7 | Each screen's layout once, in the shared `SleepGuardContentKit`; screens stay per app (ADR 0005). Before F8 |
 | F8 | Remaining features | Done | 6/6 | Settings, onboarding, sleep stages, Snore Interrupter, Learn, personalization (three of them brand-gated) |
 | F11 | UIKit screen containers | Done | 1/1 | Every screen a UIKit controller (ADR 0007): History a collection view, Onboarding a page view controller, Session Detail a compositional layout, the rest hosting their shared content; navigation stays with coordinators. On shared 0.28.0 |
+| F12 | View models and factories | Done | 1/1 | A view model for each screen with state or logic, tested without UIKit; the flows' factories build them (ADR 0008) |
 | F9 | Showcase polish | In Progress | 3/4 | Architecture doc with module graph, "adding a brand" walkthrough (Dawn, a fourth brand), comparison with SleepGuard, README. The brands' screenshots wait for the UI polish |
 
 ## Dependencies between features
@@ -46,7 +47,7 @@ F0 → F1 → F2 → F3 → F5 → F7 → F10 → F8 → F9
                │    └→ F6 (after F3-T5; when there's time)
                └→ F4
 
-F10 → F11 → F9-T4 (screenshots)
+F10 → F11 → F12 → F9-T4 (screenshots)
 ```
 
 ## Out of scope

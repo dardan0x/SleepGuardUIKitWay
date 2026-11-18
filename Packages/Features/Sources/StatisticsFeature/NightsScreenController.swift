@@ -1,6 +1,5 @@
 import ScreenKit
 import SleepCore
-import SleepDomain
 import SleepGuardContentKit
 import UIKit
 
@@ -15,18 +14,16 @@ public struct NightListRoutes {
 }
 
 /// The base of a statistics screen over every night (Trends, Calendar, Last 7
-/// Nights): the placeholder until the first list, then the screen's content
-/// in a UIKit list, redrawn live from the repository while it is on screen.
-/// No empty state: the numbers read 0.
+/// Nights): the placeholder until `NightsViewModel` has the first list, then
+/// the screen's content in a UIKit list, redrawn as the view model changes.
 public class NightsScreenController: ScreenController {
-  let dependencies: StatisticsDependencies
+  let viewModel: NightsViewModel
   let list = ContentListController()
-  /// Every night, once loaded.
-  private(set) var nights: [NightSummary]?
   private var observing: Task<Void, Never>?
+  private lazy var loading = host(StatisticsLoadingContent())
 
-  init(dependencies: StatisticsDependencies, theme: Theme, chrome: ScreenChrome) {
-    self.dependencies = dependencies
+  init(viewModel: NightsViewModel, theme: Theme, chrome: ScreenChrome) {
+    self.viewModel = viewModel
     super.init(theme: theme, chrome: chrome)
   }
 
@@ -36,18 +33,13 @@ public class NightsScreenController: ScreenController {
 
   override public func viewDidLoad() {
     super.viewDidLoad()
-    show(host(StatisticsLoadingContent()))
+    renderTracking { [weak self] in self?.redraw() }
   }
 
   override public func viewIsAppearing(_ animated: Bool) {
     super.viewIsAppearing(animated)
     guard observing == nil else { return }
-    let repository = dependencies.nights
-    observing = Task { [weak self] in
-      for await nights in await repository.observeSummaries() {
-        self?.show(nights)
-      }
-    }
+    observing = Task { [viewModel] in await viewModel.observe() }
   }
 
   override public func viewDidDisappear(_ animated: Bool) {
@@ -56,13 +48,14 @@ public class NightsScreenController: ScreenController {
     observing = nil
   }
 
-  /// Internal for tests.
-  func show(_ nights: [NightSummary]) {
-    self.nights = nights
-    render()
+  /// Redraws from the view model. Called again by subclasses when a view-only
+  /// selection changes.
+  func redraw() {
+    guard let nights = viewModel.nights else { return show(loading) }
+    render(nights)
     show(list)
   }
 
-  /// Redraws `list` from `nights`. Each screen draws its own content.
-  func render() {}
+  /// Draws `list` from `nights`. Each screen draws its own content.
+  func render(_: [NightSummary]) {}
 }

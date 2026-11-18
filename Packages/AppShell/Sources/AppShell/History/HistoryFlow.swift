@@ -11,11 +11,11 @@ final class HistoryFlow: TabFlow {
   let tab = AppTab.history
   let navigator: any Navigator
   let nightDetail: NightDetailNavigation
-  private let history: HistoryScreenComposer
+  private let history: HistoryScreenFactory
 
   init(navigator: any Navigator, container: Container) {
     self.navigator = navigator
-    history = HistoryScreenComposer(container: container)
+    history = HistoryScreenFactory(container: container)
     nightDetail = NightDetailNavigation(navigator: navigator, container: container)
   }
 

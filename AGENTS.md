@@ -18,7 +18,7 @@ Don't assume. Don't hide confusion. Surface trade-offs.
 ```
 Brand app targets (SleepGuard | SleepGuardLite | Nocturne)
         │
-     AppShell           UIKit lifecycle, coordinators, composers, Factory container
+     AppShell           UIKit lifecycle, coordinators, factories, Factory container
         │
   ┌─────┼─────────────┬──────────────┐
 Features (UIKit)    ScreenKit      Adapters (SleepPersistence, SleepAudio, SleepHealth)
@@ -34,6 +34,7 @@ Features (UIKit)    ScreenKit      Adapters (SleepPersistence, SleepAudio, Sleep
 | `SleepDomain` | Foundation, `SleepCore` | everything else |
 | Adapters | `SleepDomain`, `SleepCore`, the one Apple framework they wrap | SwiftUI, UIKit (except where the framework requires it), Factory, features |
 | Features | `SleepDomain`, `SleepCore`, `SleepGuardContentKit`, `SleepGuardDesignKit` (which re-exports `SleepStrings`), `ScreenKit`, UIKit, SwiftUI (to host the shared content) | Factory, adapters, other features |
+| A feature's `…ViewModel.swift` | Foundation, Observation, `SleepDomain`, `SleepCore` | UIKit, SwiftUI, `ScreenKit`, the kits (so no `Strings`) |
 | `ScreenKit` | UIKit, SwiftUI, `SleepGuardDesignKit` | domain, features, Factory |
 | `AppShell` | everything except `SleepHealth` | — |
 | Brand targets | `AppShell`, the adapters that brand links | — |
@@ -58,27 +59,29 @@ Enforced by package manifests, **but only when a package builds on its own**: in
 
 ## Screens (UIKit, hosting shared SwiftUI content)
 
-- **A screen is a UIKit view controller (ADR 0007).** It subclasses `ScreenController` from `ScreenKit` and owns the screen's structure (a collection view, a page view controller, or one hosted piece), its state, its loading and its alerts. The shared SwiftUI content draws inside it, through `UIHostingConfiguration` cells (`hosted { … }`), a hosted child (`host(_:)`), or `render(_:)`, which hosts once and redraws in place.
-- **No view models.** State lives on the controller as plain properties. Exactly one state child shows at a time (`show(_:)`): loading, empty, loaded, error. No boolean soup.
-- An `@Observable` state owner is allowed only when state owns an imperative resource (audio playback, timers). It is built by the composer and passed in, and the screen redraws from it with `renderTracking`. Never one per screen by reflex.
-- Each screen's public surface is three things:
+- **A screen is a UIKit view controller (ADR 0007).** It subclasses `ScreenController` from `ScreenKit` and owns the screen's structure (a collection view, a page view controller, or one hosted piece). The shared SwiftUI content draws inside it, through `UIHostingConfiguration` cells (`hosted { … }`), a hosted child (`host(_:)`), or `render(_:)`, which hosts once and redraws in place.
+- **A screen with state or logic has a view model (ADR 0008).** `@MainActor @Observable final class …ViewModel` in the feature: one `State` enum (`.loading`, `.loaded`, `.error`, plus `.empty` when the screen has one) and whatever is being edited; intents as methods (`async` for work); its `Routes`; which alert is due as an `Alert` enum value. No UI imports (checked), no `Strings`, no `@ObservationIgnored` (`let`s aren't tracked; a render reads only what it draws). Display-only screens (Learn, Briefing, the sheets that only show) have none: a view model there would only forward.
+- **The controller draws and forwards.** It redraws with `renderTracking { … }`, shows one state child at a time (`show(_:)`), forwards taps to the view model, runs its `async` work in tasks it owns, and turns its `Alert` into a `UIAlertController` (`presentAlert(_:make:)`, text from `Strings`). It never calls a route itself.
+- An `@Observable` state owner over an imperative resource (the player, the live night) is a view model too (`PlayerViewModel`), or sits under one (`BedsideClockViewModel` over `LiveRecordingModel`).
+- Each screen's public surface:
   ```swift
   public struct HistoryDependencies: Sendable { … }   // ports and use cases, plus plain values (flags, limits)
   public struct HistoryRoutes { … }                   // @MainActor closures: what the user asked for
-  public final class HistoryViewController: ScreenController { public init(dependencies:routes:theme:chrome:) }
+  public final class HistoryViewModel { public init(dependencies:routes:) }
+  public final class HistoryViewController: ScreenController { public init(viewModel:theme:chrome:) }
   ```
-- **Three layers of view code (ADR 0005, narrowed by ADR 0007).** Components live in the shared `SleepGuardDesignKit`. A screen's content (its loaded layout, and state views that only draw) lives in the shared `SleepGuardContentKit`, used by SleepGuard too. The screen stays here, in UIKit: loading, state, `Dependencies`, `Routes`, alerts, and, for a list or a pager, the container (sections, swipe actions, paging), whose cells and pages are shared views. The test: if a view can be rendered from plain values alone, it is shared; if it needs a port, a use case, a route or an alert, it is a screen. Don't write a SwiftUI layout in a feature module: add it to the content kit (values and closures in; an app-only extra goes through an optional value or a `@ViewBuilder` slot, never a flag naming an app). Something only this app draws (a placeholder) is a UIKit view. New screens are built content-first.
-- Load in `viewIsAppearing` into a `Task` the controller owns; cancel it in `viewDidDisappear` (and in `deinit`). Guard so popping back doesn't refetch. Observe changing data with the port's `AsyncStream` inside that task. Check `Task.isCancelled` before showing an error.
+- **Three layers of view code (ADR 0005, narrowed by ADR 0007).** Components live in the shared `SleepGuardDesignKit`. A screen's content (its loaded layout, and state views that only draw) lives in the shared `SleepGuardContentKit`, used by SleepGuard too. The screen stays here: its view model (state, loading, `Routes`, which alert) and its UIKit controller (alerts, and, for a list or a pager, the container (sections, swipe actions, paging), whose cells and pages are shared views). The test: if a view can be rendered from plain values alone, it is shared; if it needs a port, a use case, a route or an alert, it is a screen. Don't write a SwiftUI layout in a feature module: add it to the content kit (values and closures in; an app-only extra goes through an optional value or a `@ViewBuilder` slot, never a flag naming an app). Something only this app draws (a placeholder) is a UIKit view. New screens are built content-first.
+- The controller starts the view model's loading in `viewIsAppearing`, in a `Task` it owns, and cancels it in `viewDidDisappear` (and in `deinit`). Guard so popping back doesn't refetch. Observe changing data with the port's `AsyncStream` inside the view model's `observe()`. The view model checks `Task.isCancelled` before setting an error.
 - **Forbidden in features:** `NavigationStack`, `NavigationLink`, `.navigationDestination`, `.sheet`, `.fullScreenCover`, `.navigationTitle`, `.toolbar`, `@Query`, `@Environment(\.modelContext)`, `@Injected`, `UIApplication`, `UIDevice`, `UINavigationController`, `navigationController`, `pushViewController`, `Navigator`, and `present(` of anything but a `UIAlertController` (named `…alert`, `…Alert()` or `…confirmation(…)`).
-- Limits: a controller or view file ≤ 200 lines. Split a screen's list or pager into its own controller (`NightsListController`) and its pure item builder (`NightsListItems`, tested).
+- Limits: a controller, view model or view file ≤ 200 lines. Split a screen's list or pager into its own controller (`NightsListController`) and its pure item builder (`NightsListItems`, tested).
 - Accessibility: icon-only buttons have an accessibility label; custom-drawn views get one element with a label and a value; decorative visuals are hidden.
 
 ## Composition and navigation (UIKit)
 
 - **UIKit owns navigation. All of it.** Coordinators push, pop, present and dismiss. A screen never does.
 - **One screen base:** `ScreenController` in `ScreenKit`. Do not subclass `UIHostingController` per screen. Title and bar items are a `ScreenChrome` value applied by `ScreenController`.
-- **One composer shape:** a `@MainActor struct …ScreenComposer` in `AppShell` with `func make(routes:) -> UIViewController`. It resolves from the container, builds `Dependencies`, and builds the screen with the brand's theme and its `ScreenChrome`. No business logic, no navigation.
-- **Composers are the only code that resolves from the Factory container** (besides `AppShell.bootstrap`).
+- **One factory shape:** a `@MainActor struct …Factory` per flow in `AppShell` with `func make(routes:) -> UIViewController`. It resolves from the container, builds `Dependencies`, then the view model, then the controller with the brand's theme and its `ScreenChrome` (ADR 0008). No business logic, no navigation, no per-screen factory types.
+- **Factories are the only screen code that resolves from the Factory container** (besides `AppShell.bootstrap`).
 - Coordinators talk to UIKit through the `Navigator` protocol, so tests use `NavigatorSpy`.
 - Screen-level modals are UIKit sheets presented by a coordinator.
 - Deep links parse to an `AppRoute` in the scene delegate and are handled by `AppCoordinator`.
@@ -97,7 +100,7 @@ Notes: `docs/architecture/composition.md`, `docs/architecture/navigation.md`.
 - Three real app targets generated by Tuist from `Brand.all` in `Tuist/ProjectDescriptionHelpers/Brand.swift`. That entry holds the build-time identity: target name, display name, bundle id, URL scheme (the app group derives from the bundle id).
 - A brand's folder under `Apps/` holds `Brand.swift` (its `BrandComposition`, from F1-T7), an asset catalog (icon, `LaunchBackground`, `BrandAccent`) and entitlements. Nothing else is brand-specific.
 - `BrandComposition` is a protocol. A brand that forgets a binding does not compile. No `fatalError("register me")` placeholders.
-- **No `if brand == …` anywhere.** Brand differences reach code only through `BrandConfiguration` (theme, tabs, `health`, `appStoreID`; every brand states each, ADR 0006), read in two places only: coordinators (which tabs and flows exist) and composers (which pass plain values into `Dependencies`).
+- **No `if brand == …` anywhere.** Brand differences reach code only through `BrandConfiguration` (theme, tabs, `health`, `appStoreID`; every brand states each, ADR 0006), read in two places only: coordinators (which tabs and flows exist) and factories (which pass plain values into `Dependencies`).
 - Theme is a `Theme` value from `SleepGuardDesignKit`, supplied by the brand and injected into the SwiftUI environment of everything `ScreenController` hosts. Views read `@Environment(\.theme)`; UIKit code uses `UIColor(theme.palette…)` and `theme.typography.uiFont(size:weight:)`. Never hard-code a colour, radius or font that a token covers.
 - Adding a brand must stay "one list entry and one folder". If a change makes it more, stop and rethink.
 
@@ -113,7 +116,7 @@ Notes: `docs/architecture/brands.md`.
 - Every user-facing string goes through `Strings.x`. The catalog is `SleepStrings` in the shared repo; `SleepGuardDesignKit` re-exports it (`@_exported import SleepStrings`), so a file that imports the design kit can use `Strings` without a second import. This matches SleepGuard, where `DesignSystem` does the same. Never a literal in `Text`, `Button`, a `ScreenChrome` title, or an alert. Never `String(localized:)` directly.
 - Strings are added in `../SleepGuardShared` (see its README). A new string affects SleepGuard too.
 - Text that names the app takes the brand name as an argument from `BrandConfiguration`.
-- Only views, composers (for chrome titles) and content engines whose output is text may use `Strings`. A content engine that isn't a view imports `SleepStrings` directly rather than the design kit.
+- Only views, controllers, factories (for chrome titles) and content engines whose output is text may use `Strings`. A content engine that isn't a view imports `SleepStrings` directly rather than the design kit.
 
 ## Concurrency
 
@@ -129,8 +132,8 @@ Notes: `docs/architecture/concurrency.md`.
 ## Testing
 
 - Swift Testing only. `SleepDomain` tests run on macOS with `swift test`; everything else on the pinned simulator.
-- What must have tests: policies, use cases, mappers, adapters (against in-memory stores), coordinators (through `NavigatorSpy`), and brand bootstrap (every brand resolves every registration).
-- Views and controllers' drawing are not unit-tested. Keep logic out of them (item builders, rules in `SleepCore`) so that this is acceptable; a controller's state changes, alerts and routes are tested.
+- What must have tests: policies, use cases, view models (with the fakes), mappers, adapters (against in-memory stores), coordinators (through `NavigatorSpy`), and brand bootstrap (every brand resolves every registration).
+- Views and controllers are not unit-tested. Keep logic out of them (view models, item builders, rules in `SleepCore`) so that this is acceptable.
 
 ## Working style
 

@@ -40,10 +40,10 @@ struct SettingsFlowTests {
   @Test func theProfileOpensAsASheetAndClosesItself() throws {
     let (flow, spy) = makeFlow()
     flow.start()
-    try settings(spy).routes.openProfile()
+    try settings(spy).viewModel.routes.openProfile()
     guard case let .present(controller, .sheet) = spy.calls.last,
           let editor = controller as? ProfileEditorViewController else { throw FlowError.unexpected }
-    editor.routes.close()
+    editor.viewModel.routes.close()
     #expect(spy.calls.last == .dismiss)
   }
 
@@ -51,16 +51,16 @@ struct SettingsFlowTests {
   func rateIsOfferedOnlyWithAnAppStorePage(appStoreID: String?) throws {
     let (flow, spy) = makeFlow(brand: TestBrand(appStoreID: appStoreID))
     flow.start()
-    #expect(try (settings(spy).routes.rateApp != nil) == (appStoreID != nil))
+    #expect(try (settings(spy).viewModel.routes.rateApp != nil) == (appStoreID != nil))
   }
 
   @Test func healthRowsFollowTheBrand() throws {
     let (withHealth, healthSpy) = makeFlow(brand: TestBrand(health: FakeHealthAccess()))
     withHealth.start()
-    #expect(try settings(healthSpy).dependencies.health != nil)
+    #expect(try settings(healthSpy).viewModel.dependencies.health != nil)
     let (without, spy) = makeFlow()
     without.start()
-    #expect(try settings(spy).dependencies.health == nil)
+    #expect(try settings(spy).viewModel.dependencies.health == nil)
   }
 
   @Test func theReviewLinkIsTheAppStoresWriteAReviewPage() {
@@ -100,10 +100,10 @@ struct RecordingDelayFlowTests {
           let prestart = controller as? RecordingPrestartViewController else { throw FlowError.unexpected }
     var preferences = AppPreferences()
     preferences.recordingDelayMinutes = 15
-    prestart.routes.start(preferences)
+    prestart.viewModel.routes.start(preferences)
     guard case let .setRoot(next) = spy.calls.last,
           let countdown = next as? RecordingCountdownViewController else { throw FlowError.unexpected }
-    return countdown.routes
+    return countdown.viewModel.routes
   }
 
   private enum FlowError: Error {

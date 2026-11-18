@@ -4,33 +4,21 @@ import SleepGuardContentKit
 import SwiftUI
 import UIKit
 
-/// First launch: a `UIPageViewController` over the shared onboarding pages,
-/// with Skip above and the shared dots and Back below. Asks for Apple Health
-/// (in a brand that has it) and the microphone, then finishes. A granted
-/// permission shows for a moment before the next page, as in SleepGuard.
+/// First launch, drawn from `OnboardingViewModel`: a `UIPageViewController`
+/// over the shared onboarding pages, with Skip above and the shared dots and
+/// Back below. Follows the view model's page; reports swipes to it.
 public final class OnboardingViewController: ScreenController {
-  static let grantedPause: Duration = .seconds(0.8)
-
-  let dependencies: OnboardingDependencies
-  let routes: OnboardingRoutes
-  let pages: OnboardingPages
-  private(set) var page: OnboardingPage
-  private(set) var microphone = OnboardingPermission.notAsked
-  private(set) var health = OnboardingPermission.notAsked
+  let viewModel: OnboardingViewModel
   private(set) var requesting: Task<Void, Never>?
   private let pager = UIPageViewController(transitionStyle: .scroll, navigationOrientation: .horizontal)
   private var pageControllers: [OnboardingPage: UIHostingController<ThemedScreen<OnboardingPageView>>] = [:]
-  private lazy var dots = host(OnboardingDots(pages: pages.pages, current: page))
-  private lazy var skip = textButton(Strings.actionSkip) { [weak self] in self.map { $0.move(to: $0.pages.last) } }
-  private lazy var back = textButton(Strings.actionBack) { [weak self] in
-    self.map { $0.move(to: $0.pages.previous(before: $0.page)) }
-  }
+  private var shownPage: OnboardingPage?
+  private lazy var dots = host(OnboardingDots(pages: viewModel.pages.pages, current: viewModel.page))
+  private lazy var skip = textButton(Strings.actionSkip) { [weak self] in self?.viewModel.skip() }
+  private lazy var back = textButton(Strings.actionBack) { [weak self] in self?.viewModel.back() }
 
-  public init(dependencies: OnboardingDependencies, routes: OnboardingRoutes, theme: Theme, chrome: ScreenChrome) {
-    self.dependencies = dependencies
-    self.routes = routes
-    pages = OnboardingPages(hasHealth: dependencies.requestHealth != nil)
-    page = pages.first
+  public init(viewModel: OnboardingViewModel, theme: Theme, chrome: ScreenChrome) {
+    self.viewModel = viewModel
     super.init(theme: theme, chrome: chrome)
   }
 
@@ -40,79 +28,64 @@ public final class OnboardingViewController: ScreenController {
 
   override public func viewDidLoad() {
     super.viewDidLoad()
-    if dependencies.microphoneGranted() { microphone = .granted }
-    for page in pages.pages {
+    for page in viewModel.pages.pages {
       pageControllers[page] = host(pageView(page))
     }
     pager.dataSource = self
     pager.delegate = self
-    pager.setViewControllers([pageControllers[page]].compactMap(\.self), direction: .forward, animated: false)
     dots.sizingOptions = .intrinsicContentSize
     OnboardingLayout.arrange(in: self, pager: pager, skip: skip, dots: dots, back: back)
-    refresh()
+    renderTracking { [weak self] in self?.render() }
   }
 
-  /// Moves to `page` (Skip, Back, a page's buttons, after a permission).
-  func move(to target: OnboardingPage) {
-    guard target != page, let controller = pageControllers[target] else { return }
-    let forward = (pages.pages.firstIndex(of: target) ?? 0) > (pages.pages.firstIndex(of: page) ?? 0)
-    page = target
-    pager.setViewControllers([controller], direction: forward ? .forward : .reverse, animated: viewIfLoaded?.window != nil)
-    refresh()
-  }
-
-  func requestMicrophone() async {
-    microphone = .requesting
-    refresh()
-    let granted = await dependencies.requestMicrophone()
-    microphone = granted ? .granted : .notAsked
-    await moveOn(from: .microphone, granted: granted)
-  }
-
-  func requestHealth() async {
-    guard let request = dependencies.requestHealth else { return }
-    health = .requesting
-    refresh()
-    let granted = await request()
-    health = granted ? .granted : .notAsked
-    await moveOn(from: .health, granted: granted)
-  }
-
-  /// "Granted" for a moment, then the next page; denied moves on at once.
-  private func moveOn(from current: OnboardingPage, granted: Bool) async {
-    refresh()
-    if granted { try? await Task.sleep(for: Self.grantedPause) }
-    move(to: pages.next(after: current))
-  }
-
-  private func start(_ request: @escaping @MainActor (OnboardingViewController) async -> Void) {
-    guard requesting == nil else { return }
-    requesting = Task { [weak self] in
-      guard let self else { return }
-      await request(self)
-      requesting = nil
-    }
-  }
-
-  /// Redraws the pages (permission states), the dots and the buttons.
-  private func refresh() {
+  /// Redraws the pages (permission states), the dots and the buttons, and
+  /// turns to the view model's page.
+  private func render() {
+    let page = viewModel.page
     for (page, controller) in pageControllers {
       controller.rootView = ThemedScreen(theme: theme, content: pageView(page))
     }
-    dots.rootView = ThemedScreen(theme: theme, content: OnboardingDots(pages: pages.pages, current: page))
-    skip.isHidden = !pages.showsSkip(on: page)
-    back.alpha = pages.showsBack(on: page) ? 1 : 0
-    back.isEnabled = pages.showsBack(on: page)
+    dots.rootView = ThemedScreen(theme: theme, content: OnboardingDots(pages: viewModel.pages.pages, current: page))
+    skip.isHidden = !viewModel.showsSkip
+    back.alpha = viewModel.showsBack ? 1 : 0
+    back.isEnabled = viewModel.showsBack
+    turn(to: page)
+  }
+
+  private func turn(to page: OnboardingPage) {
+    guard page != shownPage, let controller = pageControllers[page] else { return }
+    let pages = viewModel.pages.pages
+    let forward = (pages.firstIndex(of: page) ?? 0) >= (shownPage.flatMap { pages.firstIndex(of: $0) } ?? 0)
+    let animated = shownPage != nil && viewIfLoaded?.window != nil
+    shownPage = page
+    pager.setViewControllers([controller], direction: forward ? .forward : .reverse, animated: animated)
   }
 
   private func pageView(_ page: OnboardingPage) -> OnboardingPageView {
-    OnboardingPageView(
-      page: page, microphone: microphone, health: health,
-      onNext: { [weak self] in self.map { $0.move(to: $0.pages.next(after: page)) } },
-      onRequestMicrophone: { [weak self] in self?.start { await $0.requestMicrophone() } },
-      onRequestHealth: { [weak self] in self?.start { await $0.requestHealth() } },
-      onStartRecording: { [weak self] in self.map { $0.routes.finish($0.health == .granted, true) } },
-      onBrowse: { [weak self] in self.map { $0.routes.finish($0.health == .granted, false) } })
+    let viewModel = viewModel
+    return OnboardingPageView(
+      page: page, microphone: Self.content(viewModel.microphone), health: Self.content(viewModel.health),
+      onNext: { viewModel.next(after: page) },
+      onRequestMicrophone: { [weak self] in self?.start { await viewModel.requestMicrophone() } },
+      onRequestHealth: { [weak self] in self?.start { await viewModel.requestHealth() } },
+      onStartRecording: { viewModel.finish(startRecording: true) },
+      onBrowse: { viewModel.finish(startRecording: false) })
+  }
+
+  private func start(_ request: @escaping @MainActor () async -> Void) {
+    guard requesting == nil else { return }
+    requesting = Task { [weak self] in
+      await request()
+      self?.requesting = nil
+    }
+  }
+
+  private static func content(_ permission: OnboardingViewModel.Permission) -> OnboardingPermission {
+    switch permission {
+    case .notAsked: .notAsked
+    case .requesting: .requesting
+    case .granted: .granted
+    }
   }
 
   private func textButton(_ title: String, action: @escaping () -> Void) -> UIButton {
@@ -140,8 +113,8 @@ extension OnboardingViewController: UIPageViewControllerDataSource, UIPageViewCo
     transitionCompleted completed: Bool)
   {
     guard completed, let shown = pager.viewControllers?.first, let landed = page(of: shown) else { return }
-    page = landed
-    refresh()
+    shownPage = landed
+    viewModel.land(on: landed)
   }
 
   private func page(of controller: UIViewController) -> OnboardingPage? {
@@ -149,8 +122,9 @@ extension OnboardingViewController: UIPageViewControllerDataSource, UIPageViewCo
   }
 
   private func neighbour(of controller: UIViewController, offset: Int) -> UIViewController? {
-    guard let current = page(of: controller), let index = pages.pages.firstIndex(of: current) else { return nil }
+    let pages = viewModel.pages.pages
+    guard let current = page(of: controller), let index = pages.firstIndex(of: current) else { return nil }
     let next = index + offset
-    return pages.pages.indices.contains(next) ? pageControllers[pages.pages[next]] : nil
+    return pages.indices.contains(next) ? pageControllers[pages[next]] : nil
   }
 }

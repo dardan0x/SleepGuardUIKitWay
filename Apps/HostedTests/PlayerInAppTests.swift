@@ -36,13 +36,13 @@ struct PlayerInAppTests {
       }
     }
     let (summary, episode) = try #require(chosen)
-    list.routes.openNight(summary)
+    list.viewModel.routes.openNight(summary)
     let detail = try #require(await until { navigation.topViewController as? SessionDetailViewController })
 
-    detail.routes.playEvents(episode, episode[0].id)
+    detail.viewModel.routes.playEvents(episode, episode[0].id)
     let sheet = try #require(await until { navigation.presentedViewController as? UINavigationController })
     let player = try #require(sheet.viewControllers.first as? PlayerViewController)
-    let model = player.model
+    let model = player.viewModel
     #expect(await until { model.isPlaying ? true : nil } == true)
     #expect(model.hasAudio)
     try await hold()

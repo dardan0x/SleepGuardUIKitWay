@@ -146,6 +146,18 @@ let package = Package(
         .defaultIsolation(MainActor.self),
       ]),
     .testTarget(
+      name: "SettingsFeatureTests",
+      dependencies: [
+        "SettingsFeature",
+        .product(name: "SleepDomain", package: "Core"),
+        .product(name: "SleepDomainTestSupport", package: "Core"),
+        .product(name: "SleepCore", package: "SleepGuardShared"),
+      ],
+      swiftSettings: [
+        .swiftLanguageMode(.v6),
+        .defaultIsolation(MainActor.self),
+      ]),
+    .testTarget(
       name: "OnboardingFeatureTests",
       dependencies: [
         "OnboardingFeature",

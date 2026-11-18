@@ -44,13 +44,13 @@ struct OnboardingFlowTests {
   private struct Unexpected: Error {}
 
   @Test func aHealthBrandAsksForHealthAndLiteDoesNot() throws {
-    #expect(try screen(makeFlow(health: FakeHealthAccess(granted: true))).pages.pages.contains(.health))
-    #expect(try !screen(makeFlow()).pages.pages.contains(.health))
+    #expect(try screen(makeFlow(health: FakeHealthAccess(granted: true))).viewModel.pages.pages.contains(.health))
+    #expect(try !screen(makeFlow()).viewModel.pages.pages.contains(.health))
   }
 
   @Test func finishingKeepsTheFlagAndHandsBackTheChoice() async throws {
     let h = makeFlow()
-    try screen(h).routes.finish(false, true)
+    try screen(h).viewModel.routes.finish(false, true)
     await h.flow.finishing?.value
     let stored = await h.preferences.load()
     #expect(stored.hasCompletedOnboarding)
@@ -60,7 +60,7 @@ struct OnboardingFlowTests {
 
   @Test func healthAllowedHereTurnsOnSync() async throws {
     let h = makeFlow(health: FakeHealthAccess(granted: true))
-    try screen(h).routes.finish(true, false)
+    try screen(h).viewModel.routes.finish(true, false)
     await h.flow.finishing?.value
     #expect(await h.preferences.load().syncToHealth)
     #expect(h.finished() == [false])
@@ -68,7 +68,7 @@ struct OnboardingFlowTests {
 
   @Test func finishingTwiceSavesOnce() async throws {
     let h = makeFlow()
-    let routes = try screen(h).routes
+    let routes = try screen(h).viewModel.routes
     routes.finish(false, false)
     routes.finish(false, true)
     await h.flow.finishing?.value
