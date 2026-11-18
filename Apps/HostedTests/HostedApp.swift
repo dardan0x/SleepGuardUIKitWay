@@ -1,7 +1,7 @@
-@testable import BriefingFeature
 import Foundation
 import Testing
 import UIKit
+@testable import BriefingFeature
 @testable import OnboardingFeature
 @testable import ScreenKit
 
@@ -20,9 +20,9 @@ enum HostedApp {
           return tabs
         }
         if let navigation = window.rootViewController as? UINavigationController,
-           let onboarding = navigation.viewControllers.first as? HostingScreen<OnboardingScreen>
+           let onboarding = navigation.viewControllers.first as? OnboardingViewController
         {
-          onboarding.rootView.content.routes.finish(false, false)
+          onboarding.viewModel.routes.finish(false, false)
         }
       }
       try await Task.sleep(for: .milliseconds(50))
@@ -33,8 +33,8 @@ enum HostedApp {
   /// Waits a moment for the briefing; closes it if it comes.
   private static func closeBriefing(over tabs: UITabBarController) async {
     for _ in 0..<40 {
-      if let briefing = tabs.presentedViewController as? HostingScreen<BriefingScreen> {
-        briefing.rootView.content.routes.close()
+      if let briefing = tabs.presentedViewController as? BriefingViewController {
+        briefing.routes.close()
         while tabs.presentedViewController != nil {
           try? await Task.sleep(for: .milliseconds(50))
         }

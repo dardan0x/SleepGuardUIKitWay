@@ -13,7 +13,7 @@ let package = Package(
     .library(name: "SleepDomainTestSupport", targets: ["SleepDomainTestSupport"]),
   ],
   dependencies: [
-    .package(url: "https://github.com/dardan0x/SleepGuardShared.git", exact: "0.27.0"),
+    .package(url: "https://github.com/dardan0x/SleepGuardShared.git", exact: "0.28.0"),
   ],
   targets: [
     .target(

@@ -18,7 +18,7 @@ struct PlayerInAppTests {
     tabs.selectedIndex = try #require(Container.shared.brand().configuration.tabs.firstIndex(of: .history))
     let navigation = try #require(tabs.selectedViewController as? UINavigationController)
     navigation.popToRootViewController(animated: false)
-    let list = try #require(navigation.viewControllers.first as? HostingScreen<HistoryScreen>)
+    let list = try #require(navigation.viewControllers.first as? HistoryViewController)
 
     // A night with a snoring episode of more than one clip.
     let repository = Container.shared.sessionRepository()
@@ -36,13 +36,13 @@ struct PlayerInAppTests {
       }
     }
     let (summary, episode) = try #require(chosen)
-    list.rootView.content.routes.openNight(summary)
-    let detail = try #require(await until { navigation.topViewController as? HostingScreen<SessionDetailScreen> })
+    list.viewModel.routes.openNight(summary)
+    let detail = try #require(await until { navigation.topViewController as? SessionDetailViewController })
 
-    detail.rootView.content.routes.playEvents(episode, episode[0].id)
+    detail.viewModel.routes.playEvents(episode, episode[0].id)
     let sheet = try #require(await until { navigation.presentedViewController as? UINavigationController })
-    let player = try #require(sheet.viewControllers.first as? HostingScreen<PlayerScreen>)
-    let model = player.rootView.content.model
+    let player = try #require(sheet.viewControllers.first as? PlayerViewController)
+    let model = player.viewModel
     #expect(await until { model.isPlaying ? true : nil } == true)
     #expect(model.hasAudio)
     try await hold()

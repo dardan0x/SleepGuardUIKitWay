@@ -18,9 +18,6 @@ final class LearnFlow: TabFlow {
   }
 
   func start() {
-    let url = container.brand().configuration.learnURL
-    navigator.setRoot(HostingScreen(
-      rootView: LearnScreen(url: url), theme: container.theme(),
-      chrome: ScreenChrome(title: Strings.tabLearn, hidesNavigationBar: true)))
+    navigator.setRoot(LearnFactory(container: container).make())
   }
 }

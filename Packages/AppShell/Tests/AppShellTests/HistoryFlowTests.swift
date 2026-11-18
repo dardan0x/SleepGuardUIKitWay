@@ -31,7 +31,7 @@ struct HistoryFlowTests {
       Issue.record("expected setRoot, got \(spy.calls)")
       return
     }
-    let list = try #require(root as? HostingScreen<HistoryScreen>)
+    let list = try #require(root as? HistoryViewController)
     #expect(list.navigationItem.title == Strings.tabSessions)
     #expect(list.navigationItem.largeTitleDisplayMode == .never)
   }
@@ -42,13 +42,13 @@ struct HistoryFlowTests {
     flow.start()
     let list = try #require(rootList(spy))
 
-    list.rootView.content.routes.openNight(night.summary())
+    list.viewModel.routes.openNight(night.summary())
 
     guard case let .push(pushed) = spy.calls.last else {
       Issue.record("expected push, got \(spy.calls)")
       return
     }
-    let detail = try #require(pushed as? HostingScreen<SessionDetailScreen>)
+    let detail = try #require(pushed as? SessionDetailViewController)
     #expect(detail.navigationItem.title == night.start.formatted(.dateTime.weekday(.wide).month(.abbreviated).day()))
     #expect(detail.navigationItem.rightBarButtonItems?.map(\.accessibilityLabel) == [Strings.actionDelete, Strings.a11yExportReport])
   }
@@ -57,7 +57,7 @@ struct HistoryFlowTests {
   @Test func theDeleteButtonAsksForConfirmation() async throws {
     let (flow, spy, repository) = makeFlow([night])
     flow.start()
-    try #require(rootList(spy)).rootView.content.routes.openNight(night.summary())
+    try #require(rootList(spy)).viewModel.routes.openNight(night.summary())
     guard case let .push(pushed) = spy.calls.last else {
       Issue.record("expected push, got \(spy.calls)")
       return
@@ -89,14 +89,14 @@ struct HistoryFlowTests {
     let rows = EventListRow.rows(for: noisy)
     let (flow, spy, _) = makeFlow([noisy])
     flow.start()
-    try #require(rootList(spy)).rootView.content.routes.openNight(noisy.summary())
+    try #require(rootList(spy)).viewModel.routes.openNight(noisy.summary())
     guard case let .push(pushed) = spy.calls.last else {
       Issue.record("expected push, got \(spy.calls)")
       return
     }
-    let detail = try #require(pushed as? HostingScreen<SessionDetailScreen>)
+    let detail = try #require(pushed as? SessionDetailViewController)
 
-    detail.rootView.content.routes.showAllEvents(rows, noisy.events)
+    detail.viewModel.routes.showAllEvents(rows, noisy.events)
 
     guard case let .present(presented, style) = spy.calls.last else {
       Issue.record("expected present, got \(spy.calls)")
@@ -104,8 +104,8 @@ struct HistoryFlowTests {
     }
     #expect(style == .sheet(detents: [.medium, .large]))
     let navigation = try #require(presented as? UINavigationController)
-    let sheet = try #require(navigation.viewControllers.first as? HostingScreen<EventsSheetScreen>)
-    #expect(sheet.rootView.content.rows == rows)
+    let sheet = try #require(navigation.viewControllers.first as? EventsSheetViewController)
+    #expect(sheet.rows == rows)
     #expect(sheet.navigationItem.title == Strings.recordingsDetailEventsLabel)
     let close = try #require(sheet.navigationItem.rightBarButtonItems?.first)
     #expect(close.accessibilityLabel == Strings.actionClose)
@@ -121,14 +121,14 @@ struct HistoryFlowTests {
     let noisy = Night(start: start, end: night.end, events: [snore])
     let (flow, spy, _) = makeFlow([noisy])
     flow.start()
-    try #require(rootList(spy)).rootView.content.routes.openNight(noisy.summary())
+    try #require(rootList(spy)).viewModel.routes.openNight(noisy.summary())
     guard case let .push(pushed) = spy.calls.last else {
       Issue.record("expected push, got \(spy.calls)")
       return
     }
-    let detail = try #require(pushed as? HostingScreen<SessionDetailScreen>)
+    let detail = try #require(pushed as? SessionDetailViewController)
 
-    detail.rootView.content.routes.playEvents([snore], snore.id)
+    detail.viewModel.routes.playEvents([snore], snore.id)
 
     guard case let .present(presented, style) = spy.calls.last else {
       Issue.record("expected present, got \(spy.calls)")
@@ -136,9 +136,9 @@ struct HistoryFlowTests {
     }
     #expect(style == .sheet(detents: [.height(580), .large]))
     let navigation = try #require(presented as? UINavigationController)
-    let player = try #require(navigation.viewControllers.first as? HostingScreen<PlayerScreen>)
+    let player = try #require(navigation.viewControllers.first as? PlayerViewController)
     #expect(player.navigationItem.title == Strings.eventPlayerNavigationTitle)
-    #expect(player.rootView.content.model.events == [snore])
+    #expect(player.viewModel.events == [snore])
     player.navigationItem.rightBarButtonItems?.first?.primaryAction?.performWithSender(nil, target: nil)
     #expect(spy.calls.last == .dismiss)
   }
@@ -149,24 +149,24 @@ struct HistoryFlowTests {
       start: night.start, end: night.end, sleepStages: [SleepStageSegment(stage: .deep, startOffset: 0, duration: 3600)])
     let (flow, spy, _) = makeFlow([staged])
     flow.start()
-    try #require(rootList(spy)).rootView.content.routes.openNight(staged.summary())
+    try #require(rootList(spy)).viewModel.routes.openNight(staged.summary())
     guard case let .push(pushed) = spy.calls.last else {
       Issue.record("expected push, got \(spy.calls)")
       return
     }
-    let detail = try #require(pushed as? HostingScreen<SessionDetailScreen>)
+    let detail = try #require(pushed as? SessionDetailViewController)
     let stages = try #require(SleepStageBreakdown(segments: staged.sleepStages))
 
-    detail.rootView.content.routes.showStagesInfo(stages)
+    detail.viewModel.routes.showStagesInfo(stages)
 
     guard case let .present(presented, style) = spy.calls.last else {
       Issue.record("expected present, got \(spy.calls)")
       return
     }
     #expect(style == .sheet(detents: [.large]))
-    let sheet = try #require(presented as? HostingScreen<SleepStagesInfoScreen>)
-    #expect(sheet.rootView.content.breakdown == stages)
-    sheet.rootView.content.close()
+    let sheet = try #require(presented as? SleepStagesInfoViewController)
+    #expect(sheet.breakdown == stages)
+    sheet.close()
     #expect(spy.calls.last == .dismiss)
   }
 
@@ -182,8 +182,8 @@ struct HistoryFlowTests {
   }
 
   @Test func thePlayerIsTitledByTheKindOfEvent() {
-    #expect(SessionDetailComposer.playerTitle(for: .sleepTalking) == Strings.eventPlayerSleepTalkingTitle)
-    #expect(SessionDetailComposer.playerTitle(for: .coughing) == Strings.eventPlayerNoiseTitle)
+    #expect(SessionDetailFactory.playerTitle(for: .sleepTalking) == Strings.eventPlayerSleepTalkingTitle)
+    #expect(SessionDetailFactory.playerTitle(for: .coughing) == Strings.eventPlayerNoiseTitle)
   }
 
   @Test func deletingANightRemovesItThenPops() async {
@@ -211,9 +211,9 @@ struct HistoryFlowTests {
     #expect(weakFlow == nil)
   }
 
-  private func rootList(_ spy: NavigatorSpy) -> HostingScreen<HistoryScreen>? {
+  private func rootList(_ spy: NavigatorSpy) -> HistoryViewController? {
     guard case let .setRoot(root) = spy.calls.first else { return nil }
-    return root as? HostingScreen<HistoryScreen>
+    return root as? HistoryViewController
   }
 }
 

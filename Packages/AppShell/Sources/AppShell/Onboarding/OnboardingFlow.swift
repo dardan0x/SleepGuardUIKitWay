@@ -23,21 +23,10 @@ final class OnboardingFlow {
   }
 
   func start() {
-    let capture = container.makeAudioCapture()()
-    let device = container.deviceServices()
-    var requestHealth: (@MainActor () async -> Bool)?
-    if let health = container.healthAccess() {
-      requestHealth = { await health.requestAuthorization() }
-    }
-    let screen = OnboardingScreen(
-      dependencies: OnboardingDependencies(
-        microphoneGranted: { device.microphone() == .granted },
-        requestMicrophone: { await capture.requestPermission() },
-        requestHealth: requestHealth),
-      routes: OnboardingRoutes(finish: { [weak self] healthGranted, startRecording in
+    navigator.setRoot(OnboardingFactory(container: container).make(routes: OnboardingRoutes(
+      finish: { [weak self] healthGranted, startRecording in
         self?.finish(healthGranted: healthGranted, startRecording: startRecording)
-      }))
-    navigator.setRoot(HostingScreen(rootView: screen, theme: container.theme(), chrome: ScreenChrome(hidesNavigationBar: true)))
+      })))
   }
 
   /// What the screen's finish route does; internal for tests.

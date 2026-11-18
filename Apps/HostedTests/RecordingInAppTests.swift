@@ -20,18 +20,18 @@ struct RecordingInAppTests {
     tabs.selectedIndex = index
     let navigation = try #require(tabs.selectedViewController as? UINavigationController)
     navigation.popToRootViewController(animated: false)
-    let dashboard = try #require(navigation.viewControllers.first as? HostingScreen<StatisticsScreen>)
+    let dashboard = try #require(navigation.viewControllers.first as? StatisticsViewController)
 
-    dashboard.rootView.content.routes.startRecording()
+    dashboard.viewModel.routes.startRecording()
 
     let modal = try #require(await until { tabs.presentedViewController as? UINavigationController })
     #expect(modal.modalPresentationStyle == .fullScreen)
-    let prestart = try #require(modal.viewControllers.first as? HostingScreen<RecordingPrestartScreen>)
+    let prestart = try #require(modal.viewControllers.first as? RecordingPrestartViewController)
     _ = await until { modal.isNavigationBarHidden ? true : nil }
     #expect(modal.isNavigationBarHidden)
     try await hold()
 
-    prestart.rootView.content.routes.cancel()
+    prestart.viewModel.routes.cancel()
     let gone = await until { tabs.presentedViewController == nil ? true : nil }
     #expect(gone == true)
   }

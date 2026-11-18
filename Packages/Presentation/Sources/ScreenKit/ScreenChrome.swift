@@ -2,7 +2,7 @@ import UIKit
 
 /// How a screen looks in the navigation bar, described as a value.
 ///
-/// UIKit owns the bar: `HostingScreen` applies this to its `navigationItem`.
+/// UIKit owns the bar: `ScreenController` applies this to its `navigationItem`.
 /// Screens never call `.navigationTitle` or `.toolbar`, so one system writes
 /// the bar, not two.
 public struct ScreenChrome {
@@ -22,6 +22,22 @@ public struct ScreenChrome {
     self.largeTitle = largeTitle
     self.hidesNavigationBar = hidesNavigationBar
     self.trailingItems = trailingItems
+  }
+}
+
+public extension ScreenChrome {
+  /// Title and bar items onto a screen's navigation item. `ScreenController`
+  /// calls it, and applies `hidesNavigationBar` on appearing.
+  func apply(to navigationItem: UINavigationItem) {
+    navigationItem.title = title
+    navigationItem.largeTitleDisplayMode = largeTitle ? .always : .never
+    navigationItem.rightBarButtonItems = trailingItems.reversed().map { item in
+      let button = UIBarButtonItem(
+        image: UIImage(systemName: item.systemImage),
+        primaryAction: UIAction { _ in item.action() })
+      button.accessibilityLabel = item.accessibilityLabel
+      return button
+    }
   }
 }
 

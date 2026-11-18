@@ -10,7 +10,7 @@ import UIKit
 /// sleep-stages sheets, confirm and delete it, then go back. Owned by the tab's flow.
 final class NightDetailNavigation {
   private let navigator: any Navigator
-  private let detail: SessionDetailComposer
+  private let detail: SessionDetailFactory
   private let deleteSession: DeleteSession
   private let nights: any SessionRepository
   private let clipsDirectory: URL
@@ -20,7 +20,7 @@ final class NightDetailNavigation {
 
   init(navigator: any Navigator, container: Container) {
     self.navigator = navigator
-    detail = SessionDetailComposer(container: container)
+    detail = SessionDetailFactory(container: container)
     deleteSession = container.deleteSession()
     nights = container.sessionRepository()
     clipsDirectory = container.storageLocation().clipsDirectory

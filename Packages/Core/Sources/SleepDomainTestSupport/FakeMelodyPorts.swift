@@ -63,7 +63,7 @@ public final class FakeMelodyStore: MelodyStore {
     URL(fileURLWithPath: "/melodies/\(melody.filename)")
   }
 
-  public func save(take: URL, name: String) -> Melody? {
+  public func save(take _: URL, name: String) -> Melody? {
     let id = CustomMelodies.nextID(stored: 0, existing: saved)
     let melody = Melody(id: id, filename: CustomMelodies.filename(id: id), customName: name)
     saved.append(melody)
@@ -83,6 +83,9 @@ public final class FakeMelodyRecorder: MelodyRecorder {
   public var elapsed: TimeInterval = 0
   public private(set) var isRecording = false
   public private(set) var discards = 0
+  /// A take exists until it's discarded, as in `AVMelodyRecorder`: stopping
+  /// (by hand or at the limit) keeps it.
+  private var hasTake = false
   private var onLimit: (@MainActor () -> Void)?
 
   public init() {}
@@ -91,18 +94,19 @@ public final class FakeMelodyRecorder: MelodyRecorder {
 
   public func start(onLimit: @escaping @MainActor () -> Void) throws {
     isRecording = true
+    hasTake = true
     self.onLimit = onLimit
   }
 
   public func stop() -> URL? {
-    guard isRecording else { return nil }
     isRecording = false
-    return URL(fileURLWithPath: "/tmp/take.m4a")
+    return hasTake ? URL(fileURLWithPath: "/tmp/take.m4a") : nil
   }
 
   public func discard() {
     discards += 1
     isRecording = false
+    hasTake = false
   }
 
   public func reachLimit() {

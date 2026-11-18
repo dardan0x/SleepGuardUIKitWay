@@ -66,18 +66,18 @@ The eight features are History, SessionDetail, Statistics, Recording, Settings, 
 | `SleepPersistence` | 11 / 634 | SwiftData records behind `SessionRepository`; files for clips, checkpoint, profile, raw log, survey answers; UserDefaults preferences | Leak a `@Model` past its ports |
 | `SleepAudio` | 11 / 1,054 | AVAudioEngine capture and analysis, clip compression and playback, waveforms, the interrupter's player, store and recorder | |
 | `SleepHealth` | 1 / 87 | HealthKit: write a night, read its sleep stages | Be linked by Lite |
-| `ScreenKit` (Presentation) | 3 / 223 | `HostingScreen` (a SwiftUI screen in a themed hosting controller), `ScreenChrome` (title, bar items), `Navigator` | |
-| Features | 32 / 1,983 | 21 SwiftUI screens, each with a `Dependencies` and a `Routes` value | Navigate, present, persist, inject, or touch `UIApplication` (checked) |
-| `AppShell` | 22 / 1,771 | Launch, 9 flows and coordinators, composers, the Factory container (28 registrations), brand composition | Be imported by anything but the apps and its test support |
+| `ScreenKit` (Presentation) | 5 / 422 | `ScreenController` (every screen's base: chrome, background, theme, one state child), `ContentListController` (a self-sizing UIKit list), `ScreenChrome`, `Navigator`, theme fonts for UIKit | |
+| Features | 54 / 3,582 | 21 UIKit screens (ADR 0007): collection views, a page view controller, a segmented control and alerts around the shared SwiftUI content. The 14 with state or logic have a view model (ADR 0008) that holds it, calls the use cases and routes and says which alert is due, with no UI imports. Each screen has a `Dependencies` and a `Routes` value | Navigate, present anything but an alert, persist, inject, or touch `UIApplication`; import UI in a view model (checked) |
+| `AppShell` | 22 / 1,771 | Launch, 9 flows and coordinators, factories, the Factory container (28 registrations), brand composition | Be imported by anything but the apps and its test support |
 | Apps | 4 brands | `Brand.swift`: one `BrandConfiguration` each; assets; Info.plist from the Tuist brand list | Contain logic |
 
 ## How a screen comes up: a night's detail
 
 1. A row in History calls `HistoryRoutes.openNight(summary)`. The screen only reports the intent.
-2. `HistoryFlow` hands it to `NightDetailNavigation.show(_:)`, which asks `SessionDetailComposer.make(...)` for a controller and pushes it through its `Navigator`.
-3. The composer resolves `LoadSessionDetail` from the container and builds `HostingScreen(rootView: SessionDetailScreen(dependencies:routes:), theme:, chrome:)`. The chrome carries the title and the bar items (report, delete); the screen never sets them.
-4. `SessionDetailScreen` loads through `LoadSessionDetail`. That reads the night from `SessionRepository`, asks `SleepStagePort` for stages when the night has none (the brand's Apple Health, or nothing in Lite), and saves the night with its new score.
-5. The screen hosts the shared `NightDetailContent` (the same layout SleepGuard shows), with the stages card in its slot. Tapping Play, Show all, Share or the stages' info calls a route; the navigation object presents the sheet.
+2. `HistoryFlow` hands it to `NightDetailNavigation.show(_:)`, which asks `SessionDetailFactory.make(...)` for a controller and pushes it through its `Navigator`.
+3. The factory resolves `LoadSessionDetail` from the container and builds `SessionDetailViewModel(dependencies:routes:)`, then `SessionDetailViewController(viewModel:theme:chrome:)`. The chrome carries the title and the bar items (report, delete); the screen never sets them.
+4. When the screen appears, the controller runs `viewModel.load()` in a task it owns; the view model loads through `LoadSessionDetail`. That reads the night from `SessionRepository`, asks `SleepStagePort` for stages when the night has none (the brand's Apple Health, or nothing in Lite), and saves the night with its new score.
+5. The screen lays the night out in a UIKit compositional collection view (`NightDetailController`, items from the tested `NightDetailItems`): the shared header, stages card, timeline, banners and event rows are hosted cells; the filter is a `UISegmentedControl`. Tapping Play, Show all, Share or the stages' info calls a route; the navigation object presents the sheet.
 
 Every screen follows this shape: intent out through `Routes`, data in through `Dependencies`, presentation decided by a flow.
 
@@ -96,7 +96,7 @@ Every screen follows this shape: intent out through `Routes`, data in through `D
 
 Dawn is the worked example in [ADDING_A_BRAND.md](ADDING_A_BRAND.md).
 
-Identity (bundle id, display name, app group, URL scheme) lives in the Tuist brand list and reaches the app through Info.plist. Brand differences are read only in the container, the coordinators and the composers; there is no brand enum to switch on.
+Identity (bundle id, display name, app group, URL scheme) lives in the Tuist brand list and reaches the app through Info.plist. Brand differences are read only in the container, the coordinators and the factories; there is no brand enum to switch on.
 
 ## The shared repo
 
@@ -159,11 +159,13 @@ About 210 package tests and 9 in-app tests per brand, plus the shared repo's own
 | [0004](adr/0004-shared-repo.md) | Shared code in its own repo, pinned by version |
 | [0005](adr/0005-shared-screen-content.md) | Screen layouts shared too; each app hosts them |
 | [0006](adr/0006-brand-capabilities.md) | A brand capability is a port it builds or a value it states |
+| [0007](adr/0007-uikit-screen-containers.md) | Every screen a UIKit controller; shared SwiftUI draws the cells and pages |
+| [0008](adr/0008-view-models.md) | View models for screens with state or logic; flows' factories build them |
 
 ## Where to look first
 
 - `Packages/AppShell/Sources/AppShell/Coordinators/AppCoordinator.swift`: launch, onboarding or tabs, the recording flow, the briefing.
-- `Packages/AppShell/Sources/AppShell/History/`: a flow, its composers and a navigation object end to end.
+- `Packages/AppShell/Sources/AppShell/History/`: a flow, its factories and a navigation object end to end.
 - `Packages/Core/Sources/SleepDomain/Recording/RecordingSession.swift`: the recording actor.
 - `Apps/Nocturne/Sources/Brand.swift`: everything a brand is; [ADDING_A_BRAND.md](ADDING_A_BRAND.md) adds one.
 - `scripts/check-layering.py`: the boundaries, as code.

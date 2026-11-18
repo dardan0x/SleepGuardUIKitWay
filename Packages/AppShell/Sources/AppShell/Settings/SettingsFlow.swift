@@ -11,7 +11,7 @@ import UIKit
 final class SettingsFlow: TabFlow {
   let tab = AppTab.settings
   let navigator: any Navigator
-  private let composer: SettingsScreenComposer
+  private let factory: SettingsFactory
   private let device: DeviceServices
   private let appStoreID: String?
   private let container: Container
@@ -21,7 +21,7 @@ final class SettingsFlow: TabFlow {
   init(navigator: any Navigator, container: Container) {
     self.navigator = navigator
     self.container = container
-    composer = SettingsScreenComposer(container: container)
+    factory = SettingsFactory(container: container)
     device = container.deviceServices()
     appStoreID = container.brand().configuration.appStoreID
   }
@@ -36,7 +36,7 @@ final class SettingsFlow: TabFlow {
     if let url = appStoreID.flatMap(Self.reviewURL(appStoreID:)) {
       rateApp = { [device] in device.openURL(url) }
     }
-    navigator.setRoot(composer.make(routes: SettingsRoutes(
+    navigator.setRoot(factory.make(routes: SettingsRoutes(
       openProfile: { [weak self] in self?.openProfile() },
       openSystemSettings: device.openSettings,
       rateApp: rateApp,
@@ -50,7 +50,7 @@ final class SettingsFlow: TabFlow {
 
   private func openProfile() {
     navigator.present(
-      composer.makeProfileEditor(routes: ProfileEditorRoutes(close: { [weak self] in self?.navigator.dismiss() })),
+      factory.makeProfileEditor(routes: ProfileEditorRoutes(close: { [weak self] in self?.navigator.dismiss() })),
       style: .sheet(detents: [.large]))
   }
 

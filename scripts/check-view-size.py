@@ -1,8 +1,9 @@
 #!/usr/bin/env python3
 """View size check (AGENTS.md "Screens").
 
-Any Swift file in Packages/*/Sources/ that declares a SwiftUI view may have at
-most 200 lines; a screen container (`*Screen.swift`) at most 100. A file over
+Any Swift file in Packages/*/Sources/ that declares a SwiftUI view or a view
+controller (`*ViewController.swift`, `*Controller.swift`) may have at most 200
+lines; a SwiftUI screen container (`*Screen.swift`) at most 100. A file over
 its limit fails unless it is in ALLOWLIST, and an allowlisted file fails if it
 grows past its recorded ceiling or is back within the limit (delete the entry).
 The allowlist can only shrink.
@@ -31,7 +32,7 @@ def main() -> int:
         if "/.build/" in str(path):
             continue
         text = path.read_text(encoding="utf-8")
-        if not DECLARES_VIEW.search(text):
+        if not DECLARES_VIEW.search(text) and not path.name.endswith("Controller.swift"):
             continue
         checked += 1
         rel = path.relative_to(ROOT).as_posix()

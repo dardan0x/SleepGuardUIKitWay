@@ -36,6 +36,8 @@ Vertical slices: the architecture and all three brands first, then one complete 
 |---|---------|--------|-------|-------|
 | F10 | Shared screen content | Done | 7/7 | Each screen's layout once, in the shared `SleepGuardContentKit`; screens stay per app (ADR 0005). Before F8 |
 | F8 | Remaining features | Done | 6/6 | Settings, onboarding, sleep stages, Snore Interrupter, Learn, personalization (three of them brand-gated) |
+| F11 | UIKit screen containers | Done | 1/1 | Every screen a UIKit controller (ADR 0007): History a collection view, Onboarding a page view controller, Session Detail a compositional layout, the rest hosting their shared content; navigation stays with coordinators. On shared 0.28.0 |
+| F12 | View models and factories | Done | 1/1 | A view model for each screen with state or logic, tested without UIKit; the flows' factories build them (ADR 0008) |
 | F9 | Showcase polish | In Progress | 3/4 | Architecture doc with module graph, "adding a brand" walkthrough (Dawn, a fourth brand), comparison with SleepGuard, README. The brands' screenshots wait for the UI polish |
 
 ## Dependencies between features
@@ -44,6 +46,8 @@ Vertical slices: the architecture and all three brands first, then one complete 
 F0 → F1 → F2 → F3 → F5 → F7 → F10 → F8 → F9
                │    └→ F6 (after F3-T5; when there's time)
                └→ F4
+
+F10 → F11 → F12 → F9-T4 (screenshots)
 ```
 
 ## Out of scope
@@ -52,7 +56,7 @@ Widgets, Apple Watch, Firebase (replaced by a static per-brand configuration ada
 
 ## Still open
 
-- **Screenshots** of the brands in the README (F9-T4), after the UI polish.
+- **Screenshots** of the brands in the README (F9-T4), after the UI polish (F11 changed every screen's container).
 - **Device checks** (F7, F8): a real night on a phone, Apple Health with a Watch night, the start delay with the screen locked, a Snore Interrupter melody, the onboarding's permission prompts, a briefing and a PDF. Listed in the F7 and F8 trackers.
 - **Learn page**: SleepGuard and Nocturne have no `learnURL` yet, so the tab shows "No content available".
 - **Dawn**: kept as a fourth brand or only as the example in `docs/ADDING_A_BRAND.md` (it costs a target and a CI build).

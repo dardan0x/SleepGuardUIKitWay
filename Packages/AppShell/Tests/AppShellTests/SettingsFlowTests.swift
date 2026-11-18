@@ -20,8 +20,8 @@ struct SettingsFlowTests {
     return (SettingsFlow(navigator: spy, container: Container.test(brand: brand)), spy)
   }
 
-  private func settings(_ spy: NavigatorSpy) throws -> HostingScreen<SettingsScreen> {
-    guard case let .setRoot(controller) = spy.calls.first, let screen = controller as? HostingScreen<SettingsScreen> else {
+  private func settings(_ spy: NavigatorSpy) throws -> SettingsViewController {
+    guard case let .setRoot(controller) = spy.calls.first, let screen = controller as? SettingsViewController else {
       throw FlowError.unexpected
     }
     return screen
@@ -40,10 +40,10 @@ struct SettingsFlowTests {
   @Test func theProfileOpensAsASheetAndClosesItself() throws {
     let (flow, spy) = makeFlow()
     flow.start()
-    try settings(spy).rootView.content.routes.openProfile()
+    try settings(spy).viewModel.routes.openProfile()
     guard case let .present(controller, .sheet) = spy.calls.last,
-          let editor = controller as? HostingScreen<ProfileEditorScreen> else { throw FlowError.unexpected }
-    editor.rootView.content.routes.close()
+          let editor = controller as? ProfileEditorViewController else { throw FlowError.unexpected }
+    editor.viewModel.routes.close()
     #expect(spy.calls.last == .dismiss)
   }
 
@@ -51,16 +51,16 @@ struct SettingsFlowTests {
   func rateIsOfferedOnlyWithAnAppStorePage(appStoreID: String?) throws {
     let (flow, spy) = makeFlow(brand: TestBrand(appStoreID: appStoreID))
     flow.start()
-    #expect(try (settings(spy).rootView.content.routes.rateApp != nil) == (appStoreID != nil))
+    #expect(try (settings(spy).viewModel.routes.rateApp != nil) == (appStoreID != nil))
   }
 
   @Test func healthRowsFollowTheBrand() throws {
     let (withHealth, healthSpy) = makeFlow(brand: TestBrand(health: FakeHealthAccess()))
     withHealth.start()
-    #expect(try settings(healthSpy).rootView.content.dependencies.health != nil)
+    #expect(try settings(healthSpy).viewModel.dependencies.health != nil)
     let (without, spy) = makeFlow()
     without.start()
-    #expect(try settings(spy).rootView.content.dependencies.health == nil)
+    #expect(try settings(spy).viewModel.dependencies.health == nil)
   }
 
   @Test func theReviewLinkIsTheAppStoresWriteAReviewPage() {
@@ -97,13 +97,13 @@ struct RecordingDelayFlowTests {
   private func startDelayed(_ flow: RecordingFlow, _ spy: NavigatorSpy) throws -> RecordingCountdownRoutes {
     flow.start()
     guard case let .setRoot(controller) = spy.calls.last,
-          let prestart = controller as? HostingScreen<RecordingPrestartScreen> else { throw FlowError.unexpected }
+          let prestart = controller as? RecordingPrestartViewController else { throw FlowError.unexpected }
     var preferences = AppPreferences()
     preferences.recordingDelayMinutes = 15
-    prestart.rootView.content.routes.start(preferences)
+    prestart.viewModel.routes.start(preferences)
     guard case let .setRoot(next) = spy.calls.last,
-          let countdown = next as? HostingScreen<RecordingCountdownScreen> else { throw FlowError.unexpected }
-    return countdown.rootView.content.routes
+          let countdown = next as? RecordingCountdownViewController else { throw FlowError.unexpected }
+    return countdown.viewModel.routes
   }
 
   private enum FlowError: Error {
@@ -127,7 +127,7 @@ struct RecordingDelayFlowTests {
     #expect(log.cancelled == 1)
     #expect(log.screenOn == [true, false])
     guard case let .setRoot(controller) = spy.calls.last else { throw FlowError.unexpected }
-    #expect(controller is HostingScreen<RecordingPrestartScreen>)
+    #expect(controller is RecordingPrestartViewController)
   }
 
   @Test func startNowBeginsTheNightOnTheWarmCapture() throws {
@@ -136,6 +136,6 @@ struct RecordingDelayFlowTests {
     #expect(log.cancelled == 1)
     #expect(flow.model != nil)
     guard case let .setRoot(controller) = spy.calls.last else { throw FlowError.unexpected }
-    #expect(controller is HostingScreen<BedsideClockScreen>)
+    #expect(controller is BedsideClockViewController)
   }
 }

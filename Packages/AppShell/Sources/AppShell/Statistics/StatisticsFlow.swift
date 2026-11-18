@@ -12,8 +12,8 @@ final class StatisticsFlow: TabFlow {
   let tab = AppTab.statistics
   let navigator: any Navigator
   let nightDetail: NightDetailNavigation
-  private let screens: StatisticsComposer
-  private let settings: SettingsScreenComposer
+  private let screens: StatisticsFactory
+  private let settings: SettingsFactory
   private let profilePrompt: ProfilePromptCheck
   private let onStartRecording: @MainActor () -> Void
   /// Counting a dismissed profile prompt; awaited by tests.
@@ -22,8 +22,8 @@ final class StatisticsFlow: TabFlow {
   init(navigator: any Navigator, container: Container, onStartRecording: @escaping @MainActor () -> Void) {
     self.navigator = navigator
     self.onStartRecording = onStartRecording
-    screens = StatisticsComposer(container: container)
-    settings = SettingsScreenComposer(container: container)
+    screens = StatisticsFactory(container: container)
+    settings = SettingsFactory(container: container)
     profilePrompt = container.profilePromptCheck()
     nightDetail = NightDetailNavigation(navigator: navigator, container: container)
   }

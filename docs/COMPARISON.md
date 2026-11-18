@@ -1,6 +1,6 @@
 # Same feature, two architectures
 
-SleepGuard and this app are the same product. SleepGuard is SwiftUI with the MV pattern: views load their own data from SwiftData and navigate with `NavigationStack`. This app is a UIKit shell with SwiftUI screens and a hexagonal core. Since F10 both apps draw their screens with the same shared layouts and compute with the same shared rules, so what remains different is only the architecture around them.
+SleepGuard and this app are the same product. SleepGuard is SwiftUI with the MV pattern: views load their own data from SwiftData and navigate with `NavigationStack`. This app is UIKit screens and coordinators on a hexagonal core. Since F10 both apps compute with the same shared rules and draw with the same shared views; since F11 (ADR 0007) this app's screens are UIKit controllers that host those views as cells and pages, so for History, the night detail and onboarding the container layout is UIKit here and SwiftUI there.
 
 This compares one feature, **a night's detail**: open a night, load it, read its sleep stages from Apple Health if it has none, show the shared layout, filter events, play, share, delete. Line counts are from both repos on 2026-11-17.
 
@@ -8,26 +8,27 @@ This compares one feature, **a night's detail**: open a night, load it, read its
 
 | Concern | SleepGuard (SwiftUI, MV) | This app (UIKit shell, hexagonal) |
 |---|---|---|
-| Opening the screen | `RouterPath.navigate(to: .sessionDetail(id:))`; `AppRegistry` maps it to a view | A route closure → `HistoryFlow` → `NightDetailNavigation.show(_:)` → `SessionDetailComposer.make(...)` → `Navigator.push` |
+| Opening the screen | `RouterPath.navigate(to: .sessionDetail(id:))`; `AppRegistry` maps it to a view | A route closure → `HistoryFlow` → `NightDetailNavigation.show(_:)` → `SessionDetailFactory.make(...)` → `Navigator.push` |
+| State and decisions | `SessionDetailModel` (`@Observable`) plus `@State` in the view | `SessionDetailViewModel` (ADR 0008): state, filter, which route a tap means; no UI imports, tested with fakes. The UIKit controller only draws it |
 | Loading the night | `SessionDetailModel.load(modelContext:)`: a SwiftData fetch in the state owner | `LoadSessionDetail` (use case) over the `SessionRepository` port; a SwiftData adapter behind it |
 | Sleep stages from Health | The same `load`: `healthKitSync.fetchSleepStages(for:)`, written to the `@Model` | The same use case asks the `SleepStagePort`; the container hands it the brand's `HealthAccess`, or `NoSleepStages` in Lite |
 | Saving the new score | `session.refreshCachedScore(...)`, then `modelContext.save()` | The use case saves the night with its new summary through the port |
 | The layout | `NightDetailContent` (shared) | `NightDetailContent` (shared) |
-| Title and bar buttons | `.toolbar` in the view | `ScreenChrome` from the composer; the screen can't set them (checked) |
+| Title and bar buttons | `.toolbar` in the view | `ScreenChrome` from the factory; the screen can't set them (checked) |
 | Sheets (events, player, stages, share) | `.sheet` in the view, or `UIActivityViewController` on the key window | Routes out of the screen; `NightDetailNavigation` presents through the `Navigator` |
 | Delete | The model deletes from the context at once; the view dismisses (no confirmation) | A route asks the navigation object, which confirms (alert), runs `DeleteSession`, then pops |
-| Brand differences | Remote Config flags read in the view (`appConfig.isEnabled(.pdfReport)`) | Read in the container and composers only; the screen gets plain values |
+| Brand differences | Remote Config flags read in the view (`appConfig.isEnabled(.pdfReport)`) | Read in the container and factories only; the screen gets plain values |
 
 ## Size
 
 | | SleepGuard | This app |
 |---|---|---|
-| Screen and its state | `SessionDetailView` 127 (about 70 of them a dead mini-player kept "in case"), `SessionDetailLoadedView` 148, `SessionDetailModel` 141 | `SessionDetailScreen` 72, `SessionDetailRoutes` 37, `SessionDetailStateViews` 47 |
+| Screen and its state | `SessionDetailView` 127 (about 70 of them a dead mini-player kept "in case"), `SessionDetailLoadedView` 148, `SessionDetailModel` 141 | `SessionDetailViewModel` 76, `SessionDetailViewController` 86, the UIKit layout (`NightDetailController` 165, `NightDetailItems` 59, `FilterCell` 44), `SessionDetailRoutes` 37, UIKit state views 111 |
 | Loading and rules | Inside the model | `LoadSessionDetail` 53, ports 66 (`SessionRepository`, `SleepStagePort`) |
-| Navigation and sharing | `SessionShareCoordinator` 90; the routes are one enum case | `NightDetailNavigation` 135, the detail's composer (most of `HistoryComposers` 92), `ShareSheet` 8 |
-| **Total** | **about 500 lines, 4 files** | **about 480 lines, 9 files** |
+| Navigation and sharing | `SessionShareCoordinator` 90; the routes are one enum case | `NightDetailNavigation` 135, the detail's factory (most of `HistoryFactories` 89), `ShareSheet` 8 |
+| **Total** | **about 500 lines, 4 files** | **about 900 lines, 14 files** |
 
-The totals come out about the same. The difference is how the lines are spread: SleepGuard keeps a feature together in a few files, while this app spreads it over twice as many, each with one job.
+Until F10 the totals were about the same (about 480 lines, 9 files here). Since F11 and F12 this app's night detail is almost twice SleepGuard's: the UIKit layout, the UIKit state views and the view model are the price of a UIKit screen whose decisions are tested without UI. SleepGuard keeps a feature together in a few files; this app spreads it over more, each with one job.
 
 ## Tests for this feature
 
@@ -47,8 +48,8 @@ The totals come out about the same. The difference is how the lines are spread: 
 
 ## What it costs
 
-- **Indirection.** Opening one screen goes through a route, a flow, a navigation object, a composer, the container and the hosting controller. Following a tap means reading five files; in SleepGuard it's one enum case and one view.
-- **Ceremony per screen.** Every screen has a `Dependencies` and a `Routes` struct, a composer function and a flow method. Each new action on the night detail (share a clip, export a report) touched the routes, the screen, the navigation object and a test, where SleepGuard added a button and a call.
+- **Indirection.** Opening one screen goes through a route, a flow, a navigation object, a factory, the container and the hosting controller. Following a tap means reading five files; in SleepGuard it's one enum case and one view.
+- **Ceremony per screen.** Every screen has a `Dependencies` and a `Routes` struct, a factory function and a flow method. Each new action on the night detail (share a clip, export a report) touched the routes, the screen, the navigation object and a test, where SleepGuard added a button and a call.
 - **Workarounds the boundaries force.** The shell may not import the shared content kit, so the PDF report is drawn by `NightReportExport` inside a feature, and the stages sheet needs its own `SleepStagesInfoScreen` to host shared content. Neither exists in SleepGuard.
 - **More to keep in step.** Twelve ports, each with an adapter and a fake. A capability added to `BrandConfiguration` must be stated by every brand (intended, but it is work).
 - **Slower tests overall.** The rules are fast, but the full suite builds every package on its own (separate derived data each), then every brand's app. That catches real mistakes, and it costs build time SleepGuard doesn't spend: its packages build once, together.
