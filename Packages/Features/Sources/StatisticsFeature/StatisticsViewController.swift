@@ -7,8 +7,8 @@ import UIKit
 /// The dashboard, drawn from `StatisticsViewModel`: the shared
 /// `StatisticsDashboardContent` (same as SleepGuard's) in a UIKit list, with
 /// the profile prompt above it when asked for, the latest night's sleep
-/// stages in its slot, and Start Recording pinned below. The title and the
-/// calendar button belong to the navigation bar (shell).
+/// stages in its slot, and Start Recording pinned below. The shared title row
+/// with the Calendar button stays above every state (the bar is hidden).
 public final class StatisticsViewController: ScreenController {
   let viewModel: StatisticsViewModel
   private var observing: Task<Void, Never>?
@@ -31,6 +31,7 @@ public final class StatisticsViewController: ScreenController {
   override public func viewDidLoad() {
     super.viewDidLoad()
     let viewModel = viewModel
+    setHeader(StatisticsTitleRow(onCalendar: { viewModel.showCalendar() }).padding(.horizontal, 20).padding(.top, 10))
     loading = host(StatisticsLoadingContent())
     empty = host(StatisticsEmptyContent(onStartRecording: { viewModel.startRecording() }))
     let button = host(StartRecordingButton(height: 56, action: { viewModel.startRecording() }))

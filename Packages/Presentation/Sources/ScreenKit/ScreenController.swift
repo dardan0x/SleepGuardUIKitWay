@@ -16,6 +16,8 @@ open class ScreenController: UIViewController {
   public let chrome: ScreenChrome
   /// The child showing the current state (loading, empty, loaded, error).
   public private(set) var stateChild: UIViewController?
+  /// The header's child, pinned under the safe area's top, above every state.
+  private var headerChild: UIViewController?
 
   public init(theme: Theme, chrome: ScreenChrome = ScreenChrome()) {
     self.theme = theme
@@ -39,7 +41,24 @@ open class ScreenController: UIViewController {
     navigationController?.setNavigationBarHidden(chrome.hidesNavigationBar, animated: animated)
   }
 
-  /// Replaces the state child with `child`, filling the view.
+  /// Shows shared `content` above every state (a tab root's title row, in
+  /// place of the hidden navigation bar). Call it once, before the first `show`.
+  public func setHeader(_ content: some View) {
+    let child = host(content)
+    child.sizingOptions = .intrinsicContentSize
+    addChild(child)
+    child.view.translatesAutoresizingMaskIntoConstraints = false
+    view.addSubview(child.view)
+    NSLayoutConstraint.activate([
+      child.view.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor),
+      child.view.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+      child.view.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+    ])
+    child.didMove(toParent: self)
+    headerChild = child
+  }
+
+  /// Replaces the state child with `child`, filling the view below the header.
   public func show(_ child: UIViewController) {
     guard child !== stateChild else { return }
     if let old = stateChild {
@@ -51,7 +70,7 @@ open class ScreenController: UIViewController {
     child.view.translatesAutoresizingMaskIntoConstraints = false
     view.addSubview(child.view)
     NSLayoutConstraint.activate([
-      child.view.topAnchor.constraint(equalTo: view.topAnchor),
+      child.view.topAnchor.constraint(equalTo: headerChild?.view.bottomAnchor ?? view.topAnchor),
       child.view.bottomAnchor.constraint(equalTo: view.bottomAnchor),
       child.view.leadingAnchor.constraint(equalTo: view.leadingAnchor),
       child.view.trailingAnchor.constraint(equalTo: view.trailingAnchor),

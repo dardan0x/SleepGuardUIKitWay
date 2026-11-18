@@ -14,13 +14,11 @@ struct StatisticsFactory {
     return StatisticsDependencies(nights: container.sessionRepository(), asksForProfile: { await prompt.shouldAsk() })
   }
 
-  /// The dashboard, with the calendar button in the bar.
-  func makeDashboard(routes: StatisticsRoutes, onCalendar: @escaping @MainActor () -> Void) -> UIViewController {
+  /// The dashboard draws its own title row: no bar.
+  func makeDashboard(routes: StatisticsRoutes) -> UIViewController {
     StatisticsViewController(
       viewModel: StatisticsViewModel(dependencies: dependencies, routes: routes), theme: container.theme(),
-      chrome: ScreenChrome(
-        title: Strings.tabStatistics, largeTitle: true,
-        trailingItems: [BarItem(systemImage: "calendar", accessibilityLabel: Strings.watchCalendar, action: onCalendar)]))
+      chrome: ScreenChrome(title: Strings.tabStatistics, hidesNavigationBar: true))
   }
 
   func makeTrends() -> UIViewController {

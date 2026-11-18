@@ -11,7 +11,7 @@ import UIKit
 /// each screen for an outside `simctl io screenshot`.
 @MainActor
 struct StatisticsTabInAppTests {
-  @Test func dashboardOpensTheCalendarFromTheBar() async throws {
+  @Test func dashboardOpensTheCalendarFromItsTitleRow() async throws {
     let tabs = try await HostedApp.tabBar()
     let index = try #require(Container.shared.brand().configuration.tabs.firstIndex(of: .statistics))
     tabs.selectedIndex = index
@@ -20,7 +20,8 @@ struct StatisticsTabInAppTests {
     let dashboard = try #require(navigation.viewControllers.first as? StatisticsViewController)
     try await hold()
 
-    dashboard.navigationItem.rightBarButtonItems?.first?.primaryAction?.performWithSender(nil, target: nil)
+    #expect(navigation.isNavigationBarHidden)
+    dashboard.viewModel.showCalendar()
     let calendar = await until { navigation.topViewController as? CalendarViewController }
     #expect(calendar != nil)
     try await hold()

@@ -30,7 +30,7 @@ struct SettingsFactory {
     return SettingsViewController(
       viewModel: SettingsViewModel(dependencies: dependencies, routes: routes),
       theme: container.theme(),
-      chrome: ScreenChrome(title: Strings.tabSettings, largeTitle: true))
+      chrome: ScreenChrome(title: Strings.tabSettings, hidesNavigationBar: true))
   }
 
   /// The profile editor draws its own handle and buttons: no bar.

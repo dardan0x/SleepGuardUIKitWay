@@ -35,19 +35,18 @@ struct StatisticsFlowTests {
 
   enum Failure: Error { case noRoot, noPush }
 
-  @Test func startShowsTheDashboardWithTheCalendarButton() throws {
+  @Test func startShowsTheDashboardWithoutABar() throws {
     let (flow, spy) = makeFlow()
     flow.start()
     let root = try dashboard(spy)
     #expect(root.navigationItem.title == Strings.tabStatistics)
-    #expect(root.navigationItem.largeTitleDisplayMode == .always)
-    #expect(root.navigationItem.rightBarButtonItems?.map(\.accessibilityLabel) == [Strings.watchCalendar])
+    #expect(root.chrome.hidesNavigationBar)
   }
 
   @Test func theCalendarButtonPushesTheCalendar() throws {
     let (flow, spy) = makeFlow()
     flow.start()
-    try dashboard(spy).navigationItem.rightBarButtonItems?.first?.primaryAction?.performWithSender(nil, target: nil)
+    try dashboard(spy).viewModel.showCalendar()
     let calendar = try #require(try lastPushed(spy) as? CalendarViewController)
     #expect(calendar.navigationItem.title == Strings.watchCalendar)
   }
@@ -70,7 +69,7 @@ struct StatisticsFlowTests {
     list.viewModel.routes?.openNight(night)
     #expect(try lastPushed(spy) is SessionDetailViewController)
 
-    try dashboard(spy).navigationItem.rightBarButtonItems?.first?.primaryAction?.performWithSender(nil, target: nil)
+    try dashboard(spy).viewModel.showCalendar()
     let calendar = try #require(try lastPushed(spy) as? CalendarViewController)
     calendar.viewModel.routes?.openNight(night)
     let detail = try #require(try lastPushed(spy) as? SessionDetailViewController)
