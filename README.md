@@ -116,7 +116,7 @@ Apps/<Brand>             Brand.swift: BrandConfiguration (theme, tabs, Health po
 | | `SleepAudio` | 1.1k | AVAudioEngine capture and analysis, clip compression and playback, melody player and recorder | |
 | | `SleepHealth` | 87 | HealthKit read and write | Be linked by Lite |
 | Presentation | `ScreenKit` | 0.4k | `ScreenController`, every screen's base (theme, chrome, one state child, hosting the shared views); a self-sizing UIKit list; the `Navigator` abstraction | |
-| Features | 8 modules | 3.6k | 21 UIKit screens (collection views, a page view controller, alerts) around the shared SwiftUI content; the 14 with state or logic have a view model (ADR 0008): History, SessionDetail, Statistics, Recording, Settings, Onboarding, Briefing, Learn | Navigate, present anything but an alert, persist, resolve dependencies, use `UIApplication`; a view model imports no UI |
+| Features | 8 modules | 3.7k | 21 UIKit screens (collection views, a page view controller, alerts) around the shared SwiftUI content; each with a view model (ADR 0008): History, SessionDetail, Statistics, Recording, Settings, Onboarding, Briefing, Learn | Navigate, present anything but an alert, persist, resolve dependencies, use `UIApplication`; a view model imports no UI |
 | Shell | `AppShell` | 1.8k | `AppCoordinator`, `MainTabCoordinator`, 9 flows, factories, 28 container registrations | Be imported by anything but the brand targets |
 
 Dependencies point inwards. The domain knows no framework; adapters implement its ports; features know the domain's types and the shared content but not how they are presented; only `AppShell` knows everything.

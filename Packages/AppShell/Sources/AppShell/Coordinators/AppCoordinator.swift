@@ -93,15 +93,14 @@ public final class AppCoordinator {
       guard let due = await morningBriefing.due(), let self, recording == nil,
             let tabs = mainTabs?.tabBarController, tabs.presentedViewController == nil else { return }
       await morningBriefing.markShown()
-      let sheet = BriefingViewController(
+      let sheet = BriefingFactory(container: container).make(
         briefing: due.briefing,
         routes: BriefingRoutes(
           answer: { [weak tabs] chip in
             Task { try? await morningBriefing.answer(chip, for: due.night) }
             tabs?.dismiss(animated: true)
           },
-          close: { [weak tabs] in tabs?.dismiss(animated: true) }),
-        theme: container.theme(), chrome: ScreenChrome(hidesNavigationBar: true))
+          close: { [weak tabs] in tabs?.dismiss(animated: true) }))
       sheet.sheetPresentationController?.detents = [.large()]
       tabs.present(sheet, animated: true)
     }

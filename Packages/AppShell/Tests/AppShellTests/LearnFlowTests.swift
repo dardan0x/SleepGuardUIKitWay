@@ -25,11 +25,11 @@ struct LearnFlowTests {
   @Test func theBrandsPageIsShown() throws {
     let url = try #require(URL(string: "https://example.com/learn"))
     let screen = try root(learnURL: url)
-    #expect(screen.url == url)
+    #expect(screen.viewModel.url == url)
     #expect(screen.navigationItem.title == Strings.tabLearn)
   }
 
   @Test func withoutAPageTheEmptyStateShows() throws {
-    #expect(try root(learnURL: nil).url == nil)
+    #expect(try root(learnURL: nil).viewModel.url == nil)
   }
 }

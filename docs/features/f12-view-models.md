@@ -1,6 +1,6 @@
 # F12 — View models and factories
 
-A screen with state or logic now has three parts:
+Every screen now has three parts:
 - **A view model** decides: what the screen shows, what a tap means, where the user goes next, and which alert is due.
 - **A UIKit controller** draws it.
 - **The flow's factory** builds both, from the container.
@@ -33,8 +33,12 @@ Decided with the owner on 2026-11-18 (ADR 0008).
 | Summary | `SessionSummaryViewModel` | Too short to save; save or discard |
 | Record melody | `RecordMelodyViewModel` | Record, the limit, playback, save as "My Sound N" |
 | Snore Interrupter, Melody picker | `SnoreInterrupterViewModel`, `MelodyPickerViewModel` | The draft choice; selection, preview, recordings |
+| Events sheet | `EventsSheetViewModel` | The rows; Play plays a row's episode |
+| Stages sheet | `SleepStagesInfoViewModel` | The breakdown; Close |
+| Briefing | `BriefingViewModel` | The briefing; a survey answer or Close |
+| Learn | `LearnViewModel` | The brand's page, or none |
 
-Learn, Briefing, the stages sheet and the events sheet only show values, so they have no view model.
+The last four only show values. They have view models anyway (the owner's choice), so no controller holds data or calls a route; `check-layering.py` fails a screen without one.
 
 ## Files
 
@@ -43,10 +47,10 @@ Learn, Briefing, the stages sheet and the events sheet only show values, so they
 | `Packages/Features/Sources/*Feature/*ViewModel.swift` | The view models |
 | `Packages/Features/Sources/*Feature/*ViewController.swift` | Controllers that draw them |
 | `Packages/Features/Tests/*` | View-model tests (`SettingsFeatureTests` is new) |
-| `Packages/AppShell/Sources/AppShell/*/*Factory.swift`, `History/HistoryFactories.swift` | The factories (were composers) |
+| `Packages/AppShell/Sources/AppShell/*/*Factory.swift`, `History/HistoryFactories.swift` | The factories (were composers); `BriefingFactory` is new (the sheet was built in `AppCoordinator`) |
 | `Packages/Presentation/Sources/ScreenKit/ScreenController.swift` | `presentAlert(_:make:)` |
 | `Packages/Core/Sources/SleepDomainTestSupport/FakeMelodyPorts.swift` | The fake recorder keeps its take at the limit, like the adapter |
-| `scripts/check-layering.py` | View models import no UI |
+| `scripts/check-layering.py` | View models import no UI; every screen declares a view model |
 | `docs/adr/0008-view-models.md` | The decision |
 
 ## Edge cases
@@ -59,5 +63,5 @@ Learn, Briefing, the stages sheet and the events sheet only show values, so they
 
 ## Limits
 
-- One more type per stateful screen (14).
+- One more type per screen: 19 view models for 21 screens (Trends, Calendar and Last 7 Nights share one).
 - Flow tests reach routes through `controller.viewModel.routes`, so `routes` and `dependencies` are internal on view models.
