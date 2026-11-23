@@ -61,14 +61,14 @@ struct RecordingFactory {
 
   /// A new microphone capture for one night (warmed up first when the night
   /// starts after a delay).
-  func makeCapture() -> any AudioCapturePort {
+  func makeCapture() -> any AudioCapture {
     container.makeAudioCapture()()
   }
 
   /// A night's model over `capture`, with the Settings choices and, in a
   /// brand that has it, the Snore Interrupter over the same capture. The raw
   /// recording is kept only in Debug builds, when switched on.
-  func makeModel(capture: any AudioCapturePort, preferences: AppPreferences) -> LiveRecordingModel {
+  func makeModel(capture: any AudioCapture, preferences: AppPreferences) -> LiveRecordingModel {
     #if DEBUG
     let preserveRawAudio = preferences.preserveRawAudio
     #else

@@ -16,7 +16,7 @@ struct SessionDetailViewModelTests {
   {
     SessionDetailViewModel(
       dependencies: SessionDetailDependencies(
-        nightID: id, loadDetail: LoadSessionDetail(sessions: repository, sleepStages: FakeSleepStagePort())),
+        nightID: id, loadDetail: LoadSessionDetail(sessions: repository, sleepStages: FakeSleepStageSource())),
       routes: SessionDetailRoutes(
         showAllEvents: { _, _ in }, playEvents: { _, _ in }, showStagesInfo: { _ in }, shareEvent: shared))
   }

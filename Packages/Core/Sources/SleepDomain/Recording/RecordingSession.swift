@@ -39,7 +39,7 @@ public actor RecordingSession {
   static let rawLogBatch = 40
 
   public private(set) var draft: RecordingDraft
-  private let capture: any AudioCapturePort
+  private let capture: any AudioCapture
   private let checkpoints: (any RecordingCheckpointStore)?
   private let settings: Settings
   private let rawLog: (any RawLogWriter)?
@@ -67,7 +67,7 @@ public actor RecordingSession {
   /// `interrupter`: the Snore Interrupter, for brands that have it (over the
   /// same `capture`).
   public init(
-    capture: any AudioCapturePort,
+    capture: any AudioCapture,
     settings: Settings = Settings(),
     checkpoints: (any RecordingCheckpointStore)? = nil,
     rawLog: (any RawLogWriter)? = nil,

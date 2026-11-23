@@ -30,7 +30,7 @@ final class RecordingFlow {
   private(set) var finishing: Task<Void, Never>?
   private var batteryWatch: Task<Void, Never>?
   /// The capture kept warm during the start delay.
-  private var warmCapture: (any AudioCapturePort)?
+  private var warmCapture: (any AudioCapture)?
   /// The storage limits after a save, awaited by tests.
   private(set) var cleanup: Task<Void, Never>?
   /// Opening the interrupter's settings, then saving them; awaited by tests.
@@ -164,7 +164,7 @@ final class RecordingFlow {
     startNight(capture: capture, preferences: preferences)
   }
 
-  private func startNight(capture: any AudioCapturePort, preferences: AppPreferences) {
+  private func startNight(capture: any AudioCapture, preferences: AppPreferences) {
     let model = factory.makeModel(capture: capture, preferences: preferences)
     self.model = model
     device.keepScreenOn(true)

@@ -44,9 +44,9 @@ extension Container {
   }
 
   /// The brand's Apple Health reads the stages; a brand without it has none.
-  var sleepStagePort: Factory<any SleepStagePort> {
+  var sleepStageSource: Factory<any SleepStageSource> {
     self {
-      guard let health = self.healthAccess() else { return NoSleepStages() as any SleepStagePort }
+      guard let health = self.healthAccess() else { return NoSleepStages() as any SleepStageSource }
       return health
     }.singleton
   }
@@ -56,7 +56,7 @@ extension Container {
   }
 
   var loadSessionDetail: Factory<LoadSessionDetail> {
-    self { LoadSessionDetail(sessions: self.sessionRepository(), sleepStages: self.sleepStagePort()) }
+    self { LoadSessionDetail(sessions: self.sessionRepository(), sleepStages: self.sleepStageSource()) }
   }
 
   var checkpointStore: Factory<any RecordingCheckpointStore> {
@@ -83,16 +83,16 @@ extension Container {
     self { SleepPersistence.makeLifestyleLogStore(url: self.storageLocation().lifestyleLogURL) }.singleton
   }
 
-  var morningBriefing: Factory<MorningBriefing> {
+  var loadMorningBriefing: Factory<LoadMorningBriefing> {
     self {
-      MorningBriefing(
+      LoadMorningBriefing(
         nights: self.sessionRepository(), profiles: self.profileStore(), logs: self.lifestyleLogStore(),
         preferences: self.preferencesStore())
     }
   }
 
-  var profilePromptCheck: Factory<ProfilePromptCheck> {
-    self { ProfilePromptCheck(nights: self.sessionRepository(), profiles: self.profileStore(), preferences: self.preferencesStore()) }
+  var shouldAskForProfile: Factory<ShouldAskForProfile> {
+    self { ShouldAskForProfile(nights: self.sessionRepository(), profiles: self.profileStore(), preferences: self.preferencesStore()) }
   }
 
   /// The brand's Apple Health, or `nil` (Lite doesn't link HealthKit).
@@ -156,7 +156,7 @@ extension Container {
 
   /// Makes the microphone capture for one night, writing clips beside the
   /// others. A maker for the same reason as `makeClipPlayer`.
-  var makeAudioCapture: Factory<@MainActor @Sendable () -> any AudioCapturePort> {
+  var makeAudioCapture: Factory<@MainActor @Sendable () -> any AudioCapture> {
     self {
       let clips = self.storageLocation().clipsDirectory
       return { SleepAudio.makeAudioCapture(clipsDirectory: clips) }

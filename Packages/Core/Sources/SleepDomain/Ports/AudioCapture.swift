@@ -42,7 +42,7 @@ public enum AudioCaptureError: Error, Equatable {
 /// Main-actor: it owns the audio session and engine. The samples come out as
 /// a stream, so the consumer can be on any actor.
 @MainActor
-public protocol AudioCapturePort: AnyObject, Sendable {
+public protocol AudioCapture: AnyObject, Sendable {
   /// Asks for microphone access. `true` when granted.
   func requestPermission() async -> Bool
   /// Keeps the audio session and the microphone running without listening,
@@ -82,7 +82,7 @@ public protocol AudioCapturePort: AnyObject, Sendable {
   func stop()
 }
 
-public extension AudioCapturePort {
+public extension AudioCapture {
   /// Starts listening without keeping the raw audio.
   func start() throws -> AsyncStream<CaptureSample> {
     try start(rawAudioFileName: nil)

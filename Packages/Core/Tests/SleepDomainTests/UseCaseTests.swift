@@ -69,7 +69,7 @@ struct LoadSessionDetailTests {
       Sample.event(at: 120, duration: 60), // same episode
       Sample.event(at: 3600, duration: 1), // hidden
     ])
-    let load = LoadSessionDetail(sessions: FakeSessionRepository([session]), sleepStages: FakeSleepStagePort())
+    let load = LoadSessionDetail(sessions: FakeSessionRepository([session]), sleepStages: FakeSleepStageSource())
 
     let detail = try await load(session.id)
 
@@ -82,7 +82,7 @@ struct LoadSessionDetailTests {
   @Test func addsMissingStagesAndSavesTheNewScore() async throws {
     let session = Sample.night()
     let repository = FakeSessionRepository([session])
-    let port = FakeSleepStagePort(stages: stages)
+    let port = FakeSleepStageSource(stages: stages)
 
     let detail = try await LoadSessionDetail(sessions: repository, sleepStages: port)(session.id)
 
@@ -97,7 +97,7 @@ struct LoadSessionDetailTests {
   @Test func nightWithStagesIsNotFetchedAgain() async throws {
     let session = Sample.night(stages: stages)
     let repository = FakeSessionRepository([session])
-    let port = FakeSleepStagePort(stages: stages)
+    let port = FakeSleepStageSource(stages: stages)
 
     _ = try await LoadSessionDetail(sessions: repository, sleepStages: port)(session.id)
 
@@ -109,7 +109,7 @@ struct LoadSessionDetailTests {
     let session = Sample.night()
     let repository = FakeSessionRepository([session])
 
-    let detail = try await LoadSessionDetail(sessions: repository, sleepStages: FakeSleepStagePort())(session.id)
+    let detail = try await LoadSessionDetail(sessions: repository, sleepStages: FakeSleepStageSource())(session.id)
 
     #expect(detail.summary.score == 100)
     #expect(await repository.savedIDs.isEmpty)
@@ -119,13 +119,13 @@ struct LoadSessionDetailTests {
     let session = Sample.night()
     let load = LoadSessionDetail(
       sessions: FakeSessionRepository([session]),
-      sleepStages: FakeSleepStagePort(fails: true))
+      sleepStages: FakeSleepStageSource(fails: true))
     #expect(try await load(session.id).session == session)
   }
 
   @Test func unknownNightThrowsNotFound() async {
     let id = UUID()
-    let load = LoadSessionDetail(sessions: FakeSessionRepository(), sleepStages: FakeSleepStagePort())
+    let load = LoadSessionDetail(sessions: FakeSessionRepository(), sleepStages: FakeSleepStageSource())
     await #expect(throws: SessionError.notFound(id)) { try await load(id) }
   }
 }

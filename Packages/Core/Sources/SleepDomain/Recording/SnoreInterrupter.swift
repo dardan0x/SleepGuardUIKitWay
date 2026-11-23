@@ -19,13 +19,13 @@ public final class SnoreInterrupter {
   private let melodyID: Int
   private let player: any MelodyPlayer
   private let store: any MelodyStore
-  private let capture: any AudioCapturePort
+  private let capture: any AudioCapture
   private let now: @MainActor () -> Date
 
   /// `capture` is the night's microphone (the one the session listens to).
   public init(
     mode: SnoreInterrupterMode, melodyID: Int, player: any MelodyPlayer, store: any MelodyStore,
-    capture: any AudioCapturePort, now: @escaping @MainActor () -> Date = { Date() })
+    capture: any AudioCapture, now: @escaping @MainActor () -> Date = { Date() })
   {
     self.mode = mode
     self.melodyID = melodyID

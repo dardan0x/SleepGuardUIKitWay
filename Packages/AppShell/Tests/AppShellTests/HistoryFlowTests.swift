@@ -174,11 +174,11 @@ struct HistoryFlowTests {
   @Test func theStageSourceIsTheBrandsHealth() async throws {
     let segment = SleepStageSegment(stage: .rem, startOffset: 0, duration: 600)
     let withHealth = Container.test(brand: TestBrand(health: FakeHealthAccess(stages: [segment])))
-    withHealth.sleepStagePort.reset()
-    #expect(try await withHealth.sleepStagePort().stages(from: .now, to: .now) == [segment])
+    withHealth.sleepStageSource.reset()
+    #expect(try await withHealth.sleepStageSource().stages(from: .now, to: .now) == [segment])
     let without = Container.test()
-    without.sleepStagePort.reset()
-    #expect(without.sleepStagePort() is NoSleepStages)
+    without.sleepStageSource.reset()
+    #expect(without.sleepStageSource() is NoSleepStages)
   }
 
   @Test func thePlayerIsTitledByTheKindOfEvent() {
@@ -224,7 +224,7 @@ extension Container {
     container.brand.register { brand }
     container.sessionRepository.register { repository }
     container.sessionFileStore.register { FakeSessionFileStore() }
-    container.sleepStagePort.register { FakeSleepStagePort() }
+    container.sleepStageSource.register { FakeSleepStageSource() }
     container.makeClipPlayer.register { { FakeClipPlayer() } }
     container.clipWaveformSource.register { FakeClipWaveformSource() }
     container.checkpointStore.register { FakeRecordingCheckpointStore() }

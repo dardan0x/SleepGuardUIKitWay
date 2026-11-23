@@ -43,7 +43,7 @@ Enforced by package manifests, **but only when a package builds on its own**: in
 
 ## Domain
 
-- **Entities and values** are `Sendable` structs. **Policies** are pure functions or structs (no ports, no clock unless passed in). **Ports** are `Sendable` protocols with `async` methods, named for their role (`SessionRepository`, `SleepStagePort`).
+- **Entities and values** are `Sendable` structs. **Policies** are pure functions or structs (no ports, no clock unless passed in). **Ports** are `Sendable` protocols with `async` methods, named for their role (`SessionRepository`, `SleepStageSource`).
 - **A use case exists only when it applies a policy or coordinates two or more ports** (`CommitSession`, `DeleteSession`, `LoadSessionDetail`). For a plain read, the screen's `Dependencies` holds the port. Never write a use case whose body is one forwarded call.
 - A use case is a `Sendable` struct with one `callAsFunction`. Collaborators come through `init`. A use case never calls another use case.
 - **The night itself is shared.** Entities (`Night`, `NightEvent`, `NightEpisode`, `NightSummary`) and the rules over them (episodes, snoring duration, stage stats, score inputs, score, summary), plus the score formula and detection, live in `SleepCore` in the shared repo, used by SleepGuard too. `SleepDomain` holds what is specific to this app's architecture: ports, use cases (and their output types such as `SessionDetail`), and fakes. A change to how a night is computed goes into `SleepCore`, never here.
@@ -125,7 +125,7 @@ Notes: `docs/architecture/brands.md`.
 - `async/await` only. No Combine, no GCD, no completion handlers, no NotificationCenter as an event bus.
 - No fire-and-forget `Task` in a load path. Tests `await`; they never poll or sleep.
 - Check `Task.isCancelled` before setting an error state.
-- Live detection is one ordered stream into `DetectionEngine` (from `SleepCore`). Never change detection state from a side path. `RecordingSession` (SleepDomain, an actor) is the one sender: it classifies each capture sample, sends it, and performs the engine's outputs in order (clips through `AudioCapturePort`, events into the `RecordingDraft` value). Clip compression runs beside the engine, never inside a batch.
+- Live detection is one ordered stream into `DetectionEngine` (from `SleepCore`). Never change detection state from a side path. `RecordingSession` (SleepDomain, an actor) is the one sender: it classifies each capture sample, sends it, and performs the engine's outputs in order (clips through `AudioCapture`, events into the `RecordingDraft` value). Clip compression runs beside the engine, never inside a batch.
 
 Notes: `docs/architecture/concurrency.md`.
 

@@ -1,7 +1,7 @@
 import AVFoundation
 import SleepDomain
 
-/// `AudioCapturePort` over AVAudioEngine, as SleepGuard's recorder captures:
+/// `AudioCapture` over AVAudioEngine, as SleepGuard's recorder captures:
 ///
 /// - **A direct tap on the input node.** No output path: an earlier graph that
 ///   routed the input to the mixer also fed the speaker, and a mic that hears
@@ -13,7 +13,7 @@ import SleepDomain
 ///
 /// Buffer work happens on the audio thread in `CaptureProcessor`.
 @MainActor
-final class EngineAudioCapture: AudioCapturePort {
+final class EngineAudioCapture: AudioCapture {
   private let clipsDirectory: URL
   private let processor = CaptureProcessor()
   private var engine: AVAudioEngine?

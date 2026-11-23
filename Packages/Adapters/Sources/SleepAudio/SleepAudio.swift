@@ -40,7 +40,7 @@ public enum SleepAudio {
 
   /// Microphone capture; event clips are written to `clipsDirectory`.
   @MainActor
-  public static func makeAudioCapture(clipsDirectory: URL) -> any AudioCapturePort {
+  public static func makeAudioCapture(clipsDirectory: URL) -> any AudioCapture {
     EngineAudioCapture(clipsDirectory: clipsDirectory)
   }
 }

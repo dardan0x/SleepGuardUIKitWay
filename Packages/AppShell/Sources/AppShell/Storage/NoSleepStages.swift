@@ -4,7 +4,7 @@ import SleepDomain
 
 /// The stage source of a brand without Apple Health (Lite): never any
 /// stages. Brands with Health read them through their `HealthAccess`.
-nonisolated struct NoSleepStages: SleepStagePort {
+nonisolated struct NoSleepStages: SleepStageSource {
   func stages(from _: Date, to _: Date) async throws -> [SleepStageSegment] {
     []
   }

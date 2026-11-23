@@ -1,11 +1,12 @@
 import Foundation
 import SleepCore
 
-/// The morning briefing: when a new night is waiting (SleepCore's
-/// `BriefingSchedule`) and the person hasn't turned it off, SleepCore's
+/// The morning briefing, when it's due: a new night is waiting (SleepCore's
+/// `BriefingSchedule`) and the person hasn't turned it off. SleepCore's
 /// `BriefingEngine` builds it from the nights, the profile and the survey
-/// answers. Closing it marks it shown; a survey answer is kept for its night.
-public struct MorningBriefing: Sendable {
+/// answers. Marking it shown and keeping an answer are plain port writes, done
+/// by the caller.
+public struct LoadMorningBriefing: Sendable {
   /// A briefing to show, and the night it's about.
   public struct Due: Equatable, Sendable {
     public let briefing: Briefing
@@ -29,8 +30,8 @@ public struct MorningBriefing: Sendable {
     self.calendar = calendar
   }
 
-  /// The briefing, when it's due.
-  public func due(now: Date = Date()) async -> Due? {
+  /// The briefing, or `nil` when none is due.
+  public func callAsFunction(now: Date = Date()) async -> Due? {
     let stored = await preferences.load()
     guard stored.briefingEnabled else { return nil }
     let summaries = await currentSummaries()
@@ -40,18 +41,6 @@ public struct MorningBriefing: Sendable {
     let briefing = await BriefingEngine.make(
       nights: summaries, profile: profiles.load(), logs: logs.logs(), now: now, calendar: calendar)
     return Due(briefing: briefing, night: latest)
-  }
-
-  /// The sheet closed: not again until the next night.
-  public func markShown(at now: Date = Date()) async {
-    var stored = await preferences.load()
-    stored.lastBriefingShown = now
-    await preferences.save(stored)
-  }
-
-  /// A survey answer for `night`.
-  public func answer(_ chip: LifestyleChip, for night: NightSummary) async throws {
-    try await logs.save(LifestyleLog(night: night.start, chips: [chip]))
   }
 
   private func currentSummaries() async -> [NightSummary] {

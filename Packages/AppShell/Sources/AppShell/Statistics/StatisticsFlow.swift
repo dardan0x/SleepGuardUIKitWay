@@ -14,7 +14,7 @@ final class StatisticsFlow: TabFlow {
   let nightDetail: NightDetailNavigation
   private let screens: StatisticsFactory
   private let settings: SettingsFactory
-  private let profilePrompt: ProfilePromptCheck
+  private let preferences: any PreferencesStore
   private let onStartRecording: @MainActor () -> Void
   /// Counting a dismissed profile prompt; awaited by tests.
   private(set) var dismissing: Task<Void, Never>?
@@ -24,7 +24,7 @@ final class StatisticsFlow: TabFlow {
     self.onStartRecording = onStartRecording
     screens = StatisticsFactory(container: container)
     settings = SettingsFactory(container: container)
-    profilePrompt = container.profilePromptCheck()
+    preferences = container.preferencesStore()
     nightDetail = NightDetailNavigation(navigator: navigator, container: container)
   }
 
@@ -48,7 +48,11 @@ final class StatisticsFlow: TabFlow {
   }
 
   private func dismissProfilePrompt() {
-    dismissing = Task { [profilePrompt] in await profilePrompt.dismissed() }
+    dismissing = Task { [preferences] in
+      var stored = await preferences.load()
+      stored.profilePromptDismissCount += 1
+      await preferences.save(stored)
+    }
   }
 
   private func showTrends() {

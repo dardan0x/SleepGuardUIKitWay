@@ -10,8 +10,8 @@ struct StatisticsFactory {
   let container: Container
 
   private var dependencies: StatisticsDependencies {
-    let prompt = container.profilePromptCheck()
-    return StatisticsDependencies(nights: container.sessionRepository(), asksForProfile: { await prompt.shouldAsk() })
+    let shouldAsk = container.shouldAskForProfile()
+    return StatisticsDependencies(nights: container.sessionRepository(), asksForProfile: { await shouldAsk() })
   }
 
   /// The dashboard draws its own title row: no bar.

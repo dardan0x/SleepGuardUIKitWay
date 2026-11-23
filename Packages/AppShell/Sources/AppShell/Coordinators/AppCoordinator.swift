@@ -2,6 +2,7 @@ import BriefingFeature
 import FactoryKit
 import ScreenKit
 import SleepAudio
+import SleepCore
 import SleepDomain
 import UIKit
 
@@ -25,13 +26,17 @@ public final class AppCoordinator {
   /// Resolved at launch, used once the tabs are up.
   private let recoverInterruptedSession: RecoverInterruptedSession
   private let enforceStorageLimits: EnforceStorageLimits
-  private let morningBriefing: MorningBriefing
+  private let loadMorningBriefing: LoadMorningBriefing
+  private let preferences: any PreferencesStore
+  private let lifestyleLogs: any LifestyleLogStore
 
   init(container: Container) {
     self.container = container
     recoverInterruptedSession = container.recoverInterruptedSession()
     enforceStorageLimits = container.enforceStorageLimits()
-    morningBriefing = container.morningBriefing()
+    loadMorningBriefing = container.loadMorningBriefing()
+    preferences = container.preferencesStore()
+    lifestyleLogs = container.lifestyleLogStore()
   }
 
   deinit {
@@ -87,17 +92,19 @@ public final class AppCoordinator {
   /// nothing else is showing (a recovered night comes first). Shown counts
   /// from when it opens, however it's closed.
   private func offerBriefing() {
-    let morningBriefing = morningBriefing
+    let (load, preferences, logs) = (loadMorningBriefing, preferences, lifestyleLogs)
     briefing = Task { [weak self] in
       await self?.recovery?.value
-      guard let due = await morningBriefing.due(), let self, recording == nil,
+      guard let due = await load(), let self, recording == nil,
             let tabs = mainTabs?.tabBarController, tabs.presentedViewController == nil else { return }
-      await morningBriefing.markShown()
+      var shown = await preferences.load()
+      shown.lastBriefingShown = Date()
+      await preferences.save(shown)
       let sheet = BriefingFactory(container: container).make(
         briefing: due.briefing,
         routes: BriefingRoutes(
           answer: { [weak tabs] chip in
-            Task { try? await morningBriefing.answer(chip, for: due.night) }
+            Task { try? await logs.save(LifestyleLog(night: due.night.start, chips: [chip])) }
             tabs?.dismiss(animated: true)
           },
           close: { [weak tabs] in tabs?.dismiss(animated: true) }))

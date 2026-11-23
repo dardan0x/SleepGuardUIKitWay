@@ -28,7 +28,7 @@ public final class LiveRecordingModel {
   private let interrupter: SnoreInterrupter?
 
   public init(
-    capture: any AudioCapturePort,
+    capture: any AudioCapture,
     settings: RecordingSession.Settings = .init(),
     checkpoints: (any RecordingCheckpointStore)? = nil,
     rawLog: (any RawLogWriter)? = nil,

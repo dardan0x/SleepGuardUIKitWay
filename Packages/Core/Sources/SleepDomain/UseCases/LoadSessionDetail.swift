@@ -23,10 +23,10 @@ public struct SessionDetail: Sendable, Equatable {
 /// score policy.
 public struct LoadSessionDetail: Sendable {
   private let sessions: any SessionRepository
-  private let sleepStages: any SleepStagePort
+  private let sleepStages: any SleepStageSource
   private let scoreConfig: SleepScoreConfig
 
-  public init(sessions: any SessionRepository, sleepStages: any SleepStagePort, scoreConfig: SleepScoreConfig = .default) {
+  public init(sessions: any SessionRepository, sleepStages: any SleepStageSource, scoreConfig: SleepScoreConfig = .default) {
     self.sessions = sessions
     self.sleepStages = sleepStages
     self.scoreConfig = scoreConfig
