@@ -14,6 +14,15 @@ Under the hood it's built the way a large UIKit team would build it: **UIKit scr
 
 Further reading: [Architecture](docs/ARCHITECTURE.md) (the full reference, checked against the code) · [Comparison with SleepGuard](docs/COMPARISON.md) (one feature in both shapes, with costs) · [Adding a brand](docs/ADDING_A_BRAND.md) (the real diff) · [ADRs](docs/adr/)
 
+<p align="center">
+  <img src="docs/screenshots/screenshot-1.png" width="16%" alt="Start a sleep session" />
+  <img src="docs/screenshots/screenshot-2.png" width="16%" alt="Statistics with sleep score and stages" />
+  <img src="docs/screenshots/screenshot-3.png" width="16%" alt="Last 7 Nights" />
+  <img src="docs/screenshots/screenshot-4.png" width="16%" alt="Calendar month view" />
+  <img src="docs/screenshots/screenshot-5.png" width="16%" alt="Night detail with snoring timeline" />
+  <img src="docs/screenshots/screenshot-6.png" width="16%" alt="Snore Interrupter settings" />
+</p>
+
 ---
 
 ## What it does
@@ -49,7 +58,7 @@ A brand is a `BrandConfiguration` value, an asset catalog and an entry in the Tu
 A sleep tracker's important logic sits next to the hardware and the system. One night touches the microphone, a classifier, the file system, SwiftData, HealthKit and an audio player. Three requirements made ports and adapters the right fit here:
 
 - **The riskiest code must be testable without a device.** Recording a night, recovering it after a crash, committing it and scoring it are the behaviours users notice when they break. As use cases and an actor over ports, they run on macOS with `swift test` in seconds, against fakes.
-- **Brands differ in infrastructure, not in behaviour.** SleepGuard Lite links no HealthKit. With a `SleepStagePort`, that's a composition decision (pass `nil`) rather than `#if` or brand checks across the codebase.
+- **Brands differ in infrastructure, not in behaviour.** SleepGuard Lite links no HealthKit. With a `SleepStageSource`, that's a composition decision (pass `nil`) rather than `#if` or brand checks across the codebase.
 - **Frameworks are details with a shelf life.** SwiftData, AVFoundation and HealthKit each sit behind one adapter. Replacing one (a different store, a different capture pipeline) changes one module and its tests.
 
 It also reflects how large iOS codebases tend to be organised: a UI layer that changes often, over a domain that shouldn't.
@@ -62,7 +71,7 @@ It also reflects how large iOS codebases tend to be organised: a UI layer that c
 │ AppShell                 │            │ SleepDomain (application layer)  │            │ SleepPersistence               │
 │   coordinators, flows,   │  calls     │   use cases: LoadSessionDetail,  │  ports     │   SwiftData @ModelActor,       │
 │   factories              │ ─────────► │   CommitSession, DeleteSession,  │ ─────────► │   file stores                  │
-│ Features                 │            │   MorningBriefing, …             │            │ SleepAudio                     │
+│ Features                 │            │   LoadMorningBriefing, …         │            │ SleepAudio                     │
 │   UIKit screens via      │            │   RecordingSession (actor)       │            │   AVAudioEngine, SoundAnalysis │
 │   Dependencies closures  │            │ ──────────────────────────────── │            │ SleepHealth                    │
 └──────────────────────────┘            │ SleepCore (shared; domain model) │            │   HealthKit                    │
@@ -71,12 +80,12 @@ It also reflects how large iOS codebases tend to be organised: a UI layer that c
 ```
 
 - **The core has two rings.** `SleepCore` (from SleepGuardShared) is the domain model: entities and pure rules, shared with SleepGuard. `SleepDomain` is this app's application layer: it orchestrates those rules over ports. Neither imports an Apple framework beyond Foundation.
-- **Ports are owned by the core and named for its needs**: `SessionRepository`, `SessionFileStore`, `AudioCapturePort`, `SleepStagePort`, `RecordingCheckpointStore`, `ClipPlayer`, `MelodyPlayer`, `ProfileStore`, `LifestyleLogStore`, and others (12 in all). Each has a fake in `SleepDomainTestSupport`.
+- **Ports are owned by the core and named for its needs**: `SessionRepository`, `SessionFileStore`, `AudioCapture`, `SleepStageSource`, `RecordingCheckpointStore`, `ClipPlayer`, `MelodyPlayer`, `ProfileStore`, `LifestyleLogStore`, and others (12 in all). Each has a fake in `SleepDomainTestSupport`.
 - **Use cases are small values** composed from ports, invoked with `callAsFunction`:
 
 ```swift
 public struct LoadSessionDetail: Sendable {
-  public init(sessions: any SessionRepository, sleepStages: any SleepStagePort, scoreConfig: SleepScoreConfig = .default)
+  public init(sessions: any SessionRepository, sleepStages: any SleepStageSource, scoreConfig: SleepScoreConfig = .default)
 
   public func callAsFunction(_ id: Night.ID) async throws -> SessionDetail {
     var session = try await sessions.session(id: id)
@@ -129,8 +138,8 @@ A feature never calls another feature, the shell, or an adapter. Every interacti
 
 | Contract | Direction | Defined in | Implemented by |
 |---|---|---|---|
-| **Port** | domain → infrastructure | `SleepDomain` (`SessionRepository`, `AudioCapturePort`, `SleepStagePort`, …) | Adapters |
-| **Use case** | screen → domain | `SleepDomain` (`LoadSessionDetail`, `CommitSession`, `MorningBriefing`, …) | Itself; composed from ports |
+| **Port** | domain → infrastructure | `SleepDomain` (`SessionRepository`, `AudioCapture`, `SleepStageSource`, …) | Adapters |
+| **Use case** | screen → domain | `SleepDomain` (`LoadSessionDetail`, `CommitSession`, `LoadMorningBriefing`, …) | Itself; composed from ports |
 | **`Dependencies`** | shell → screen (data in) | Each feature | `AppShell` factories |
 | **`Routes`** | screen → shell (intent out) | Each feature | `AppShell` flows |
 
@@ -148,7 +157,7 @@ HistoryViewController ── viewModel.open(summary) ── routes.openNight(sum
                                       navigator.push(controller)
                                                   │
 SessionDetailViewModel ── await loadDetail(id) ──► LoadSessionDetail ──► SessionRepository ──► SleepPersistence
-                                                                  └─► SleepStagePort    ──► SleepHealth, or none (Lite)
+                                                                  └─► SleepStageSource  ──► SleepHealth, or none (Lite)
          │
          └─ a UIKit collection view of shared pieces (SleepGuardShared); Play / Share / Show all ──► SessionDetailRoutes ──► flow
 ```
