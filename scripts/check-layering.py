@@ -23,12 +23,19 @@ So this script checks imports against the module table in AGENTS.md, plus:
      ScreenKit, so their logic is testable without a UI (ADR 0008).
   7. Every screen has a view model: a feature class that subclasses
      `ScreenController` declares `let viewModel` (ADR 0008).
+  8. Declared imports: every target (tests included) imports a package module
+     only if its Package.swift declares it, directly or through a module that
+     `@_exported import`s it. The workspace build doesn't check this, and a
+     standalone build only does when no sibling target built the module
+     first. Manifests are read with `swift package dump-package`.
 
 Lines starting with `//` are ignored. Exits 1 with a file:line listing.
 """
 
+import json
 import pathlib
 import re
+import subprocess
 import sys
 
 ROOT = pathlib.Path(__file__).resolve().parent.parent
@@ -112,8 +119,82 @@ def code_lines(path: pathlib.Path):
             yield number, line
 
 
-def main() -> int:
+# Re-exports (`@_exported import`) of products from outside this repo, which
+# the script can't read. Re-exports inside Packages/ are read from the sources.
+EXTERNAL_REEXPORTS = {
+    "SleepGuardContentKit": {"SleepGuardDesignKit"},
+    "SleepGuardDesignKit": {"SleepStrings"},
+}
+
+EXPORTED_IMPORT = re.compile(r"^\s*@_exported\s+import\s+(\w+)")
+
+
+def undeclared_imports() -> list[str]:
+    packages = sorted(path.parent for path in (ROOT / "Packages").glob("*/Package.swift"))
+    manifests = {
+        package: json.loads(subprocess.run(
+            ["swift", "package", "dump-package", "--package-path", str(package)],
+            check=True, capture_output=True, text=True).stdout)
+        for package in packages
+    }
+
+    product_modules: dict[str, set[str]] = {}  # local product -> its targets
+    target_dirs: dict[str, pathlib.Path] = {}
+    target_package: dict[str, pathlib.Path] = {}
+    for package, manifest in manifests.items():
+        for product in manifest["products"]:
+            product_modules[product["name"]] = set(product["targets"])
+        for target in manifest["targets"]:
+            default = "Tests" if target["type"] == "test" else "Sources"
+            target_dirs[target["name"]] = package / (target.get("path") or f"{default}/{target['name']}")
+            target_package[target["name"]] = package
+
+    reexports = {module: set(names) for module, names in EXTERNAL_REEXPORTS.items()}
+    for module, directory in target_dirs.items():
+        for path in directory.rglob("*.swift"):
+            for _, line in code_lines(path):
+                match = EXPORTED_IMPORT.match(line)
+                if match:
+                    reexports.setdefault(module, set()).add(match.group(1))
+
+    def modules_of(dependency: dict) -> set[str]:
+        kind, value = next(iter(dependency.items()))
+        name = value[0]
+        if kind == "product":
+            return product_modules.get(name, {name})
+        return {name} if name in target_dirs else product_modules.get(name, {name})
+
+    # Package modules: anything else imported (UIKit, SwiftData, ...) is the SDK's.
+    known = set(target_dirs) | set(product_modules) | set(reexports) | set().union(*reexports.values())
+    declared_by: dict[str, set[str]] = {}
+    for manifest in manifests.values():
+        for target in manifest["targets"]:
+            modules = {target["name"]}
+            for dependency in target["dependencies"]:
+                modules |= modules_of(dependency)
+            known |= modules
+            pending = list(modules)
+            while pending:
+                for exported in reexports.get(pending.pop(), set()) - modules:
+                    modules.add(exported)
+                    pending.append(exported)
+            declared_by[target["name"]] = modules
+
     violations = []
+    for target, directory in sorted(target_dirs.items()):
+        manifest = (target_package[target] / "Package.swift").relative_to(ROOT).as_posix()
+        for path in sorted(directory.rglob("*.swift")):
+            rel = path.relative_to(ROOT).as_posix()
+            for number, line in code_lines(path):
+                match = IMPORT.match(line)
+                if match and match.group(1) in known - declared_by[target]:
+                    violations.append(
+                        f"{rel}:{number}: '{target}' imports {match.group(1)}, which {manifest} doesn't declare")
+    return violations
+
+
+def main() -> int:
+    violations = undeclared_imports()
     swift_files = sorted(
         path for base in ("Packages", "Apps") for path in (ROOT / base).rglob("*.swift") if "/.build/" not in str(path)
     )

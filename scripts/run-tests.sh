@@ -5,8 +5,10 @@
 #   2. Packages:  each package built standalone on the simulator, each in its
 #                 own derived data. Xcode lets a module import anything already
 #                 built in the same derived data (the app workspace, or another
-#                 package's build), so isolation is what catches an undeclared
-#                 import. Packages with tests run them here.
+#                 package's build), so isolation catches an import of a module
+#                 no target in the package declares. One a sibling target
+#                 declares still leaks; check-layering.py catches that.
+#                 Packages with tests run them here.
 #   3. In-app:    `tuist generate`, then each brand's `<Brand>HostedTests`
 #                 inside that brand's app (presentation, brand bootstrap).
 #

@@ -6,6 +6,11 @@ import PackageDescription
 /// domain, the shared core and the design kit; a screen whose structure is
 /// UIKit (ADR 0007) also sees UIKit and `ScreenKit`. Never Factory, adapters
 /// or each other.
+///
+/// No target declares `SleepGuardDesignKit`: `SleepGuardContentKit` re-exports
+/// it (`@_exported import`), and it re-exports `SleepStrings`, so declaring the
+/// content kit brings `Theme`, the components and `Strings`. Declare the design
+/// kit only in a target that imports it without the content kit.
 let package = Package(
   name: "Features",
   platforms: [.iOS(.v17)],
@@ -44,7 +49,6 @@ let package = Package(
         .product(name: "SleepDomain", package: "Core"),
         .product(name: "SleepCore", package: "SleepGuardShared"),
         .product(name: "SleepGuardContentKit", package: "SleepGuardShared"),
-        .product(name: "SleepGuardDesignKit", package: "SleepGuardShared"),
       ],
       swiftSettings: [
         .swiftLanguageMode(.v6),
@@ -57,7 +61,6 @@ let package = Package(
         .product(name: "SleepDomain", package: "Core"),
         .product(name: "SleepDomainTestSupport", package: "Core"),
         .product(name: "SleepCore", package: "SleepGuardShared"),
-        .product(name: "SleepGuardDesignKit", package: "SleepGuardShared"),
       ],
       swiftSettings: [
         .swiftLanguageMode(.v6),
@@ -135,11 +138,9 @@ let package = Package(
       name: "HistoryFeatureTests",
       dependencies: [
         "HistoryFeature",
-        .product(name: "ScreenKit", package: "Presentation"),
         .product(name: "SleepDomain", package: "Core"),
         .product(name: "SleepDomainTestSupport", package: "Core"),
         .product(name: "SleepCore", package: "SleepGuardShared"),
-        .product(name: "SleepGuardDesignKit", package: "SleepGuardShared"),
       ],
       swiftSettings: [
         .swiftLanguageMode(.v6),
@@ -161,8 +162,6 @@ let package = Package(
       name: "OnboardingFeatureTests",
       dependencies: [
         "OnboardingFeature",
-        .product(name: "ScreenKit", package: "Presentation"),
-        .product(name: "SleepGuardDesignKit", package: "SleepGuardShared"),
         .product(name: "SleepCore", package: "SleepGuardShared"),
       ],
       swiftSettings: [
@@ -173,8 +172,6 @@ let package = Package(
       name: "RecordingFeatureTests",
       dependencies: [
         "RecordingFeature",
-        .product(name: "ScreenKit", package: "Presentation"),
-        .product(name: "SleepGuardDesignKit", package: "SleepGuardShared"),
         .product(name: "SleepDomain", package: "Core"),
         .product(name: "SleepDomainTestSupport", package: "Core"),
         .product(name: "SleepCore", package: "SleepGuardShared"),

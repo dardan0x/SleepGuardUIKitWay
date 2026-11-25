@@ -17,6 +17,10 @@ jobs:
     timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
+      # The layering check reads manifests with `swift package dump-package`
+      # (tools version 6.2).
+      - name: Select newest Xcode 26
+        run: sudo xcode-select -s "$(ls -d /Applications/Xcode_26*.app | sort -V | tail -1)"
       - name: Layering
         run: python3 scripts/check-layering.py
       - name: View size
@@ -53,8 +57,9 @@ jobs:
           done
 
   tests:
-    # macOS domain tests, every package built standalone (catches undeclared
-    # imports), package tests, and each brand's in-app tests.
+    # macOS domain tests, every package built standalone (catches imports no
+    # target in the package declares), package tests, and each brand's in-app
+    # tests. Undeclared imports in general: the layering check.
     runs-on: macos-26
     timeout-minutes: 90
     steps:

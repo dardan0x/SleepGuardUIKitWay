@@ -39,7 +39,7 @@ Features (UIKit)    ScreenKit      Adapters (SleepPersistence, SleepAudio, Sleep
 | `AppShell` | everything except `SleepHealth` | — |
 | Brand targets | `AppShell`, the adapters that brand links | — |
 
-Enforced by package manifests, **but only when a package builds on its own**: inside the app workspace Xcode lets any module it has already built be imported, declared or not (verified in F1-T3). So `scripts/run-tests.sh` builds every package standalone, and `scripts/check-layering.py` checks every module's imports against this table (`ALLOWED_IMPORTS`; a new module must be added there). Full notes: `docs/architecture/modules.md`.
+Enforced by package manifests, **but only when a package builds on its own**: inside the app workspace Xcode lets any module it has already built be imported, declared or not (verified in F1-T3). So `scripts/check-layering.py` checks every module's imports against this table (`ALLOWED_IMPORTS`; a new module must be added there) and against what its `Package.swift` declares, and `scripts/run-tests.sh` builds every package standalone. A standalone build alone isn't enough: a module a sibling target in the same package declares leaks too (verified: `SessionDetailFeature` built without declaring `ScreenKit`). Full notes: `docs/architecture/modules.md`.
 
 ## Domain
 
