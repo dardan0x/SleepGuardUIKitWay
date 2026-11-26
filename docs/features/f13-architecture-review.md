@@ -21,7 +21,7 @@ A principal-level review of the three repos (`ARCHITECTURE_INTERROGATION.md`) as
 | Day delete, chrome (Q38, Q43) | A loop that could delete half a day; static bar items; report failures only logged | `delete(ids:)` all or none; `BarItemActivity`; a failure alert (T11) |
 | Deep links (Q28) | Declared schemes, no handling | `AppRoute` via the app coordinator, held while busy (T12) |
 | Fakes (Q59) | Nothing checked fakes against adapters | `PortContracts` run on both; one drift fixed (T13) |
-| Shared behaviour (owner, after close-out) | Own HealthKit and raw-log code, drifting from SleepGuard's | `HealthKitSleep` and `RawLogFile` from shared 0.32.0, wrapped by the adapters (T16) |
+| Shared behaviour (owner, after close-out) | Own HealthKit and raw-log code, drifting from SleepGuard's | `HealthKitSleep` and `RawLogFile` from shared 0.32.0, wrapped by the adapters (T16); settings are the shared `SleepPreferences` stored by `PreferencesDefaults` (0.33.0, T17) |
 | Lint, theme, CI (Q63, Q51, Q62) | A regex for `present(`; hand-themed hosting; every brand fully on every PR | Unavailable `present` (compile error); hosting only through ScreenKit; one reference brand per PR, all nightly; SwiftPM cache (T14) |
 
 ## Files
@@ -78,4 +78,4 @@ Tests: 291 package tests (from about 210) and 13 in-app tests per brand (from 9)
 
 ## Tasks Completed
 
-F13-T1 … F13-T16.
+F13-T1 … F13-T17.

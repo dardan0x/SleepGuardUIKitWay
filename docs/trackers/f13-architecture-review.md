@@ -42,6 +42,7 @@ Fixes this app's verdicts from the principal-level architecture review of the th
 | F13-T14 | Structural lint, theme check, CI (Q63, Q51, Q62) | Tooling | Done | — | ScreenKit, scripts, CI |
 | F13-T15 | Docs and close-out | Docs | Done | all | docs |
 | F13-T16 | Shared HealthKit and raw-log behaviour (shared 0.32.0) | Refactor | Done | T15 | SleepHealth, SleepPersistence |
+| F13-T17 | Shared settings (shared 0.33.0) | Refactor | Done | T16 | SleepDomain, SleepPersistence |
 
 ## Task Details
 
@@ -349,3 +350,21 @@ Added after F13's close-out, at the owner's request: behaviour both apps need li
 
 **Notes:**
 - Branch `feature/f13/t16-shared-healthkit-rawlog`
+
+### F13-T17 — Shared settings (shared 0.33.0)
+
+| Field | Value |
+|-------|-------|
+| Status | Done |
+| Started | 2026-11-26 |
+| Completed | 2026-11-26 |
+
+**Acceptance Criteria:**
+- [x] Pinned 0.33.0 (`SleepPreferences` in SleepCore, `SleepSettings` tagged by the owner)
+- [x] `AppPreferences` is the shared `SleepPreferences` (a typealias in SleepDomain; same fields and defaults as before)
+- [x] `UserDefaultsPreferencesStore` wraps `PreferencesDefaults` (from about 100 lines to 25): keys, defaults and validity are the same code as SleepGuard's
+- [x] A stored limit or melody id of 0 now reads as "not set", as in SleepGuard (it used to read as 0 here)
+
+**Notes:**
+- The apps aren't in production (owner), so the interrupter's keys were renamed for the feature with no migration.
+- Branch `feature/f13/t17-shared-preferences`
