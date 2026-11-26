@@ -39,11 +39,13 @@ extension Container {
         return try! StoreOpening(repository: SleepPersistence.makeSessionRepository(storeURL: nil), isAvailable: false)
       }
     }
-    .singleton
+    // Once per container (`.singleton` would be one for every container in
+    // the process, so a test's container could get another test's store).
+    .cached
   }
 
   var sessionRepository: Factory<any SessionRepository> {
-    self { self.storeOpening().repository }.singleton
+    self { self.storeOpening().repository }.cached
   }
 
   var sessionFileStore: Factory<any SessionFileStore> {

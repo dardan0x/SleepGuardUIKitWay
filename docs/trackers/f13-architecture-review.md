@@ -30,7 +30,7 @@ Fixes this app's verdicts from the principal-level architecture review of the th
 | F13-T2 | Stored scores carry their version; refresh at launch (Q9) | Bug / Data | Done | T1 | SleepDomain, SleepPersistence, AppShell |
 | F13-T3 | Detail load is read-only; narrow stage writes (Q34, Q37) | Refactor | Done | T2 | SleepDomain, SleepPersistence, SessionDetailFeature |
 | F13-T4 | Observation follows the store (Q37) | Bug | Done | T3 | SleepPersistence |
-| F13-T5 | "We couldn't open your data" + shared 0.31.0 (Q55) | Data safety | In Progress (waits for the 0.31.0 tag) | T4 | shared, AppShell |
+| F13-T5 | "We couldn't open your data" + shared 0.31.0 (Q55) | Data safety | Done | T4 | shared, AppShell |
 | F13-T6 | Same samples as SleepGuard; interruptions; FFT; thermal (Q14, Q17) | Detection | Done | T1 | SleepDomain, SleepAudio |
 | F13-T7 | Writes leave the sample path (Q13, Q39) | Performance | Done | T6 | SleepDomain |
 | F13-T8 | Typed composition (Q47, Q48) | Architecture | Backlog | T5 | AppShell, Apps |
@@ -124,10 +124,20 @@ Fixes this app's verdicts from the principal-level architecture review of the th
 
 | Field | Value |
 |-------|-------|
-| Status | In Progress (waits for the owner's 0.31.0 tag) |
+| Status | Done |
 | Started | 2026-11-26 |
+| Completed | 2026-11-26 |
 
-**Done so far:** shared branch `f13-store-unavailable-content` (pushed): `StoreUnavailableContent`, export-failed and day-delete-failed strings, `Night.minimumSaveDuration` removed; shared tests pass. Here, on `feature/f13/t5-store-unavailable` (pushed, not merged): `StoreOpening` (repository + whether the file opened), `AppCoordinator` shows only `StoreUnavailableViewController` when it didn't (no recovery, recording or seeding). Tested against the local shared checkout: corrupt-file test (file kept byte for byte), coordinator test; simulator: a corrupt store shows the screen and keeps the file; the real store was restored (14 nights). **Left:** bump to 0.31.0, all lanes on the release, merge.
+**Acceptance Criteria:**
+- [x] Shared 0.31.0 (owner merged and tagged): `StoreUnavailableContent` (update button optional), export-failed and day-delete-failed strings, `Night.minimumSaveDuration` removed
+- [x] Pinned 0.31.0 everywhere
+- [x] `StoreOpening` (the repository and whether its file opened); when it didn't, `AppCoordinator` shows only `StoreUnavailableViewController` (in OnboardingFeature, the launch screens): no tabs, recovery, recording or sample nights reach the in-memory store. The update button opens the brand's App Store page, or is left out when the brand has none
+- [x] Tests: a corrupt file is kept byte for byte and the store is marked unavailable; a good file opens; the coordinator shows only that screen. Simulator: a corrupt store shows the screen and keeps the file; the real store (14 nights) was restored afterwards
+
+**Notes:**
+- The store registrations are `.cached` (once per container), not `.singleton`: Factory's singleton is one per process, so one test's container could get another's store (it made the corrupt-file test fail when the good-file test ran first).
+- SleepGuard could host the same shared content later; its own view stays for now.
+- Branch `feature/f13/t5-store-unavailable`
 
 ### F13-T6 — Same samples as SleepGuard; interruptions; FFT; thermal
 
