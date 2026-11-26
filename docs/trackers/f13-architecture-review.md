@@ -34,7 +34,7 @@ Fixes this app's verdicts from the principal-level architecture review of the th
 | F13-T6 | Same samples as SleepGuard; interruptions; FFT; thermal (Q14, Q17) | Detection | Done | T1 | SleepDomain, SleepAudio |
 | F13-T7 | Writes leave the sample path (Q13, Q39) | Performance | Done | T6 | SleepDomain |
 | F13-T8 | Typed composition (Q47, Q48) | Architecture | Backlog | T5 | AppShell, Apps |
-| F13-T9 | Navigator races (Q45) | Bug | Backlog | — | ScreenKit, AppShell |
+| F13-T9 | Navigator races (Q45) | Bug | Done | — | ScreenKit, AppShell |
 | F13-T10 | Split `RecordingFlow` (Q44) | Refactor | Backlog | T8 | AppShell |
 | F13-T11 | Atomic day delete; dynamic chrome (Q38, Q43) | Bug / UI | Backlog | T5 | SleepDomain, SleepPersistence, ScreenKit, features |
 | F13-T12 | Deep links (Q28) | Feature | Backlog | T8 | Apps, AppShell |
@@ -168,3 +168,22 @@ Fixes this app's verdicts from the principal-level architecture review of the th
 **Notes:**
 - No sequence gate needed, unlike SleepGuard's F27-T6: here the writers belong to the session and `stop` awaits them, and the checkpoint is only cleared after `stop` returns (`CommitSession`, discard).
 - Branch `feature/f13/t7-off-path-writes`
+
+### F13-T9 — Navigator races
+
+| Field | Value |
+|-------|-------|
+| Status | Done |
+| Started | 2026-11-26 |
+| Completed | 2026-11-26 |
+
+**Acceptance Criteria:**
+- [x] The navigator runs operations one at a time, in order; each waits until nothing is moving and picks its presenter only then
+- [x] `dismiss(_:)` dismisses the controller a flow presented (through its presenter, so an alert over it goes too); the untargeted `dismiss()` is gone. Flows use `present(style:) { close in … }`, whose `close` is bound to that controller
+- [x] `presentAlert` waits for the screen's own transition
+- [x] Hosted tests: an alert over a sheet goes with the sheet (mutation-checked: asking the sheet instead of its presenter leaves the sheet up); present, dismiss, present in one animated turn ends with the second sheet. The suite has a time limit and its waits end on cancellation, so a regression fails in a minute instead of hanging
+- [x] `NavigatorSpy` records the dismissed controller; flow tests assert the right one closes
+
+**Notes:**
+- Scope grew from the plan: a targeted dismiss alone would drop a dismiss asked for before its present had happened. The serial queue covers that; `presentAlert` doesn't go through it (screens own their alerts, ADR 0008).
+- Branch `feature/f13/t9-navigator-races`

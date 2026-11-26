@@ -80,27 +80,27 @@ final class NightDetailNavigation {
   /// The sleep-stages sheet, from the detail or the dashboard; its own close
   /// button dismisses it.
   func showStagesInfo(_ stages: SleepStageBreakdown) {
-    navigator.present(
-      detail.makeStagesInfo(stages, onClose: { [weak self] in self?.navigator.dismiss() }),
-      style: .sheet(detents: [.large]))
+    navigator.present(style: .sheet(detents: [.large])) { [detail] close in
+      detail.makeStagesInfo(stages, onClose: close)
+    }
   }
 
   /// Medium and large detents; the close button dismisses it.
   private func showEvents(_ rows: [EventListRow], _ events: [NightEvent]) {
-    navigator.present(
+    navigator.present(style: .sheet(detents: [.medium, .large])) { [detail] close in
       detail.makeEventsSheet(
         rows: rows, events: events,
         playEvents: { [weak self] events, start in self?.play(events, from: start) },
-        onClose: { [weak self] in self?.navigator.dismiss() }),
-      style: .sheet(detents: [.medium, .large]))
+        onClose: close)
+    }
   }
 
   /// The player sheet, over whatever is showing (the events sheet stays
   /// under it). SleepGuard's height, and large; closing releases the audio.
   private func play(_ events: [NightEvent], from start: NightEvent.ID) {
-    navigator.present(
-      detail.makePlayer(events: events, start: start, onClose: { [weak self] in self?.navigator.dismiss() }),
-      style: .sheet(detents: [.height(580), .large]))
+    navigator.present(style: .sheet(detents: [.height(580), .large])) { [detail] close in
+      detail.makePlayer(events: events, start: start, onClose: close)
+    }
   }
 
   private func confirmDeleting(_ id: Night.ID) {

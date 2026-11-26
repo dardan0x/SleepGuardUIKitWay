@@ -42,9 +42,9 @@ final class StatisticsFlow: TabFlow {
 
   /// The profile editor, as from Settings.
   private func openProfile() {
-    navigator.present(
-      settings.makeProfileEditor(routes: ProfileEditorRoutes(close: { [weak self] in self?.navigator.dismiss() })),
-      style: .sheet(detents: [.large]))
+    navigator.present(style: .sheet(detents: [.large])) { close in
+      settings.makeProfileEditor(routes: ProfileEditorRoutes(close: close))
+    }
   }
 
   private func dismissProfilePrompt() {

@@ -49,9 +49,9 @@ final class SettingsFlow: TabFlow {
   }
 
   private func openProfile() {
-    navigator.present(
-      factory.makeProfileEditor(routes: ProfileEditorRoutes(close: { [weak self] in self?.navigator.dismiss() })),
-      style: .sheet(detents: [.large]))
+    navigator.present(style: .sheet(detents: [.large])) { [factory] close in
+      factory.makeProfileEditor(routes: ProfileEditorRoutes(close: close))
+    }
   }
 
   #if DEBUG
