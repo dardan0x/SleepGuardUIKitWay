@@ -21,6 +21,7 @@ title: F13 architecture review fixes, T1–T15 (shared 0.30.0 and 0.31.0)
 - F13-T10: `RecordingFlow` split into interrupter navigation and the night's device lifecycle.
 - F13-T11: atomic day delete; the report button shows its work and failures.
 - F13-T12: deep links routed by the app coordinator.
+- F13-T17: settings are the shared `SleepPreferences`, stored by the shared `PreferencesDefaults` (0.33.0).
 - F13-T16: HealthKit and the raw log wrap shared 0.32.0 behaviour (`SleepHealthKit`, `SleepFiles`), the same code as SleepGuard.
 - F13-T15: ADRs 0010–0012, architecture doc, README, AGENTS/CLAUDE, workflow, feature doc `docs/features/f13-architecture-review.md`. F13 done.
 
@@ -52,6 +53,7 @@ title: F13 architecture review fixes, T1–T15 (shared 0.30.0 and 0.31.0)
 - T12: `Routing/AppRoute.swift` (new), `AppCoordinator.swift`, `MainTabCoordinator.swift` (`NightDetailHosting`, `select`), `HistoryFlow.swift`, `StatisticsFlow.swift`, `AppComposition.swift`, `Apps/Shared/Sources/SceneDelegate.swift`; test `DeepLinkTests` (new)
 - T15: `docs/adr/0010-stored-nights.md`, `0011-detection-input.md`, `0012-deep-links.md` (new), `docs/ARCHITECTURE.md` (with the owner's two renames), `README.md`, `AGENTS.md`, `CLAUDE.md`, `docs/CODING_WORKFLOW.md`, `docs/Roadmap.md`, `docs/features/f13-architecture-review.md` (new)
 - T16: manifests and `Package.resolved` (0.32.0), `Project.swift`, `SleepHealth/SleepHealth.swift`, `SleepPersistence/Store/RawLogFileWriter.swift` (new; `FileRawLogWriter.swift` removed), `SleepPersistence.swift`, `Adapters/Package.swift`, `scripts/check-layering.py`; tests `HealthKitStageTests`, `SettingsStoresTests`
+- T17: manifests and `Package.resolved` (0.33.0), `Project.swift`, `SleepDomain/Settings/AppPreferences.swift`, `SleepPersistence/Store/UserDefaultsPreferencesStore.swift`, `Adapters/Package.swift`, `scripts/check-layering.py`
 - Docs: `FeatureTracker.md`, `trackers/f13-architecture-review.md`, this fragment
 
 ### Architecture Decisions

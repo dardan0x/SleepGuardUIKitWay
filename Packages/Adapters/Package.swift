@@ -14,7 +14,7 @@ let package = Package(
   ],
   dependencies: [
     .package(path: "../Core"),
-    .package(url: "https://github.com/dardan0x/SleepGuardShared.git", exact: "0.32.0"),
+    .package(url: "https://github.com/dardan0x/SleepGuardShared.git", exact: "0.33.0"),
   ],
   targets: [
     // SwiftData, files, UserDefaults.
@@ -24,6 +24,7 @@ let package = Package(
         .product(name: "SleepDomain", package: "Core"),
         .product(name: "SleepCore", package: "SleepGuardShared"),
         .product(name: "SleepFiles", package: "SleepGuardShared"),
+        .product(name: "SleepSettings", package: "SleepGuardShared"),
       ],
       swiftSettings: [.swiftLanguageMode(.v6)]),
     // AVFoundation, SoundAnalysis, Accelerate; the Snore Interrupter's sounds.
