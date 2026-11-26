@@ -41,7 +41,7 @@ Last updated: 2026-11-26
 | F9 | Showcase polish | P2 | In Progress (T4: screenshots after the UI polish) | 3/4 | ████████░░ 75% | [tracker](trackers/f9-showcase-polish.md) |
 | F11 | UIKit screen containers | P2 | Done | 1/1 | ██████████ 100% | [tracker](trackers/f11-uikit-screen-containers.md) |
 | F12 | View models and factories | P2 | Done | 1/1 | ██████████ 100% | [tracker](trackers/f12-view-models.md) |
-| F13 | Architecture review fixes | P0/P1 | In Progress | 7/15 | █████░░░░░ 47% | [tracker](trackers/f13-architecture-review.md) |
+| F13 | Architecture review fixes | P0/P1 | In Progress | 8/15 | █████░░░░░ 53% | [tracker](trackers/f13-architecture-review.md) |
 
 ## Currently Active
 
@@ -66,6 +66,7 @@ Last updated: 2026-11-26
 
 | Date | Task | Event | Notes |
 |------|------|-------|-------|
+| 2026-11-26 | F13-T13 | Completed | Port contracts in `SleepDomainTestSupport`, run against every fake and adapter; `FakeSessionRepository` now returns events in time order (the one drift found). Branch `feature/f13/t13-port-contracts` |
 | 2026-11-26 | F13-T9 | Completed | Navigator runs operations serially and picks presenters only when idle; targeted `dismiss(_:)` (an alert goes with its sheet); `presentAlert` waits for transitions; hosted race tests with a time limit. Branch `feature/f13/t9-navigator-races` |
 | 2026-11-26 | F13-T7 | Completed | Checkpoints through a latest-wins writer task, raw log through a serial one; the sample path never waits for the disk; `stop` drains both. Branch `feature/f13/t7-off-path-writes` |
 | 2026-11-26 | F13-T6 | Completed | 20 Hz decimation in `RecordingSession` (same samples as SleepGuard); interruptions reported by the adapter and sent to the engine as pause/resume (gaps left out of the score); resume without `.shouldResume` and after media-services reset; FFT only with the raw log; thermal state logged. Branch `feature/f13/t6-capture-parity` |

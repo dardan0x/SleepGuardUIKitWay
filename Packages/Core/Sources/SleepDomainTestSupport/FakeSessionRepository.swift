@@ -76,7 +76,9 @@ public actor FakeSessionRepository: SessionRepository {
 
   public func session(id: Night.ID) async throws -> Night {
     try throwIfFailing()
-    guard let session = sessions[id] else { throw SessionError.notFound(id) }
+    guard var session = sessions[id] else { throw SessionError.notFound(id) }
+    // In time order, as the port promises and the SwiftData store does.
+    session.events.sort { $0.start < $1.start }
     return session
   }
 
