@@ -49,6 +49,7 @@ struct DeleteSessionTests {
       let wrapping: FakeSessionRepository
       func save(_: Night, summary _: NightSummary, scoreVersion _: String) async throws {}
       func staleNightIDs(currentVersion _: String) async throws -> [Night.ID] { [] }
+      func updateStages(of _: Night.ID, stages _: [SleepStageSegment], summary _: NightSummary, scoreVersion _: String) async throws {}
       func updateSummaries(_: [NightSummary], scoreVersion _: String) async throws {}
       func session(id: Night.ID) async throws -> Night { try await wrapping.session(id: id) }
       func delete(id _: Night.ID) async throws { throw DiskFull() }
@@ -71,64 +72,73 @@ struct LoadSessionDetailTests {
       Sample.event(at: 120, duration: 60), // same episode
       Sample.event(at: 3600, duration: 1), // hidden
     ])
-    let load = LoadSessionDetail(sessions: FakeSessionRepository([session]), sleepStages: FakeSleepStageSource())
+    let repository = FakeSessionRepository([session])
 
-    let detail = try await load(session.id)
+    let detail = try await LoadSessionDetail(sessions: repository)(session.id)
 
     #expect(detail.session == session)
     #expect(detail.summary == session.summary())
     #expect(detail.episodes.count == 1)
-  }
-
-  /// Light sleep only: −15 for missing deep and REM (see SessionMetricsTests).
-  @Test func addsMissingStagesAndSavesTheNewScore() async throws {
-    let session = Sample.night()
-    let repository = FakeSessionRepository([session])
-    let port = FakeSleepStageSource(stages: stages)
-
-    let detail = try await LoadSessionDetail(sessions: repository, sleepStages: port)(session.id)
-
-    #expect(detail.session.sleepStages == stages)
-    #expect(detail.summary.score == 85)
-    #expect(await repository.savedIDs == [session.id])
-    #expect(await repository.summaries[session.id]?.score == 85)
-    let request = try #require(await port.requests.first)
-    #expect(request.start == session.start && request.end == session.end)
-  }
-
-  @Test func nightWithStagesIsNotFetchedAgain() async throws {
-    let session = Sample.night(stages: stages)
-    let repository = FakeSessionRepository([session])
-    let port = FakeSleepStageSource(stages: stages)
-
-    _ = try await LoadSessionDetail(sessions: repository, sleepStages: port)(session.id)
-
-    #expect(await port.requests.isEmpty)
-    #expect(await repository.savedIDs.isEmpty)
-  }
-
-  @Test func noStagesAvailableChangesNothing() async throws {
-    let session = Sample.night()
-    let repository = FakeSessionRepository([session])
-
-    let detail = try await LoadSessionDetail(sessions: repository, sleepStages: FakeSleepStageSource())(session.id)
-
-    #expect(detail.summary.score == 100)
-    #expect(await repository.savedIDs.isEmpty)
-  }
-
-  @Test func failingStageSourceStillOpensTheNight() async throws {
-    let session = Sample.night()
-    let load = LoadSessionDetail(
-      sessions: FakeSessionRepository([session]),
-      sleepStages: FakeSleepStageSource(fails: true))
-    #expect(try await load(session.id).session == session)
+    #expect(await repository.savedIDs.isEmpty) // a query never writes
+    #expect(await repository.stageUpdates.isEmpty)
   }
 
   @Test func unknownNightThrowsNotFound() async {
     let id = UUID()
-    let load = LoadSessionDetail(sessions: FakeSessionRepository(), sleepStages: FakeSleepStageSource())
+    let load = LoadSessionDetail(sessions: FakeSessionRepository())
     await #expect(throws: SessionError.notFound(id)) { try await load(id) }
+  }
+
+  /// Light sleep only: −15 for missing deep and REM (see SessionMetricsTests).
+  @Test func enrichingAddsMissingStagesAndStoresOnlyThemWithTheNewScore() async throws {
+    let session = Sample.night(events: [Sample.event(at: 600)])
+    let repository = FakeSessionRepository([session])
+    let port = FakeSleepStageSource(stages: stages)
+
+    let detail = try #require(await EnrichNightWithStages(sessions: repository, sleepStages: port)(session))
+
+    #expect(detail.session.sleepStages == stages)
+    #expect(detail.summary.score == session.summary().score - 15)
+    #expect(await repository.stageUpdates == [session.id])
+    #expect(await repository.savedIDs.isEmpty) // no whole-night rewrite
+    #expect(await repository.sessions[session.id]?.events == session.events)
+    #expect(await repository.summaries[session.id] == detail.summary)
+    #expect(await repository.scoreVersions[session.id] == SleepScore.cacheVersion(for: .default))
+    let request = try #require(await port.requests.first)
+    #expect(request.start == session.start && request.end == session.end)
+  }
+
+  @Test func aNightWithStagesIsNotFetchedAgain() async {
+    let session = Sample.night(stages: stages)
+    let repository = FakeSessionRepository([session])
+    let port = FakeSleepStageSource(stages: stages)
+
+    #expect(await EnrichNightWithStages(sessions: repository, sleepStages: port)(session) == nil)
+    #expect(await port.requests.isEmpty)
+    #expect(await repository.stageUpdates.isEmpty)
+  }
+
+  @Test func noStagesOrAFailingSourceChangesNothing() async {
+    let session = Sample.night()
+    let repository = FakeSessionRepository([session])
+    #expect(await EnrichNightWithStages(sessions: repository, sleepStages: FakeSleepStageSource())(session) == nil)
+    #expect(await EnrichNightWithStages(sessions: repository, sleepStages: FakeSleepStageSource(fails: true))(session) == nil)
+    #expect(await repository.stageUpdates.isEmpty)
+  }
+
+  /// The screen still shows the stages; the store keeps the night without
+  /// them, so the next open tries again.
+  @Test func aFailedStoreStillReturnsTheStages() async throws {
+    struct DiskFull: Error {}
+    let session = Sample.night()
+    let repository = FakeSessionRepository([session])
+    await repository.failNextCall(with: DiskFull())
+
+    let detail = try #require(
+      await EnrichNightWithStages(sessions: repository, sleepStages: FakeSleepStageSource(stages: stages))(session))
+
+    #expect(detail.session.sleepStages == stages)
+    #expect(await repository.sessions[session.id]?.sleepStages.isEmpty == true)
   }
 }
 

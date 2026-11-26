@@ -35,6 +35,17 @@ actor SwiftDataSessionStore: SessionRepository {
     return try modelContext.fetch(descriptor).map(\.id)
   }
 
+  func updateStages(
+    of id: Night.ID, stages: [SleepStageSegment], summary: NightSummary, scoreVersion: String) async throws
+  {
+    guard let record = try record(id: id) else { throw SessionError.notFound(id) }
+    record.sleepStages = stages
+    record.update(from: summary)
+    record.scoreVersion = scoreVersion
+    try modelContext.save()
+    try publish()
+  }
+
   func updateSummaries(_ summaries: [NightSummary], scoreVersion: String) async throws {
     for summary in summaries {
       guard let record = try record(id: summary.id) else { continue }

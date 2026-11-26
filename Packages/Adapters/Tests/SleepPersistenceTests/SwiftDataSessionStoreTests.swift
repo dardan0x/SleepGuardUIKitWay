@@ -203,4 +203,27 @@ extension SwiftDataSessionStoreTests {
     #expect(try await store.session(id: session.id) == session)
     #expect(try ModelContext(container).fetch(FetchDescriptor<EventRecord>()).first?.persistentModelID == eventID)
   }
+
+  // F13-T3: stages are a narrow write, not a whole-night rewrite.
+  @Test func updatingStagesKeepsTheStoredEvents() async throws {
+    let (store, container) = try makeStore()
+    var session = night(events: [event(at: 0, clip: "a.m4a"), event(at: 600)])
+    session.sleepStages = []
+    try await store.save(session, summary: session.summary(), scoreVersion: "1-a")
+    let before = try Set(ModelContext(container).fetch(FetchDescriptor<EventRecord>()).map(\.persistentModelID))
+    let stages = [SleepStageSegment(stage: .rem, startOffset: 0, duration: 1800)]
+    session.sleepStages = stages
+
+    try await store.updateStages(of: session.id, stages: stages, summary: session.summary(), scoreVersion: "2-a")
+
+    let after = try Set(ModelContext(container).fetch(FetchDescriptor<EventRecord>()).map(\.persistentModelID))
+    #expect(after == before)
+    #expect(try await store.session(id: session.id) == session)
+    #expect(try await store.staleNightIDs(currentVersion: "2-a").isEmpty)
+    await #expect(throws: SessionError.notFound(UUID(uuidString: "00000000-0000-0000-0000-000000000001")!)) {
+      try await store.updateStages(
+        of: UUID(uuidString: "00000000-0000-0000-0000-000000000001")!, stages: stages, summary: session.summary(),
+        scoreVersion: "2-a")
+    }
+  }
 }

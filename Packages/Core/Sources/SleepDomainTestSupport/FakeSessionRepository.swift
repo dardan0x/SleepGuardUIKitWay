@@ -13,7 +13,10 @@ public actor FakeSessionRepository: SessionRepository {
   public private(set) var summaryUpdates: [[Night.ID]] = []
   public private(set) var savedIDs: [Night.ID] = []
   public private(set) var deletedIDs: [Night.ID] = []
+  /// Nights given stages through `updateStages`, in order.
+  public private(set) var stageUpdates: [Night.ID] = []
   private var failure: (any Error)?
+  private var stageUpdateFailure: (any Error)?
   private var observers: [UUID: AsyncStream<[NightSummary]>.Continuation] = [:]
 
   public init(_ sessions: [Night] = []) {
@@ -28,6 +31,11 @@ public actor FakeSessionRepository: SessionRepository {
     failure = error
   }
 
+  /// Every `updateStages` throws this, while other calls succeed.
+  public func failStageUpdates(with error: any Error) {
+    stageUpdateFailure = error
+  }
+
   public func save(_ session: Night, summary: NightSummary, scoreVersion: String) async throws {
     try throwIfFailing()
     sessions[session.id] = session
@@ -40,6 +48,19 @@ public actor FakeSessionRepository: SessionRepository {
   public func staleNightIDs(currentVersion: String) async throws -> [Night.ID] {
     try throwIfFailing()
     return sessions.values.sorted { $0.start < $1.start }.map(\.id).filter { scoreVersions[$0] != currentVersion }
+  }
+
+  public func updateStages(
+    of id: Night.ID, stages: [SleepStageSegment], summary: NightSummary, scoreVersion: String) async throws
+  {
+    try throwIfFailing()
+    if let stageUpdateFailure { throw stageUpdateFailure }
+    guard sessions[id] != nil else { throw SessionError.notFound(id) }
+    sessions[id]?.sleepStages = stages
+    summaries[id] = summary
+    scoreVersions[id] = scoreVersion
+    stageUpdates.append(id)
+    publish()
   }
 
   public func updateSummaries(_ updates: [NightSummary], scoreVersion: String) async throws {

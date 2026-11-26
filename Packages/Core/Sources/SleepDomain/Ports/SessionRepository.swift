@@ -14,6 +14,11 @@ public protocol SessionRepository: Sendable {
   /// before versions were stored. Reads no events.
   func staleNightIDs(currentVersion: String) async throws -> [Night.ID]
 
+  /// Sets the night's sleep stages and its summary (stages change the score);
+  /// events are untouched. Throws `SessionError.notFound`.
+  func updateStages(
+    of id: Night.ID, stages: [SleepStageSegment], summary: NightSummary, scoreVersion: String) async throws
+
   /// Replaces stored summaries only (events and stages untouched), in one
   /// write. A night that no longer exists is skipped.
   func updateSummaries(_ summaries: [NightSummary], scoreVersion: String) async throws

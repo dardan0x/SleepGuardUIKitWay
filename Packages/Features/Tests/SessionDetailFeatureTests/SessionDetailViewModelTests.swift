@@ -11,12 +11,16 @@ struct SessionDetailViewModelTests {
   private let start = Date(timeIntervalSinceReferenceDate: 815_000_000)
 
   private func viewModel(
-    _ repository: FakeSessionRepository, id: Night.ID, shared: @escaping @MainActor (NightEvent) -> Void = { _ in })
+    _ repository: FakeSessionRepository,
+    id: Night.ID,
+    stages: FakeSleepStageSource = FakeSleepStageSource(),
+    shared: @escaping @MainActor (NightEvent) -> Void = { _ in })
     -> SessionDetailViewModel
   {
     SessionDetailViewModel(
       dependencies: SessionDetailDependencies(
-        nightID: id, loadDetail: LoadSessionDetail(sessions: repository, sleepStages: FakeSleepStageSource())),
+        nightID: id, loadDetail: LoadSessionDetail(sessions: repository),
+        enrichDetail: EnrichNightWithStages(sessions: repository, sleepStages: stages)),
       routes: SessionDetailRoutes(
         showAllEvents: { _, _ in }, playEvents: { _, _ in }, showStagesInfo: { _ in }, shareEvent: shared))
   }
@@ -31,6 +35,26 @@ struct SessionDetailViewModelTests {
     }
     #expect(detail.session.id == night.id)
     #expect(!viewModel.needsLoading)
+  }
+
+  /// A failed stage save used to fail the whole load; now the night opens
+  /// with its stages and the store keeps it without them.
+  @Test func aFailedStageSaveStillOpensTheNightWithItsStages() async {
+    struct DiskFull: Error {}
+    let night = Night(start: start, end: start.addingTimeInterval(3600))
+    let repository = FakeSessionRepository([night])
+    await repository.failStageUpdates(with: DiskFull())
+    let stages = [SleepStageSegment(stage: .deep, startOffset: 0, duration: 3600)]
+    let viewModel = viewModel(repository, id: night.id, stages: FakeSleepStageSource(stages: stages))
+
+    await viewModel.load()
+
+    guard case let .loaded(detail) = viewModel.state else {
+      Issue.record("not loaded")
+      return
+    }
+    #expect(detail.session.sleepStages == stages)
+    #expect(await repository.sessions[night.id]?.sleepStages.isEmpty == true)
   }
 
   @Test func aFailedLoadShowsTheErrorAndRetryLoadsAgain() async {

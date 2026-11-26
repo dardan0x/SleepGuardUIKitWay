@@ -28,7 +28,7 @@ Fixes this app's verdicts from the principal-level architecture review of the th
 |----|------|------|--------|------------|-------|
 | F13-T1 | Adopt shared 0.30.0 and `SaveRules` | Dependency | Done | — | all packages, AppShell |
 | F13-T2 | Stored scores carry their version; refresh at launch (Q9) | Bug / Data | Done | T1 | SleepDomain, SleepPersistence, AppShell |
-| F13-T3 | Detail load is read-only; narrow stage writes (Q34, Q37) | Refactor | Backlog | T2 | SleepDomain, SleepPersistence, SessionDetailFeature |
+| F13-T3 | Detail load is read-only; narrow stage writes (Q34, Q37) | Refactor | Done | T2 | SleepDomain, SleepPersistence, SessionDetailFeature |
 | F13-T4 | Observation follows the store (Q37) | Bug | Backlog | T3 | SleepPersistence |
 | F13-T5 | "We couldn't open your data" + shared 0.31.0 (Q55) | Data safety | Backlog | T4 | shared, AppShell |
 | F13-T6 | Same samples as SleepGuard; interruptions; FFT; thermal (Q14, Q17) | Detection | Backlog | T1 | SleepDomain, SleepAudio |
@@ -83,3 +83,22 @@ Fixes this app's verdicts from the principal-level architecture review of the th
 - A night that fails to load stays stale and is retried at the next launch. A refresh failure is logged and doesn't block the storage limits.
 - Checked on the simulator: a store from 2026-11-18 (14 nights, no version column) opened after the change with every night intact, and all 14 came out stamped `2-…` (scores 70–100).
 - Branch `feature/f13/t2-score-version`
+
+### F13-T3 — Detail load is read-only; narrow stage writes
+
+| Field | Value |
+|-------|-------|
+| Status | Done |
+| Started | 2026-11-26 |
+| Completed | 2026-11-26 |
+
+**Acceptance Criteria:**
+- [x] `LoadSessionDetail` only reads (tested: no write)
+- [x] `EnrichNightWithStages` adds stages through the new port method `updateStages(of:stages:summary:scoreVersion:)`: stage blob and summary columns only, events untouched (tested on SwiftData: same event records)
+- [x] A failed stage save no longer fails the night's load: the screen shows the stages, the store keeps the night without them, the next open retries (tested at use case and view model)
+
+**Notes:**
+- The view model loads, shows the night, then enriches; only the load can put the screen in its error state.
+- The failure is not logged: SleepDomain and the view models have no logger by design (layering). Same handling as the stage source failing, which was already silent.
+- `FakeSessionRepository.failStageUpdates(with:)` added for the view-model case.
+- Branch `feature/f13/t3-read-only-detail`
