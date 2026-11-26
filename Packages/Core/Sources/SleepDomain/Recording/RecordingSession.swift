@@ -17,7 +17,10 @@ import SleepCore
 /// batch of outputs back here, where they are performed in order: clips are
 /// started, closed or discarded through the capture port, and events are
 /// added to the draft. Compressing a clip runs beside detection, never in
-/// its way.
+/// its way, and so do disk writes: a checkpoint goes to a latest-wins writer
+/// task (a newer night replaces one still waiting), raw-log batches to a
+/// serial one. `stop` drains both before its final save, so nothing written
+/// for the night lands after it is committed or discarded.
 ///
 /// It replaces SleepGuard's `RealtimeDetectionTracker` without the main
 /// actor, SwiftData or a 50 ms loop: the samples arrive as a stream, and the
@@ -69,6 +72,12 @@ public actor RecordingSession {
   /// The event's clip, closed when the melody paused the microphone; the
   /// event keeps it when it is finalized after the melody.
   private var closedClip: String?
+  /// The newest night waiting for the checkpoint writer.
+  private var pendingCheckpoint: Night?
+  private var checkpointWriter: Task<Void, Never>?
+  /// Raw-log batches waiting for the raw writer, in order.
+  private var pendingRawBatches: [[SnoreSample]] = []
+  private var rawWriter: Task<Void, Never>?
 
   /// `checkpoints`: where the night in progress is kept while recording.
   /// `rawLog`: where samples go when `settings.preserveRawAudio` is on.
@@ -146,12 +155,11 @@ public actor RecordingSession {
       await compression.value
     }
     compressions = []
+    if let rawLog { enqueueRaw(rawSamples) }
+    rawSamples = []
+    await flushWrites()
     await checkpoints?.save(draft.night(end: end, endReason: endReason))
-    if let rawLog {
-      await rawLog.append(rawSamples)
-      rawSamples = []
-      await rawLog.finish()
-    }
+    await rawLog?.finish()
     snapshots?.finish()
     return draft
   }
@@ -181,13 +189,12 @@ public actor RecordingSession {
 
   private func receiveDecimated(_ sample: CaptureSample) async {
     ingest(sample)
-    if let rawLog, rawSamples.count >= Self.rawLogBatch {
-      let batch = rawSamples
+    if rawLog != nil, rawSamples.count >= Self.rawLogBatch {
+      enqueueRaw(rawSamples)
       rawSamples = []
-      await rawLog.append(batch)
     }
     if lastCheckpoint.map({ sample.time.timeIntervalSince($0) >= Self.checkpointInterval }) ?? true {
-      await checkpoint(at: sample.time)
+      checkpoint(at: sample.time)
     }
   }
 
@@ -286,16 +293,53 @@ public actor RecordingSession {
       }
     }
     if batch.outputs.contains(where: \.savesAnEvent) {
-      await checkpoint(at: batch.time)
+      checkpoint(at: batch.time)
     }
     return feedback
   }
 
-  /// Keeps the night so far, ending at `time`.
-  private func checkpoint(at time: Date) async {
-    guard let checkpoints else { return }
+  // MARK: - Writes
+
+  /// Keeps the night so far, ending at `time`, without waiting for the disk:
+  /// the writer saves the newest night waiting, one save at a time.
+  private func checkpoint(at time: Date) {
+    guard checkpoints != nil else { return }
     lastCheckpoint = time
-    await checkpoints.save(draft.night(end: time))
+    pendingCheckpoint = draft.night(end: time)
+    if checkpointWriter == nil {
+      checkpointWriter = Task { await writeCheckpoints() }
+    }
+  }
+
+  private func writeCheckpoints() async {
+    while let night = pendingCheckpoint {
+      pendingCheckpoint = nil
+      await checkpoints?.save(night)
+    }
+    checkpointWriter = nil
+  }
+
+  private func enqueueRaw(_ batch: [SnoreSample]) {
+    guard !batch.isEmpty else { return }
+    pendingRawBatches.append(batch)
+    if rawWriter == nil {
+      rawWriter = Task { await writeRaw() }
+    }
+  }
+
+  private func writeRaw() async {
+    while !pendingRawBatches.isEmpty {
+      await rawLog?.append(pendingRawBatches.removeFirst())
+    }
+    rawWriter = nil
+  }
+
+  /// Resumes once every write handed to the writers so far has finished.
+  /// Internal so tests can read the stores.
+  func flushWrites() async {
+    while let writer = checkpointWriter ?? rawWriter {
+      await writer.value
+    }
   }
 
   /// Compresses the clip beside detection and points the event at the result.
@@ -305,7 +349,7 @@ public actor RecordingSession {
       let compressed = await capture.compressClip(named: clip)
       if let index = draft.events.firstIndex(where: { $0.id == eventID }) {
         draft.events[index].clipFileName = compressed
-        await checkpoint(at: lastSampleTime ?? draft.start)
+        checkpoint(at: lastSampleTime ?? draft.start)
       }
     })
   }
