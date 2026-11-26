@@ -125,8 +125,8 @@ Apps/<Brand>             Brand.swift: BrandConfiguration (theme, tabs, Health po
 | | `SleepAudio` | 1.1k | AVAudioEngine capture and analysis, clip compression and playback, melody player and recorder | |
 | | `SleepHealth` | 87 | HealthKit read and write | Be linked by Lite |
 | Presentation | `ScreenKit` | 0.4k | `ScreenController`, every screen's base (theme, chrome, one state child, hosting the shared views); a self-sizing UIKit list; the `Navigator` abstraction | |
-| Features | 8 modules | 3.7k | 21 UIKit screens (collection views, a page view controller, alerts) around the shared SwiftUI content; each with a view model (ADR 0008): History, SessionDetail, Statistics, Recording, Settings, Onboarding, Briefing, Learn | Navigate, present anything but an alert, persist, resolve dependencies, use `UIApplication`; a view model imports no UI |
-| Shell | `AppShell` | 1.8k | `AppCoordinator`, `MainTabCoordinator`, 9 flows, factories, 28 container registrations | Be imported by anything but the brand targets |
+| Features | 8 modules | 3.7k | 22 UIKit screens (collection views, a page view controller, alerts) around the shared SwiftUI content; each with a view model (ADR 0008): History, SessionDetail, Statistics, Recording, Settings, Onboarding, Briefing, Learn | Navigate, present anything but an alert, persist, resolve dependencies, use `UIApplication`; a view model imports no UI |
+| Shell | `AppShell` | 2.4k | `AppComposition` (the composition root), `AppCoordinator` (launch, links), `MainTabCoordinator`, 6 flows and their navigation helpers, factories, 33 container registrations | Be imported by anything but the brand targets |
 
 Dependencies point inwards. The domain knows no framework; adapters implement its ports; features know the domain's types and the shared content but not how they are presented; only `AppShell` knows everything.
 
@@ -220,7 +220,7 @@ The shared package contains no persistence, dependency injection, navigation or 
 | Mode | Command | Resolves to |
 |---|---|---|
 | Local (default) | `tuist generate` | `../SleepGuardShared`, so changes there build immediately |
-| Release (CI) | `TUIST_SHARED_RELEASE=1 tuist generate` | The exact pinned version (`0.27.0`) |
+| Release (CI) | `TUIST_SHARED_RELEASE=1 tuist generate` | The exact pinned version (`0.31.0`) |
 
 Both modes use the same package identity, so manifests don't change between them. Adopting a new release means running `sh scripts/bump-shared.sh <version>` and then the full suite.
 
@@ -241,7 +241,7 @@ Same product, same shared core, different composition:
 | **Configuration** | Firebase Remote Config for flags | Static `BrandConfiguration` per brand |
 | **Project** | Xcode project + workspace | Tuist; one app target per brand, generated |
 | **Tests** | Models and services with fakes, in-memory SwiftData | Domain on macOS, flows over a navigator spy, hosted tests per brand |
-| **Cost of one screen** (night detail) | ~500 lines in 4 files | ~480 lines in 9 files |
+| **Cost of one screen** (night detail, see [COMPARISON.md](docs/COMPARISON.md)) | about 500 lines in 4 files | about 900 lines in 14 files |
 
 **Where SleepGuard is simpler:** less ceremony per screen, and `@Query` gives live updates for free. That is the right default for a small team on a new iOS 17 app.
 
@@ -306,9 +306,9 @@ A flow against a navigator spy. The screen's route is invoked directly, and the 
 }
 ```
 
-**What is tested elsewhere.** The rules (score, detection, statistics, briefing) and every screen layout are tested once, in SleepGuardShared: 251 tests, including replay goldens recorded from a real night and renders of every screen in two themes. This repo doesn't re-test them; it tests that it composes them correctly. What only a device can verify (microphone over a full night, HealthKit permissions, a melody over a locked phone) is listed in the tracker as manual checks.
+**What is tested elsewhere.** The rules (score, detection, statistics, briefing) and every screen layout are tested once, in SleepGuardShared: about 280 tests, including replay goldens recorded from a real night and renders of every screen in two themes. This repo doesn't re-test them; it tests that it composes them correctly. What only a device can verify (microphone over a full night, HealthKit permissions, a melody over a locked phone) is listed in the tracker as manual checks.
 
-**How it runs.** `sh scripts/run-tests.sh` has three lanes: macOS (domain), packages (each built standalone with its own derived data, which also catches undeclared imports), and in-app (each brand discovered from `Apps/*`). CI runs all three on every PR against the pinned shared release.
+**How it runs.** `sh scripts/run-tests.sh` has three lanes: macOS (domain), packages (each built standalone with its own derived data, which also catches undeclared imports), and in-app (each brand discovered from `Apps/*`). CI runs them against the pinned shared release: on a pull request, every brand's bootstrap test and one brand's whole suite (every brand when brand code changed); nightly, everything.
 
 ---
 

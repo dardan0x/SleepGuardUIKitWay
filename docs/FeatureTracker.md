@@ -10,19 +10,19 @@ Last updated: 2026-11-26
 
 | Metric | Count |
 |--------|-------|
-| Features | 13 |
-| Done | 11 |
+| Features | 14 |
+| Done | 12 |
 | In Progress | 2 |
 | Backlog | 0 |
 | Blocked | 0 |
 | — | — |
-| Total Tasks | 64 |
-| Tasks Done | 63 |
+| Total Tasks | 79 |
+| Tasks Done | 78 |
 | Tasks In Progress | 1 |
 | Tasks Blocked | 0 |
 | Tasks Backlog | 0 |
 | — | — |
-| **Progress** | **98%** |
+| **Progress** | **99%** |
 
 ## Features
 
@@ -41,11 +41,11 @@ Last updated: 2026-11-26
 | F9 | Showcase polish | P2 | In Progress (T4: screenshots after the UI polish) | 3/4 | ████████░░ 75% | [tracker](trackers/f9-showcase-polish.md) |
 | F11 | UIKit screen containers | P2 | Done | 1/1 | ██████████ 100% | [tracker](trackers/f11-uikit-screen-containers.md) |
 | F12 | View models and factories | P2 | Done | 1/1 | ██████████ 100% | [tracker](trackers/f12-view-models.md) |
-| F13 | Architecture review fixes | P0/P1 | In Progress | 14/15 | █████████░ 93% | [tracker](trackers/f13-architecture-review.md) |
+| F13 | Architecture review fixes | P0/P1 | Done | 15/15 | ██████████ 100% | [tracker](trackers/f13-architecture-review.md) |
 
 ## Currently Active
 
-- **F13-T15** — Docs and close-out.
+- **F13 device check** — one real night: 20 Hz cadence, a call as a gap, resume after a call, thermal logs.
 - **F9-T4** — README written; the brands' screenshots wait for the UI polish.
 - **F8 device checks** — Apple Health permission and writing, real sleep stages from an Apple Watch night, the start delay's notification and warm-up with the screen locked, raw audio on a real night, a Snore Interrupter melody with the microphone resuming after it, the onboarding's permission prompts on a fresh install, a morning briefing and a PDF report.
 - **F7 device check** — one short night on a phone (Debug saves after 2 min): microphone, locked screen, clips, recovery after a kill.
@@ -65,6 +65,7 @@ Last updated: 2026-11-26
 
 | Date | Task | Event | Notes |
 |------|------|-------|-------|
+| 2026-11-26 | F13-T15 | Completed | ADRs 0010–0012, architecture doc, README, AGENTS/CLAUDE, workflow, feature doc. F13 done; the owner merges `feature/f13-architecture-review` into main. Branch `feature/f13/t15-docs` |
 | 2026-11-26 | F13-T12 | Completed | Deep links: `AppRoute` (start, session, last 7 nights) from the scene delegate to `AppCoordinator`, held while busy, dropped when meaningless. Branch `feature/f13/t12-deep-links` |
 | 2026-11-26 | F13-T11 | Completed | A day's nights deleted in one write (`delete(ids:)`, `DeleteSessions`), all or none; bar items with an activity (report button busy state); a failed report shows an alert. Branch `feature/f13/t11-day-delete-chrome` |
 | 2026-11-26 | F13-T10 | Completed | `RecordingFlow` split into `InterrupterSettingsNavigation` and `NightLifecycle` (248 → 154 lines); the interrupter's task no longer leaks. Branch `feature/f13/t10-recording-flow-split` |

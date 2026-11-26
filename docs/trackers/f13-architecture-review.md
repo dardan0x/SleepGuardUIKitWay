@@ -4,13 +4,13 @@
 
 | Field | Value |
 |-------|-------|
-| **Status** | In Progress |
+| **Status** | Done |
 | **Priority** | P0 (T1–T5) / P1 |
 | **Milestone** | M5 |
 | **Blocked By** | — |
 | **Started** | 2026-11-26 |
-| **Completed** | — |
-| **Feature Doc** | — |
+| **Completed** | 2026-11-26 |
+| **Feature Doc** | [f13-architecture-review.md](../features/f13-architecture-review.md) |
 | **Branch** | `feature/f13-architecture-review` (task branches `feature/f13/t#-slug`, merged by the owner through PRs) |
 
 ## Summary
@@ -40,7 +40,7 @@ Fixes this app's verdicts from the principal-level architecture review of the th
 | F13-T12 | Deep links (Q28) | Feature | Done | T8 | Apps, AppShell |
 | F13-T13 | Port contract tests (Q59) | Tests | Done | — | SleepDomain, Adapters |
 | F13-T14 | Structural lint, theme check, CI (Q63, Q51, Q62) | Tooling | Done | — | ScreenKit, scripts, CI |
-| F13-T15 | Docs and close-out | Docs | Backlog | all | docs |
+| F13-T15 | Docs and close-out | Docs | Done | all | docs |
 
 ## Task Details
 
@@ -310,3 +310,21 @@ Fixes this app's verdicts from the principal-level architecture review of the th
 **Notes:**
 - Simulator: `simctl openurl` reached the app, but iOS's "Open in SleepGuard?" prompt couldn't be tapped (the simulator's input connection failed twice), so the on-device routing is covered by the tests, not seen.
 - Branch `feature/f13/t12-deep-links`
+
+### F13-T15 — Docs and close-out
+
+| Field | Value |
+|-------|-------|
+| Status | Done |
+| Started | 2026-11-26 |
+| Completed | 2026-11-26 |
+
+**Acceptance Criteria:**
+- [x] ADRs 0010 (stored nights), 0011 (detection input), 0012 (links); 0009 came with T8
+- [x] `ARCHITECTURE.md` current (0.31.0, counts, launch and links, 20 Hz capture, rules, tests, ADRs), on top of the owner's two renames (owner's choice to include them)
+- [x] README counts, pinned version, the comparison row (from `COMPARISON.md`), shared test count, CI
+- [x] `AGENTS.md` (then `CLAUDE.md`, body copied): composition root, targeted dismiss, links, cached scope, contracts, four brands, CI; `CODING_WORKFLOW.md`: four brands
+- [x] Feature doc, Roadmap, trackers, session fragment
+
+**Notes:**
+- Branch `feature/f13/t15-docs`

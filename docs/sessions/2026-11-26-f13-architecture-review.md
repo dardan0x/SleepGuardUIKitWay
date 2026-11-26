@@ -2,7 +2,7 @@
 date: 2026-11-26
 feature: F13
 branch: feature/f13-architecture-review
-title: F13 planned; T1 shared 0.30.0 and SaveRules; T2 versioned scores; T3 read-only detail; T4 store observation; T5 store unavailable; T6 capture parity; T7 off-path writes; T9 navigator races; T13 port contracts; T14 structural checks and CI; T8 typed composition; T10 recording flow split; T11 day delete and chrome; T12 deep links
+title: F13 architecture review fixes, T1–T15 (shared 0.30.0 and 0.31.0)
 ---
 
 ### Completed
@@ -21,6 +21,7 @@ title: F13 planned; T1 shared 0.30.0 and SaveRules; T2 versioned scores; T3 read
 - F13-T10: `RecordingFlow` split into interrupter navigation and the night's device lifecycle.
 - F13-T11: atomic day delete; the report button shows its work and failures.
 - F13-T12: deep links routed by the app coordinator.
+- F13-T15: ADRs 0010–0012, architecture doc, README, AGENTS/CLAUDE, workflow, feature doc `docs/features/f13-architecture-review.md`. F13 done.
 
 ### Technical Details
 - 0.30.0 adds `DetectionOutput.interruptionGap`; `RecordingSession` records it as a `.interruption` gap. The night detail's "recording paused" banner counts melody gaps only (`melodyGapsDuration`), because interruptions are reported separately.
@@ -48,34 +49,41 @@ title: F13 planned; T1 shared 0.30.0 and SaveRules; T2 versioned scores; T3 read
 - T10: `Recording/RecordingFlow.swift`, `Recording/InterrupterSettingsNavigation.swift` (new), `Recording/NightLifecycle.swift` (new); tests `NightLifecycleTests` (new), `SnoreInterrupterFlowTests`
 - T11: `SessionRepository.swift`, `DeleteSession.swift` (+ `DeleteSessions`), `FakeSessionRepository.swift`, `PortContracts.swift`, `SwiftDataSessionStore.swift`, `HistoryDependencies.swift`, `HistoryViewModel.swift`, `HistoryViewController.swift`, `ScreenChrome.swift`, `ScreenController.swift`, `ThemedHosting.swift` (new), `Container+AppShell.swift`, `HistoryFactories.swift`, `NightDetailNavigation.swift`; tests `UseCaseTests`, `HistoryViewModelTests`, `ScreenControllerTests`, `PersonalizationFlowTests`, `BrandBootstrapTests`
 - T12: `Routing/AppRoute.swift` (new), `AppCoordinator.swift`, `MainTabCoordinator.swift` (`NightDetailHosting`, `select`), `HistoryFlow.swift`, `StatisticsFlow.swift`, `AppComposition.swift`, `Apps/Shared/Sources/SceneDelegate.swift`; test `DeepLinkTests` (new)
+- T15: `docs/adr/0010-stored-nights.md`, `0011-detection-input.md`, `0012-deep-links.md` (new), `docs/ARCHITECTURE.md` (with the owner's two renames), `README.md`, `AGENTS.md`, `CLAUDE.md`, `docs/CODING_WORKFLOW.md`, `docs/Roadmap.md`, `docs/features/f13-architecture-review.md` (new)
 - Docs: `FeatureTracker.md`, `trackers/f13-architecture-review.md`, this fragment
 
 ### Architecture Decisions
+- ADR 0010 stored nights (versioned scores, one writer, store unavailable, all-or-none delete); ADR 0011 detection input (20 Hz, interruptions, writes off the sample path); ADR 0012 links.
 - T8: ADR 0009, one composition per brand; flows take what they use.
 - T4: the nights store stays the database's only writer; cross-context observation is deferred until a second writer exists (documented in the store).
 - None new beyond that. The save minimum is the app's composition choice (shared 0.30.0's `SaveRules`).
 
 ### Build Status
-- Release mode (`TUIST_SHARED_RELEASE=1`): SleepGuard, SleepGuardLite, Nocturne and Dawn build.
-- `scripts/run-tests.sh`: all lanes pass (T1: Core 65, Adapters 18, Presentation 18, Features 6, AppShell 70, hosted 9 per brand; T2: Core 68, Adapters 20).
-- T2 on the simulator: a 2026-11-18 store (14 nights) opened with the new column and every night was re-stamped with formula 2.
-- Layering, view size and strings checks pass. SwiftFormat is clean on every changed file; three untouched files on `main` already fail it.
+- Every task: all four brands build on the pinned release (`TUIST_SHARED_RELEASE=1`), every lane passes, layering, view size and strings checks pass, SwiftFormat clean on changed files.
+- Final: Core 81, Adapters 51, Presentation 19, Features 52, AppShell 88 package tests; 13 in-app tests per brand.
+- Simulator: a pre-change store (14 nights) opened and was re-scored (T2); a corrupt store showed the store-unavailable screen and was kept byte for byte, then restored (T5); a link reached the app but iOS's "Open in…?" prompt couldn't be tapped (T12).
+- Flake seen once: `PlayerInAppTests` timed out in one full Dawn run; passed on reruns.
 
 ### Suggested Branch
-Task branches `feature/f13/t1-shared-0-30-save-rules`, `feature/f13/t2-score-version`, merged into `feature/f13-architecture-review`
+`feature/f13-architecture-review` into `main` (task branches `feature/f13/t1-…` to `feature/f13/t15-docs` already merged into it).
 
 ### Suggested Commit
+Each task is its own commit (`F13-T# — …`, no AI trailer). The pull request into main:
 ```
-F13-T1 — Adopt shared 0.30.0 and SaveRules
+F13 — Architecture review fixes
 
-- Pin SleepGuardShared 0.30.0 in every manifest and Project.swift
-- Record interruption gaps; the gap banner counts melody gaps only
-- SaveRules from the composition (Debug 2 min) replaces Night.minimumSaveDuration
-- F13 tracker and plan
+- Shared 0.31.0; SaveRules
+- Versioned scores refreshed at launch; read-only detail; safe store failures; all-or-none day delete
+- 20 Hz detection input, calls as gaps, writes off the sample path
+- AppComposition per brand, flows take what they use; navigator races; RecordingFlow split
+- Deep links; port contracts; compile-time screen bans; cheaper CI
+- ADRs 0009–0012
 ```
 
 ### Next Session
-- F13-T8 after T5 (both change `Container+AppShell.swift`). F13-T5 finishes after the 0.31.0 tag.
+- Owner: merge `feature/f13-architecture-review` into main; one real night on a device (20 Hz cadence, a call as a gap, resume after a call, thermal logs).
+- F9-T4: the brands' screenshots.
 
 ### Open Questions
 - Should the three pre-existing SwiftFormat failures on `main` be fixed in a separate small PR?
+- `COMPARISON.md`'s line counts date from F12; refresh them?
