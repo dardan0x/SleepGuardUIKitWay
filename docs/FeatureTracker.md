@@ -16,8 +16,8 @@ Last updated: 2026-11-26
 | Backlog | 0 |
 | Blocked | 0 |
 | — | — |
-| Total Tasks | 84 |
-| Tasks Done | 83 |
+| Total Tasks | 85 |
+| Tasks Done | 84 |
 | Tasks In Progress | 1 |
 | Tasks Blocked | 0 |
 | Tasks Backlog | 0 |
@@ -41,7 +41,7 @@ Last updated: 2026-11-26
 | F9 | Showcase polish | P2 | In Progress (T4: screenshots after the UI polish) | 3/4 | ████████░░ 75% | [tracker](trackers/f9-showcase-polish.md) |
 | F11 | UIKit screen containers | P2 | Done | 1/1 | ██████████ 100% | [tracker](trackers/f11-uikit-screen-containers.md) |
 | F12 | View models and factories | P2 | Done | 1/1 | ██████████ 100% | [tracker](trackers/f12-view-models.md) |
-| F13 | Architecture review fixes | P0/P1 | Done | 20/20 | ██████████ 100% | [tracker](trackers/f13-architecture-review.md) |
+| F13 | Architecture review fixes | P0/P1 | Done | 21/21 | ██████████ 100% | [tracker](trackers/f13-architecture-review.md) |
 
 ## Currently Active
 
@@ -65,6 +65,7 @@ Last updated: 2026-11-26
 
 | Date | Task | Event | Notes |
 |------|------|-------|-------|
+| 2026-11-26 | F13-T21 | Completed | Close-out: ADR 0013 and the docs. Branch `feature/f13/t21-close-out` |
 | 2026-11-26 | F13-T20 | Completed | Shared 0.36.0: SleepStore's records and schema behind the repository. Branch `feature/f13/t20-shared-store` |
 | 2026-11-26 | F13-T19 | Completed | Shared 0.35.0: SleepAudioKit behind the audio ports. Branch `feature/f13/t19-shared-audio` |
 | 2026-11-26 | F13-T18 | Completed | Shared 0.34.0: logging, classifier, sample nights, storage layout, file stores, storage sweep and start notification are the shared ones. Branch `feature/f13/t18-shared-small-pieces` |

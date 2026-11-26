@@ -79,3 +79,17 @@ Tests: 291 package tests (from about 210) and 13 in-app tests per brand (from 9)
 ## Tasks Completed
 
 F13-T1 … F13-T17.
+
+## Uniform the apps (T18–T21)
+
+The owner's later request: the adapters' behaviour moves to the shared repo ([ADR 0013](../adr/0013-uniform-apps.md)).
+
+| Release | Task | What moved |
+|---|---|---|
+| 0.34.0 | T18 | Logging, live classification, sample nights, file layout and files, storage sweep, start notification |
+| 0.35.0 | T19 | `SleepAudio`'s implementations → `SleepAudioKit` (ports unchanged, `KitConformances.swift`) |
+| 0.36.0 | T20 | `SleepPersistence`'s records, mapping and schema → `SleepStore` (the actor and its contract stay) |
+| — | T21 | ADR 0013, ARCHITECTURE, AGENTS/CLAUDE |
+
+Files the table above lists in `SleepAudio/Capture/` and `SleepPersistence/Records/` are now in the shared repo.
+
