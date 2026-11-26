@@ -23,21 +23,27 @@ extension Container {
     self { StorageLocation.resolve() }.singleton
   }
 
-  /// The nights database. If it can't be opened, this launch runs on an
-  /// in-memory store and logs a fault: the file is left alone, never deleted,
-  /// so nothing is lost and the next launch tries again.
-  var sessionRepository: Factory<any SessionRepository> {
+  /// The nights database, opened once. If the file can't be opened, this
+  /// launch gets an in-memory store and `isAvailable` is false: the app then
+  /// shows only "We couldn't open your sleep data" (`AppCoordinator`), so
+  /// nothing is recorded into a store that would be lost. The file is left
+  /// alone, never deleted, and the next launch (or an update) tries again.
+  var storeOpening: Factory<StoreOpening> {
     self {
       let url = self.storageLocation().storeURL
       do {
-        return try SleepPersistence.makeSessionRepository(storeURL: url)
+        return try StoreOpening(repository: SleepPersistence.makeSessionRepository(storeURL: url), isAvailable: true)
       } catch {
         Log.storage.fault("Couldn't open the nights store: \(error.localizedDescription, privacy: .public)")
         // In memory can only fail if SwiftData itself can't start.
-        return try! SleepPersistence.makeSessionRepository(storeURL: nil)
+        return try! StoreOpening(repository: SleepPersistence.makeSessionRepository(storeURL: nil), isAvailable: false)
       }
     }
     .singleton
+  }
+
+  var sessionRepository: Factory<any SessionRepository> {
+    self { self.storeOpening().repository }.singleton
   }
 
   var sessionFileStore: Factory<any SessionFileStore> {
@@ -203,4 +209,11 @@ extension Container {
   var makeClipPlayer: Factory<@MainActor @Sendable () -> any ClipPlayer> {
     self { { SleepAudio.makeClipPlayer() } }
   }
+}
+
+/// The nights database and whether it opened from its file.
+struct StoreOpening: Sendable {
+  let repository: any SessionRepository
+  /// False when the file couldn't be opened and `repository` is in memory.
+  let isAvailable: Bool
 }

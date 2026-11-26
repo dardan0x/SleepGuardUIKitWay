@@ -222,6 +222,7 @@ extension Container {
   static func test(brand: TestBrand = TestBrand(), repository: FakeSessionRepository = FakeSessionRepository()) -> Container {
     let container = Container()
     container.brand.register { brand }
+    container.storeOpening.register { StoreOpening(repository: repository, isAvailable: true) }
     container.sessionRepository.register { repository }
     container.sessionFileStore.register { FakeSessionFileStore() }
     container.sleepStageSource.register { FakeSleepStageSource() }
