@@ -65,11 +65,10 @@ final class NightsListController: UICollectionViewController {
   private func makeDataSource() -> UICollectionViewDiffableDataSource<NightMonth.ID, NightDay.ID> {
     let cell = UICollectionView.CellRegistration<UICollectionViewListCell, NightDay.ID> { [weak self] cell, _, id in
       guard let self, let day = items.day(id) else { return }
-      cell.contentConfiguration = UIHostingConfiguration {
+      cell.contentConfiguration = theme.hosting {
         NightDayCard(
           day: day, isExpanded: expanded.contains(id), onOpen: onOpen,
           onToggle: { [weak self] in self?.toggle(id) }, onDeleteRequest: { [weak self] in self?.onDelete(day) })
-          .environment(\.theme, theme)
       }
       .margins(.horizontal, 16)
       .margins(.vertical, 8)
@@ -79,8 +78,8 @@ final class NightsListController: UICollectionViewController {
       elementKind: UICollectionView.elementKindSectionHeader)
     { [weak self] view, _, indexPath in
       guard let self, let month = self.dataSource.sectionIdentifier(for: indexPath.section) else { return }
-      view.contentConfiguration = UIHostingConfiguration {
-        NightMonthHeader(month: month).environment(\.theme, theme)
+      view.contentConfiguration = theme.hosting {
+        NightMonthHeader(month: month)
       }
       .margins(.horizontal, 20)
       view.backgroundConfiguration = .clear()

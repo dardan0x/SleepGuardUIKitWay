@@ -39,7 +39,7 @@ Fixes this app's verdicts from the principal-level architecture review of the th
 | F13-T11 | Atomic day delete; dynamic chrome (Q38, Q43) | Bug / UI | Backlog | T5 | SleepDomain, SleepPersistence, ScreenKit, features |
 | F13-T12 | Deep links (Q28) | Feature | Backlog | T8 | Apps, AppShell |
 | F13-T13 | Port contract tests (Q59) | Tests | Done | — | SleepDomain, Adapters |
-| F13-T14 | Structural lint, theme check, CI (Q63, Q51, Q62) | Tooling | Backlog | — | ScreenKit, scripts, CI |
+| F13-T14 | Structural lint, theme check, CI (Q63, Q51, Q62) | Tooling | Done | — | ScreenKit, scripts, CI |
 | F13-T15 | Docs and close-out | Docs | Backlog | all | docs |
 
 ## Task Details
@@ -204,3 +204,23 @@ Fixes this app's verdicts from the principal-level architecture review of the th
 
 **Notes:**
 - Branch `feature/f13/t13-port-contracts`
+
+### F13-T14 — Structural lint, theme check, CI
+
+| Field | Value |
+|-------|-------|
+| Status | Done |
+| Started | 2026-11-26 |
+| Completed | 2026-11-26 |
+
+**Acceptance Criteria:**
+- [x] A screen that presents anything but an alert doesn't compile: `ScreenController.present` is `@available(*, unavailable)` (checked that Swift accepts an unavailable override and rejects a subclass's call); `presentAlert` presents through `super`. The regex in rule 5 stays as a backstop for feature controllers that aren't screens
+- [x] Themed hosting: only ScreenKit creates `UIHostingController` / `UIHostingConfiguration` (layering rule 9; it flags the old hand-themed sites); `Theme.hosting { }` for collection views that aren't screens (History list, night detail). Chosen over a loud Debug default theme, which would need a shared-kit change
+- [x] Hosted leak check: a popped night detail is released with its view model
+- [x] CI: pull requests build and fully test the reference brand (SleepGuard) and run every other brand's bootstrap test; nightly, manual and brand-touching pull requests (`Apps/`, `Tuist/`, `Project.swift`, AppShell) cover every brand; SwiftPM caches keyed on the lockfiles. `run-tests.sh` gained `REFERENCE_BRAND`
+
+**Notes:**
+- **Changed from the plan:** the package lane stays on every pull request (it is where the package tests run; moving it nightly would lose them), and derived data isn't cached (fragile across Xcode updates). The workflow is valid YAML; it is only exercised on GitHub.
+- Locally, the in-app lane with a reference brand: about 50 s instead of about 2½ min.
+- Flake seen once: `PlayerInAppTests.playsAnEpisodeAndStopsOnClose` timed out (60 s) in Dawn's full run; it passed alone twice (19 s) and in a full Dawn rerun. It plays real audio on the simulator; watch it in CI.
+- Branch `feature/f13/t14-structural-checks`

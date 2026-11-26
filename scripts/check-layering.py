@@ -28,6 +28,15 @@ So this script checks imports against the module table in AGENTS.md, plus:
      `@_exported import`s it. The workspace build doesn't check this, and a
      standalone build only does when no sibling target built the module
      first. Manifests are read with `swift package dump-package`.
+  9. Themed hosting: only ScreenKit creates `UIHostingController` or
+     `UIHostingConfiguration`. Everyone else hosts through its helpers
+     (`host`, `render`, `hosted`, `Theme.hosting`), which put the brand's
+     theme in the environment; the environment's default is SleepGuard's, so
+     a hand-made host would draw another brand in SleepGuard's colours.
+
+A screen presenting anything but an alert is a compile error
+(`ScreenController.present` is unavailable), so rule 5's `present(` pattern
+only backs it up for the few feature controllers that aren't screens.
 
 Lines starting with `//` are ignored. Exits 1 with a file:line listing.
 """
@@ -101,6 +110,9 @@ FEATURE_BANNED = re.compile(
     # Only alerts: `present(alert, …)`, `present(someAlert(), …)`, `present(confirmation(…), …)`.
     r"|\bpresent\((?!\w*[aA]lert\b|\w*Alert\(|\w*[cC]onfirmation\()"
 )
+
+HOSTING = re.compile(r"\bUIHosting(Controller|Configuration)\s*[({]")
+HOSTING_OWNER = "Packages/Presentation/Sources/ScreenKit/"
 
 IMPORT = re.compile(r"^\s*(?:@testable\s+|@_exported\s+)?import\s+(?:(?:struct|class|enum|protocol|func|var|let)\s+)?([\w]+)")
 
@@ -227,6 +239,8 @@ def main() -> int:
                 for match in SHARED.finditer(line):
                     if (rel, match.group(1)) not in SHARED_ALLOWLIST:
                         violations.append(f"{rel}:{number}: {match.group(0)} — inject it instead")
+            if module and not rel.startswith(HOSTING_OWNER) and HOSTING.search(line):
+                violations.append(f"{rel}:{number}: host SwiftUI through ScreenKit (host, render, hosted, Theme.hosting)")
             if is_feature:
                 match = FEATURE_BANNED.search(line)
                 if match:
