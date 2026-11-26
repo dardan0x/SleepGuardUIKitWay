@@ -103,7 +103,7 @@ struct SettingsStoresTests {
     let night = Night(
       start: start, end: start.addingTimeInterval(8 * 3600),
       events: [NightEvent(start: start, duration: 60, intensity: .light, clipFileName: "a.m4a")])
-    try await repository.save(night, summary: night.summary())
+    try await repository.save(night, summary: night.summary(), scoreVersion: "")
 
     #expect(try await repository.nightFiles() == [NightFiles(id: night.id, start: start, clipFileNames: ["a.m4a"])])
     try await repository.removeClips(of: night.id)

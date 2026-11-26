@@ -56,6 +56,10 @@ extension Container {
     self { DeleteSession(sessions: self.sessionRepository(), files: self.sessionFileStore()) }
   }
 
+  var refreshStaleSummaries: Factory<RefreshStaleSummaries> {
+    self { RefreshStaleSummaries(sessions: self.sessionRepository()) }
+  }
+
   var loadSessionDetail: Factory<LoadSessionDetail> {
     self { LoadSessionDetail(sessions: self.sessionRepository(), sleepStages: self.sleepStageSource()) }
   }

@@ -12,6 +12,10 @@ extension SessionRecord {
     endReason = session.endReason.rawValue
     recordingGaps = session.recordingGaps
     sleepStages = session.sleepStages
+    update(from: summary)
+  }
+
+  func update(from summary: NightSummary) {
     score = summary.score
     snoringDuration = summary.snoringDuration
     eventCount = summary.eventCount

@@ -47,7 +47,9 @@ struct DeleteSessionTests {
     /// Reads succeed; delete throws.
     struct FailingDelete: SessionRepository {
       let wrapping: FakeSessionRepository
-      func save(_: Night, summary _: NightSummary) async throws {}
+      func save(_: Night, summary _: NightSummary, scoreVersion _: String) async throws {}
+      func staleNightIDs(currentVersion _: String) async throws -> [Night.ID] { [] }
+      func updateSummaries(_: [NightSummary], scoreVersion _: String) async throws {}
       func session(id: Night.ID) async throws -> Night { try await wrapping.session(id: id) }
       func delete(id _: Night.ID) async throws { throw DiskFull() }
       func observeSummaries() async -> AsyncStream<[NightSummary]> { await wrapping.observeSummaries() }
@@ -139,7 +141,7 @@ struct FakeSessionRepositoryTests {
     var updates = await repository.observeSummaries().makeAsyncIterator()
 
     #expect(await updates.next()?.map(\.id) == [older.id])
-    try await repository.save(newer, summary: newer.summary())
+    try await repository.save(newer, summary: newer.summary(), scoreVersion: "")
     #expect(await updates.next()?.map(\.id) == [newer.id, older.id])
     try await repository.delete(id: older.id)
     #expect(await updates.next()?.map(\.id) == [newer.id])

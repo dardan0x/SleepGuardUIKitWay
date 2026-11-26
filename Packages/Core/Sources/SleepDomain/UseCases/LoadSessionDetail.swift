@@ -42,7 +42,8 @@ public struct LoadSessionDetail: Sendable {
        !stages.isEmpty
     {
       session.sleepStages = stages
-      try await sessions.save(session, summary: session.summary(using: scoreConfig))
+      try await sessions.save(
+        session, summary: session.summary(using: scoreConfig), scoreVersion: SleepScore.cacheVersion(for: scoreConfig))
     }
 
     return SessionDetail(

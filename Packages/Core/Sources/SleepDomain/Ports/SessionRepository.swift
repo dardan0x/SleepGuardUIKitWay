@@ -6,8 +6,17 @@ import SleepCore
 /// Every method takes and returns domain values; no storage type crosses it.
 public protocol SessionRepository: Sendable {
   /// Inserts or replaces the night and its summary. The summary is stored with
-  /// it so lists never load events.
-  func save(_ session: Night, summary: NightSummary) async throws
+  /// it so lists never load events; `scoreVersion` (SleepCore's
+  /// `SleepScore.cacheVersion(for:)`) says which formula and config made it.
+  func save(_ session: Night, summary: NightSummary, scoreVersion: String) async throws
+
+  /// The nights whose stored summary was made by another score version, or
+  /// before versions were stored. Reads no events.
+  func staleNightIDs(currentVersion: String) async throws -> [Night.ID]
+
+  /// Replaces stored summaries only (events and stages untouched), in one
+  /// write. A night that no longer exists is skipped.
+  func updateSummaries(_ summaries: [NightSummary], scoreVersion: String) async throws
 
   /// The whole night, events included and in time order. Throws
   /// `SessionError.notFound`.
