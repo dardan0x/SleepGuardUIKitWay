@@ -79,6 +79,16 @@ public enum PortContracts {
       try await store.delete(id: newer.id)
       await check(first(store.observeSummaries())?.map(\.id) == [older.id], "a deleted night leaves the list")
       await check(throwsNotFound(newer.id) { _ = try await store.session(id: newer.id) }, "a deleted night is not found")
+      // Several at once: all or none.
+      let third = Night(start: start.addingTimeInterval(2 * 86400), end: start.addingTimeInterval(2 * 86400 + 3600))
+      try await store.save(third, summary: third.summary(), scoreVersion: "1")
+      await check(
+        throwsNotFound(unknown) { try await store.delete(ids: [third.id, unknown]) },
+        "delete(ids:) with an unknown night throws notFound")
+      try await check(store.nightFiles().count == 2, "a failed delete(ids:) deletes none")
+      try await store.delete(ids: [older.id, third.id])
+      await check(first(store.observeSummaries()) == [], "delete(ids:) removes every night given")
+      try await store.save(third, summary: third.summary(), scoreVersion: "1")
       try await store.deleteAll()
       await check(first(store.observeSummaries()) == [], "deleteAll empties the store")
     } catch {

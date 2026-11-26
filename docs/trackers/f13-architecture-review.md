@@ -36,7 +36,7 @@ Fixes this app's verdicts from the principal-level architecture review of the th
 | F13-T8 | Typed composition (Q47, Q48) | Architecture | Done | T5 | AppShell, Apps |
 | F13-T9 | Navigator races (Q45) | Bug | Done | — | ScreenKit, AppShell |
 | F13-T10 | Split `RecordingFlow` (Q44) | Refactor | Done | T8 | AppShell |
-| F13-T11 | Atomic day delete; dynamic chrome (Q38, Q43) | Bug / UI | Backlog | T5 | SleepDomain, SleepPersistence, ScreenKit, features |
+| F13-T11 | Atomic day delete; dynamic chrome (Q38, Q43) | Bug / UI | Done | T5 | SleepDomain, SleepPersistence, ScreenKit, features |
 | F13-T12 | Deep links (Q28) | Feature | Backlog | T8 | Apps, AppShell |
 | F13-T13 | Port contract tests (Q59) | Tests | Done | — | SleepDomain, Adapters |
 | F13-T14 | Structural lint, theme check, CI (Q63, Q51, Q62) | Tooling | Done | — | ScreenKit, scripts, CI |
@@ -271,3 +271,23 @@ Fixes this app's verdicts from the principal-level architecture review of the th
 
 **Notes:**
 - Branch `feature/f13/t10-recording-flow-split`
+
+### F13-T11 — Atomic day delete; dynamic chrome
+
+| Field | Value |
+|-------|-------|
+| Status | Done |
+| Started | 2026-11-26 |
+| Completed | 2026-11-26 |
+
+**Acceptance Criteria:**
+- [x] Port `delete(ids:)`: one write, all or none (an unknown id deletes none; the SwiftData store rolls back a failed save). In the port contracts, met by the store and the fake
+- [x] `DeleteSessions`: every record in one write, then the clips; a failed write keeps every night and every clip (tested). History deletes a day through it, and its failure alert says the nights are all still there (shared 0.31.0 string)
+- [x] `BarItemActivity`: a bar item with one is disabled with a spinner, read as the activity's label, while it runs (tested). The report button uses it
+- [x] A report that can't be made shows "Couldn't Create Report" and frees the button (tested); before, it was only logged
+
+**Notes:**
+- **Changed from the plan:** the day's delete isn't moved to a flow-owned task. With one atomic write, a screen closing mid-delete can't leave half a day; it either happened or it didn't.
+- `ScreenController.swift` went over the 200-line view limit; `Theme.hosting` and `ThemedScreen` moved to `ThemedHosting.swift`.
+- Simulator check of the spinner skipped: the PDF is made in well under a second, so the state is covered by the tests instead.
+- Branch `feature/f13/t11-day-delete-chrome`

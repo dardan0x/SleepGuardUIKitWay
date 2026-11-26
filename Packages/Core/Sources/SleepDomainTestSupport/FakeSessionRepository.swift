@@ -17,6 +17,7 @@ public actor FakeSessionRepository: SessionRepository {
   public private(set) var stageUpdates: [Night.ID] = []
   private var failure: (any Error)?
   private var stageUpdateFailure: (any Error)?
+  private var deleteFailure: (any Error)?
   private var observers: [UUID: AsyncStream<[NightSummary]>.Continuation] = [:]
 
   public init(_ sessions: [Night] = []) {
@@ -29,6 +30,11 @@ public actor FakeSessionRepository: SessionRepository {
 
   public func failNextCall(with error: any Error) {
     failure = error
+  }
+
+  /// Every `delete(ids:)` throws this, while other calls succeed.
+  public func failDeletes(with error: any Error) {
+    deleteFailure = error
   }
 
   /// Every `updateStages` throws this, while other calls succeed.
@@ -88,6 +94,19 @@ public actor FakeSessionRepository: SessionRepository {
     summaries[id] = nil
     scoreVersions[id] = nil
     deletedIDs.append(id)
+    publish()
+  }
+
+  public func delete(ids: [Night.ID]) async throws {
+    try throwIfFailing()
+    if let deleteFailure { throw deleteFailure }
+    if let missing = ids.first(where: { sessions[$0] == nil }) { throw SessionError.notFound(missing) }
+    for id in ids {
+      sessions[id] = nil
+      summaries[id] = nil
+      scoreVersions[id] = nil
+      deletedIDs.append(id)
+    }
     publish()
   }
 

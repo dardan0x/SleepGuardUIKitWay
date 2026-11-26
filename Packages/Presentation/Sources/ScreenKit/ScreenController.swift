@@ -25,7 +25,28 @@ open class ScreenController: UIViewController {
     self.theme = theme
     self.chrome = chrome
     super.init(nibName: nil, bundle: nil)
-    chrome.apply(to: navigationItem)
+    for (item, button) in chrome.apply(to: navigationItem) {
+      guard let activity = item.activity else { continue }
+      renderTracking { [weak button] in
+        guard let button else { return }
+        Self.show(activity, on: button, item: item)
+      }
+    }
+  }
+
+  /// Busy: disabled, a spinner, the activity's label. Idle: the icon again.
+  private static func show(_ activity: BarItemActivity, on button: UIBarButtonItem, item: BarItem) {
+    button.isEnabled = !activity.isRunning
+    if activity.isRunning {
+      let spinner = UIActivityIndicatorView(style: .medium)
+      spinner.startAnimating()
+      spinner.accessibilityLabel = activity.label
+      button.customView = spinner
+      button.accessibilityLabel = activity.label
+    } else {
+      button.customView = nil
+      button.accessibilityLabel = item.accessibilityLabel
+    }
   }
 
   @available(*, unavailable)
@@ -159,31 +180,5 @@ open class ScreenController: UIViewController {
     let controller = UIHostingController(rootView: ThemedScreen(theme: theme, content: content))
     controller.view.backgroundColor = .clear
     return controller
-  }
-}
-
-public extension Theme {
-  /// A cell's SwiftUI content with this theme in its environment: what a
-  /// collection view that isn't a `ScreenController` uses. Creating hosting
-  /// configurations or controllers anywhere else is a layering error, so no
-  /// SwiftUI content can be drawn without the brand's theme (the
-  /// environment's default is SleepGuard's).
-  func hosting<Content: View>(@ViewBuilder _ content: () -> Content) -> UIHostingConfiguration<ThemedScreen<Content>, EmptyView> {
-    UIHostingConfiguration { ThemedScreen(theme: self, content: content()) }
-  }
-}
-
-/// A screen's content with the brand theme in its environment.
-public struct ThemedScreen<Content: View>: View {
-  let theme: Theme
-  let content: Content
-
-  public init(theme: Theme, content: Content) {
-    self.theme = theme
-    self.content = content
-  }
-
-  public var body: some View {
-    content.environment(\.theme, theme)
   }
 }

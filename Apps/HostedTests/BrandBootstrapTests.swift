@@ -21,6 +21,7 @@ struct BrandBootstrapTests {
       "sessionFileStore": { container.sessionFileStore() },
       "sleepStageSource": { container.sleepStageSource() },
       "deleteSession": { container.deleteSession() },
+      "deleteSessions": { container.deleteSessions() },
       "refreshStaleSummaries": { container.refreshStaleSummaries() },
       "loadSessionDetail": { container.loadSessionDetail() },
       "enrichNightWithStages": { container.enrichNightWithStages() },

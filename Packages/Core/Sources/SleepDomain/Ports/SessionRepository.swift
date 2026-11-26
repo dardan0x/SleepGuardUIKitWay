@@ -30,6 +30,11 @@ public protocol SessionRepository: Sendable {
   /// Removes the night and its events. Throws `SessionError.notFound`.
   func delete(id: Night.ID) async throws
 
+  /// Removes these nights and their events in one write: all of them, or
+  /// none (a failure, or an id that isn't there, which throws
+  /// `SessionError.notFound`).
+  func delete(ids: [Night.ID]) async throws
+
   /// Every summary, newest first: the current list, then the new list after
   /// each change. Ends when the caller stops iterating.
   func observeSummaries() async -> AsyncStream<[NightSummary]>

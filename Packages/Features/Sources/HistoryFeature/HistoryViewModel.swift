@@ -56,15 +56,14 @@ public final class HistoryViewModel {
     alert = nil
   }
 
-  /// Deletes every night of the confirmed day; the list updates itself from
-  /// the repository.
+  /// Deletes every night of the confirmed day in one write (all or none);
+  /// the list updates itself from the repository. A failure leaves the whole
+  /// day and says so.
   public func confirmDelete() async {
     guard case let .confirmDelete(day) = alert else { return }
     alert = nil
     do {
-      for night in day.nights {
-        try await dependencies.deleteNight(night.id)
-      }
+      try await dependencies.deleteNights(day.nights.map(\.id))
     } catch {
       if !Task.isCancelled { alert = .deleteFailed }
     }

@@ -21,3 +21,25 @@ public struct DeleteSession: Sendable {
     await files.removeFiles(named: clips)
   }
 }
+
+/// Deletes several nights at once (a day in History): every record in one
+/// write, then their clips. All or none: if the write fails, every night is
+/// still there with its clips.
+public struct DeleteSessions: Sendable {
+  private let sessions: any SessionRepository
+  private let files: any SessionFileStore
+
+  public init(sessions: any SessionRepository, files: any SessionFileStore) {
+    self.sessions = sessions
+    self.files = files
+  }
+
+  public func callAsFunction(_ ids: [Night.ID]) async throws {
+    var clips: [String] = []
+    for id in ids {
+      try await clips += sessions.session(id: id).events.compactMap(\.clipFileName)
+    }
+    try await sessions.delete(ids: ids)
+    await files.removeFiles(named: clips)
+  }
+}
