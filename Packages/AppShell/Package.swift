@@ -18,7 +18,7 @@ let package = Package(
     .package(path: "../Adapters"),
     .package(path: "../Presentation"),
     .package(path: "../Features"),
-    .package(url: "https://github.com/dardan0x/SleepGuardShared.git", exact: "0.34.0"),
+    .package(url: "https://github.com/dardan0x/SleepGuardShared.git", exact: "0.35.0"),
     .package(url: "https://github.com/hmlongco/Factory", exact: "3.5.2"),
   ],
   targets: [

@@ -16,8 +16,8 @@ Last updated: 2026-11-26
 | Backlog | 0 |
 | Blocked | 0 |
 | — | — |
-| Total Tasks | 82 |
-| Tasks Done | 81 |
+| Total Tasks | 83 |
+| Tasks Done | 82 |
 | Tasks In Progress | 1 |
 | Tasks Blocked | 0 |
 | Tasks Backlog | 0 |
@@ -41,7 +41,7 @@ Last updated: 2026-11-26
 | F9 | Showcase polish | P2 | In Progress (T4: screenshots after the UI polish) | 3/4 | ████████░░ 75% | [tracker](trackers/f9-showcase-polish.md) |
 | F11 | UIKit screen containers | P2 | Done | 1/1 | ██████████ 100% | [tracker](trackers/f11-uikit-screen-containers.md) |
 | F12 | View models and factories | P2 | Done | 1/1 | ██████████ 100% | [tracker](trackers/f12-view-models.md) |
-| F13 | Architecture review fixes | P0/P1 | Done | 18/18 | ██████████ 100% | [tracker](trackers/f13-architecture-review.md) |
+| F13 | Architecture review fixes | P0/P1 | Done | 19/19 | ██████████ 100% | [tracker](trackers/f13-architecture-review.md) |
 
 ## Currently Active
 
@@ -65,6 +65,7 @@ Last updated: 2026-11-26
 
 | Date | Task | Event | Notes |
 |------|------|-------|-------|
+| 2026-11-26 | F13-T19 | Completed | Shared 0.35.0: SleepAudioKit behind the audio ports. Branch `feature/f13/t19-shared-audio` |
 | 2026-11-26 | F13-T18 | Completed | Shared 0.34.0: logging, classifier, sample nights, storage layout, file stores, storage sweep and start notification are the shared ones. Branch `feature/f13/t18-shared-small-pieces` |
 | 2026-11-26 | F13-T17 | Completed | Shared 0.33.0: `AppPreferences` is SleepCore's `SleepPreferences`; the UserDefaults store wraps `PreferencesDefaults`, the same code as SleepGuard. Branch `feature/f13/t17-shared-preferences` |
 | 2026-11-26 | F13-T16 | Completed | Shared 0.32.0: HealthKit and the raw log are shared behaviour (`HealthKitSleep`, `RawLogFile`) wrapped by this app's adapters, as in SleepGuard. Branch `feature/f13/t16-shared-healthkit-rawlog` |

@@ -14,7 +14,7 @@ let package = Package(
   ],
   dependencies: [
     .package(path: "../Core"),
-    .package(url: "https://github.com/dardan0x/SleepGuardShared.git", exact: "0.34.0"),
+    .package(url: "https://github.com/dardan0x/SleepGuardShared.git", exact: "0.35.0"),
   ],
   targets: [
     // SwiftData, files, UserDefaults.
@@ -28,7 +28,7 @@ let package = Package(
         .product(name: "SleepSettings", package: "SleepGuardShared"),
       ],
       swiftSettings: [.swiftLanguageMode(.v6)]),
-    // AVFoundation, SoundAnalysis, Accelerate; the Snore Interrupter's sounds.
+    // The shared SleepAudioKit behind the audio ports; the Snore Interrupter's sounds.
     .target(
       name: "SleepAudio",
       dependencies: [
@@ -36,6 +36,7 @@ let package = Package(
         .product(name: "SleepCore", package: "SleepGuardShared"),
         .product(name: "SleepLogging", package: "SleepGuardShared"),
         .product(name: "SleepMelodies", package: "SleepGuardShared"),
+        .product(name: "SleepAudioKit", package: "SleepGuardShared"),
       ],
       swiftSettings: [.swiftLanguageMode(.v6)]),
     .testTarget(
