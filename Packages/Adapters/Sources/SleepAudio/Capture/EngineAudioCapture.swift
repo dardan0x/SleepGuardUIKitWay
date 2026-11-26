@@ -10,6 +10,11 @@ import SleepDomain
 ///   snoring isn't turned down, and the full band reaches the analysis.
 /// - **A new engine at every start.** An engine with a tap can't be restarted
 ///   reliably, and a new route can change the input format.
+/// - **Interruptions are reported.** A call stops the engine and sends
+///   `interrupted`; listening comes back when the interruption ends (with or
+///   without `.shouldResume`), after a media-services reset or a route
+///   change, and sends `resumed`. A resume that fails is logged and retried
+///   at the next of those events.
 ///
 /// Buffer work happens on the audio thread in `CaptureProcessor`.
 @MainActor
@@ -18,7 +23,7 @@ final class EngineAudioCapture: AudioCapture {
   private let processor = CaptureProcessor()
   private var engine: AVAudioEngine?
   private var format: AVAudioFormat?
-  private var continuation: AsyncStream<CaptureSample>.Continuation?
+  private var continuation: AsyncStream<CaptureEvent>.Continuation?
   private var clipURL: URL?
   /// The engine kept running during the start delay (no listening).
   private var warmEngine: AVAudioEngine?
@@ -27,6 +32,9 @@ final class EngineAudioCapture: AudioCapture {
   /// Paused for the Snore Interrupter's melody: nothing restarts the engine
   /// until `resume`.
   private var isPaused = false
+  /// The system took the microphone (`interrupted` was sent); cleared by the
+  /// resume that sends `resumed`.
+  private var isInterrupted = false
 
   init(clipsDirectory: URL) {
     self.clipsDirectory = clipsDirectory
@@ -64,13 +72,13 @@ final class EngineAudioCapture: AudioCapture {
     try? AVAudioSession.sharedInstance().setActive(false, options: .notifyOthersOnDeactivation)
   }
 
-  func start(rawAudioFileName: String?) throws -> AsyncStream<CaptureSample> {
+  func start(rawAudioFileName: String?) throws -> AsyncStream<CaptureEvent> {
     stop()
     stopWarmEngine()
     discardClip() // left open by the last night
     self.rawAudioFileName = rawAudioFileName
     try activateSession()
-    let (stream, continuation) = AsyncStream.makeStream(of: CaptureSample.self)
+    let (stream, continuation) = AsyncStream.makeStream(of: CaptureEvent.self)
     self.continuation = continuation
     do {
       try startEngine()
@@ -79,6 +87,7 @@ final class EngineAudioCapture: AudioCapture {
       throw error
     }
     observeSession()
+    Self.logThermalState()
     return stream
   }
 
@@ -131,6 +140,7 @@ final class EngineAudioCapture: AudioCapture {
   func stop() {
     guard isListening else { return }
     isPaused = false
+    isInterrupted = false
     // An open clip stays open for the final flush; it gets no more buffers.
     stopEngine()
     observers.forEach(NotificationCenter.default.removeObserver)
@@ -160,11 +170,11 @@ final class EngineAudioCapture: AudioCapture {
     let format = input.outputFormat(forBus: 0)
     guard format.channelCount > 0, format.sampleRate > 0 else { throw AudioCaptureError.invalidFormat }
 
-    processor.begin(format: format)
+    processor.begin(format: format, computesSpectrum: rawAudioFileName != nil)
     let processor = processor
     let continuation = continuation
     input.installTap(onBus: 0, bufferSize: AVAudioFrameCount(CaptureProcessor.transformSize), format: format) { @Sendable buffer, _ in
-      continuation?.yield(processor.process(buffer, at: Date()))
+      continuation?.yield(.sample(processor.process(buffer, at: Date())))
     }
     do {
       try engine.start()
@@ -220,9 +230,30 @@ final class EngineAudioCapture: AudioCapture {
       try activateSession()
       try startEngine()
       Log.audio.info("Listening resumed")
+      if isInterrupted {
+        isInterrupted = false
+        continuation?.yield(.resumed(at: Date()))
+      }
     } catch {
       Log.audio.error("Couldn't resume listening: \(error.localizedDescription, privacy: .public)")
     }
+  }
+
+  /// The system took the microphone: stop, and say so once.
+  private func interruptionBegan() {
+    let wasListening = isRunning
+    stopEngine()
+    guard isListening, !isPaused, wasListening, !isInterrupted else { return }
+    isInterrupted = true
+    Log.audio.notice("Listening interrupted")
+    continuation?.yield(.interrupted(at: Date()))
+  }
+
+  /// Logged at the start and on every change: a hot phone throttles, and a
+  /// night's log should show it. Nothing changes behaviour on it (yet).
+  private nonisolated static func logThermalState() {
+    let state = ProcessInfo.processInfo.thermalState
+    Log.audio.notice("Thermal state: \(String(describing: state.rawValue), privacy: .public)")
   }
 
   // MARK: - Session events
@@ -235,11 +266,21 @@ final class EngineAudioCapture: AudioCapture {
         let options = AVAudioSession.InterruptionOptions(rawValue: note.userInfo?[AVAudioSessionInterruptionOptionKey] as? UInt ?? 0)
         MainActor.assumeIsolated {
           if began {
-            self?.stopEngine()
-          } else if options.contains(.shouldResume) {
+            self?.interruptionBegan()
+          } else {
+            // Tried even without `.shouldResume`: a recording app has no
+            // reason to wait for the person, and a failure is retried at the
+            // next route, configuration or media-services event.
+            if !options.contains(.shouldResume) { Log.audio.notice("Interruption ended without shouldResume; resuming") }
             self?.resumeIfNeeded()
           }
         }
+      },
+      center.addObserver(forName: AVAudioSession.mediaServicesWereResetNotification, object: nil, queue: .main) { [weak self] _ in
+        MainActor.assumeIsolated { self?.resumeIfNeeded() }
+      },
+      center.addObserver(forName: ProcessInfo.thermalStateDidChangeNotification, object: nil, queue: .main) { _ in
+        Self.logThermalState()
       },
       // The engine stops itself when its hardware configuration changes.
       center.addObserver(forName: .AVAudioEngineConfigurationChange, object: nil, queue: .main) { [weak self] _ in

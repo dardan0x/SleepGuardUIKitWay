@@ -30,8 +30,8 @@ Fixes this app's verdicts from the principal-level architecture review of the th
 | F13-T2 | Stored scores carry their version; refresh at launch (Q9) | Bug / Data | Done | T1 | SleepDomain, SleepPersistence, AppShell |
 | F13-T3 | Detail load is read-only; narrow stage writes (Q34, Q37) | Refactor | Done | T2 | SleepDomain, SleepPersistence, SessionDetailFeature |
 | F13-T4 | Observation follows the store (Q37) | Bug | Done | T3 | SleepPersistence |
-| F13-T5 | "We couldn't open your data" + shared 0.31.0 (Q55) | Data safety | Backlog | T4 | shared, AppShell |
-| F13-T6 | Same samples as SleepGuard; interruptions; FFT; thermal (Q14, Q17) | Detection | Backlog | T1 | SleepDomain, SleepAudio |
+| F13-T5 | "We couldn't open your data" + shared 0.31.0 (Q55) | Data safety | In Progress (waits for the 0.31.0 tag) | T4 | shared, AppShell |
+| F13-T6 | Same samples as SleepGuard; interruptions; FFT; thermal (Q14, Q17) | Detection | Done | T1 | SleepDomain, SleepAudio |
 | F13-T7 | Writes leave the sample path (Q13, Q39) | Performance | Backlog | T6 | SleepDomain |
 | F13-T8 | Typed composition (Q47, Q48) | Architecture | Backlog | T5 | AppShell, Apps |
 | F13-T9 | Navigator races (Q45) | Bug | Backlog | — | ScreenKit, AppShell |
@@ -119,3 +119,34 @@ Fixes this app's verdicts from the principal-level architecture review of the th
 **Notes:**
 - **Scope changed from the plan, on evidence:** the plan said to observe other contexts' saves. There are none: the container makes one store (singleton) and nothing else opens the database (no widget, extension or sync). Observing `ModelContext.didSave` would be code for a writer that doesn't exist, and awkward under Swift 6 (contexts aren't Sendable). The store's doc now says a second writer needs persistent-history observation first.
 - Branch `feature/f13/t4-store-observation`
+
+### F13-T5 — "We couldn't open your data" + shared 0.31.0
+
+| Field | Value |
+|-------|-------|
+| Status | In Progress (waits for the owner's 0.31.0 tag) |
+| Started | 2026-11-26 |
+
+**Done so far:** shared branch `f13-store-unavailable-content` (pushed): `StoreUnavailableContent`, export-failed and day-delete-failed strings, `Night.minimumSaveDuration` removed; shared tests pass. Here, on `feature/f13/t5-store-unavailable` (pushed, not merged): `StoreOpening` (repository + whether the file opened), `AppCoordinator` shows only `StoreUnavailableViewController` when it didn't (no recovery, recording or seeding). Tested against the local shared checkout: corrupt-file test (file kept byte for byte), coordinator test; simulator: a corrupt store shows the screen and keeps the file; the real store was restored (14 nights). **Left:** bump to 0.31.0, all lanes on the release, merge.
+
+### F13-T6 — Same samples as SleepGuard; interruptions; FFT; thermal
+
+| Field | Value |
+|-------|-------|
+| Status | Done |
+| Started | 2026-11-26 |
+| Completed | 2026-11-26 |
+
+**Acceptance Criteria:**
+- [x] `RecordingSession` decimates readings to 20 Hz with SleepCore's `SampleDecimator` (43 Hz and 47 Hz input give the same events, about 600 samples per 30 s)
+- [x] The capture stream carries `CaptureEvent` (`sample`, `interrupted`, `resumed`); the session sends `captureDidPause` / `captureDidResume` and restarts the grid (a call mid-event ends the event and leaves a 60 s `.interruption` gap; mutation-checked)
+- [x] The adapter reports interruptions, resumes when one ends with or without `.shouldResume`, and after a media-services reset
+- [x] The FFT runs only with the raw recording; thermal state logged at start and on change
+- [x] README's parity sentence is accurate
+
+**Notes:**
+- No `didBecomeActive` retry: SleepAudio doesn't import UIKit (layering). A failed resume is logged and retried at the next route, configuration or media-services event. The device night should show whether that is enough.
+- Raw log and snapshots now run at 20 Hz; `rawLogBatch` 40 → 20 (one second).
+- `docs/ARCHITECTURE.md`'s capture section is left for T15: the file has the owner's uncommitted edits.
+- Simulator raw-log spacing check skipped: the decimator tests prove the spacing; the device night (owner) covers the microphone.
+- Branch `feature/f13/t6-capture-parity`

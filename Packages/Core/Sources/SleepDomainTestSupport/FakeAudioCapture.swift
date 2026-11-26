@@ -29,7 +29,7 @@ public final class FakeAudioCapture: AudioCapture {
   public var startError: AudioCaptureError?
   /// When false, `compressClip` fails and returns the raw name.
   public var compresses = true
-  private var continuation: AsyncStream<CaptureSample>.Continuation?
+  private var continuation: AsyncStream<CaptureEvent>.Continuation?
   private var openClip: UUID?
 
   public init() {}
@@ -46,18 +46,28 @@ public final class FakeAudioCapture: AudioCapture {
     calls.append(.coolDown)
   }
 
-  public func start(rawAudioFileName: String?) throws -> AsyncStream<CaptureSample> {
+  public func start(rawAudioFileName: String?) throws -> AsyncStream<CaptureEvent> {
     calls.append(.start)
     self.rawAudioFileName = rawAudioFileName
     if let startError { throw startError }
-    let (stream, continuation) = AsyncStream.makeStream(of: CaptureSample.self)
+    let (stream, continuation) = AsyncStream.makeStream(of: CaptureEvent.self)
     self.continuation = continuation
     return stream
   }
 
   /// Delivers a sample to the stream `start` returned.
   public func send(_ sample: CaptureSample) {
-    continuation?.yield(sample)
+    continuation?.yield(.sample(sample))
+  }
+
+  /// The system takes the microphone (a call) at `time`.
+  public func interrupt(at time: Date) {
+    continuation?.yield(.interrupted(at: time))
+  }
+
+  /// The microphone is back at `time`.
+  public func resumeAfterInterruption(at time: Date) {
+    continuation?.yield(.resumed(at: time))
   }
 
   public func startClip(id: UUID) throws {

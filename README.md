@@ -4,7 +4,7 @@
 
 Under the hood it's built the way a large UIKit team would build it: **UIKit screens and coordinators**, with the shared **SwiftUI** views as their cells and pages, on a **hexagonal core**, and **four white-label apps** ship from one codebase.
 
-**One product, two architectures.** This is the UIKit-first sibling of [SleepGuard](https://github.com/dardan0x/SleepGuard), the same app built in pure SwiftUI. Both build against [SleepGuardShared](https://github.com/dardan0x/SleepGuardShared), which holds the domain rules, strings, design system and screen layouts. A night recorded here yields the same events, score and screens as in SleepGuard. Navigation, dependency injection, persistence boundaries, project generation and white-labelling are built differently, on purpose.
+**One product, two architectures.** This is the UIKit-first sibling of [SleepGuard](https://github.com/dardan0x/SleepGuard), the same app built in pure SwiftUI. Both build against [SleepGuardShared](https://github.com/dardan0x/SleepGuardShared), which holds the domain rules, strings, design system and screen layouts. Detection runs on the same 20 Hz samples in both apps, and a call is left out of the score in both, so the same sound yields the same events, score and screens as in SleepGuard. Navigation, dependency injection, persistence boundaries, project generation and white-labelling are built differently, on purpose.
 
 ![Platform](https://img.shields.io/badge/platform-iOS%2017%2B-blue)
 ![Language](https://img.shields.io/badge/Swift-6.2%20%C2%B7%20strict%20concurrency-orange)

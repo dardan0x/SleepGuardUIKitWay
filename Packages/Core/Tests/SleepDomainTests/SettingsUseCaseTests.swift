@@ -140,15 +140,16 @@ struct RawRecordingTests {
       rawLog: log, start: Sample.start)
     _ = try await session.start()
     for tick in 1...50 {
-      await session.receive(Harness.sample(at: Double(tick) * 0.05, db: -40, snore: 0, speech: 0))
+      await session.receive(.sample(Harness.sample(at: Double(tick) * 0.05, db: -40, snore: 0, speech: 0)))
     }
     let draft = await session.stop(at: Sample.at(3))
 
     #expect(capture.rawAudioFileName == RawRecording.audioFileName(for: draft.id))
     #expect(await log.night == draft.id)
     #expect(await log.metadata?.detectionSensitivity == "high")
-    #expect(await log.samples.count == 50)
-    #expect(await abs((log.samples.first?.elapsed ?? 0) - 0.05) < 0.001)
+    #expect(await log.samples.count == draft.sampleCount) // every 20 Hz sample
+    #expect(draft.sampleCount >= 48)
+    #expect(await abs((log.samples.first?.elapsed ?? 0) - 0.10) < 0.001) // one window after the first reading
     #expect(await log.finished)
   }
 
