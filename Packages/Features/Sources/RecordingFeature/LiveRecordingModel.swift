@@ -26,16 +26,20 @@ public final class LiveRecordingModel {
   public private(set) var interrupterMuted = false
   private let session: RecordingSession
   private let interrupter: SnoreInterrupter?
+  /// When a stopped night is long enough to save.
+  public let saveRules: SaveRules
 
   public init(
     capture: any AudioCapture,
     settings: RecordingSession.Settings = .init(),
+    saveRules: SaveRules = .standard,
     checkpoints: (any RecordingCheckpointStore)? = nil,
     rawLog: (any RawLogWriter)? = nil,
     interrupter: SnoreInterrupter? = nil,
     start: Date = Date())
   {
     self.start = start
+    self.saveRules = saveRules
     self.interrupter = interrupter
     session = RecordingSession(
       capture: capture, settings: settings, checkpoints: checkpoints, rawLog: rawLog, interrupter: interrupter,
@@ -91,10 +95,9 @@ public final class LiveRecordingModel {
     }
   }
 
-  /// Stopping now would leave a night too short to save
-  /// (`Night.minimumSaveDuration`).
+  /// Stopping now would leave a night too short to save (`saveRules`).
   public func isTooShort(at now: Date) -> Bool {
-    now.timeIntervalSince(start) < Night.minimumSaveDuration
+    !saveRules.isLongEnough(now.timeIntervalSince(start))
   }
 
   /// Stops listening, finalizes the night and returns it, clips compressed.

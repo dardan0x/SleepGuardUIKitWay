@@ -1,5 +1,6 @@
 import FactoryKit
 import SleepAudio
+import SleepCore
 import SleepDomain
 import SleepGuardDesignKit
 import SleepPersistence
@@ -63,11 +64,25 @@ extension Container {
     self { SleepPersistence.makeCheckpointStore(url: self.storageLocation().checkpointURL) }.singleton
   }
 
+  /// When a stopped night is long enough to save. The shipped rule is 30
+  /// minutes; Debug builds take 2 so a night can be tried at a desk. The
+  /// choice is this app's (SleepCore's `SaveRules`), not the shared
+  /// package's build configuration.
+  var saveRules: Factory<SaveRules> {
+    self {
+      #if DEBUG
+      SaveRules(minimumDuration: 120)
+      #else
+      .standard
+      #endif
+    }
+  }
+
   var commitSession: Factory<CommitSession> {
     self {
       CommitSession(
         sessions: self.sessionRepository(), checkpoints: self.checkpointStore(), health: self.healthAccess(),
-        preferences: self.preferencesStore())
+        preferences: self.preferencesStore(), saveRules: self.saveRules())
     }
   }
 
@@ -92,7 +107,11 @@ extension Container {
   }
 
   var shouldAskForProfile: Factory<ShouldAskForProfile> {
-    self { ShouldAskForProfile(nights: self.sessionRepository(), profiles: self.profileStore(), preferences: self.preferencesStore()) }
+    self {
+      ShouldAskForProfile(
+        nights: self.sessionRepository(), profiles: self.profileStore(), preferences: self.preferencesStore(),
+        saveRules: self.saveRules())
+    }
   }
 
   /// The brand's Apple Health, or `nil` (Lite doesn't link HealthKit).

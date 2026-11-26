@@ -39,7 +39,7 @@ struct NightDetailItems: Equatable {
     rows = EventListRow.rows(for: night, filter: filter)
     stages = SleepStageBreakdown(segments: night.sleepStages)
     var banners: [Item] = []
-    if !night.recordingGaps.isEmpty { banners.append(.gapsBanner) }
+    if night.melodyGapsDuration > 0 { banners.append(.gapsBanner) }
     if night.endReason == .lowBattery { banners.append(.batteryBanner) }
     var events: [Item] = [.eventsTitle]
     events += rows.prefix(Self.visibleRows).map { .event($0.id) }

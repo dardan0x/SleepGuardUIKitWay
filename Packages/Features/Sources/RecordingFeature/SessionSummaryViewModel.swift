@@ -2,8 +2,8 @@ import Foundation
 import Observation
 import SleepCore
 
-/// The night just recorded: its summary, then Save or Discard. A night under
-/// `Night.minimumSaveDuration` can't be saved, as in SleepGuard.
+/// The night just recorded: its summary, then Save or Discard. A night
+/// shorter than the `SaveRules` minimum can't be saved, as in SleepGuard.
 @MainActor
 @Observable
 public final class SessionSummaryViewModel {
@@ -14,16 +14,23 @@ public final class SessionSummaryViewModel {
   public let night: Night
   public let summary: NightSummary
   public private(set) var alert: Alert?
+  public let saveRules: SaveRules
   let routes: SessionSummaryRoutes
 
-  public init(night: Night, scoreConfig: SleepScoreConfig = .default, routes: SessionSummaryRoutes) {
+  public init(
+    night: Night,
+    scoreConfig: SleepScoreConfig = .default,
+    saveRules: SaveRules = .standard,
+    routes: SessionSummaryRoutes)
+  {
     self.night = night
+    self.saveRules = saveRules
     summary = night.summary(using: scoreConfig)
     self.routes = routes
   }
 
   public func save() {
-    guard night.duration >= Night.minimumSaveDuration else {
+    guard saveRules.isLongEnough(night.duration) else {
       alert = .tooShort
       return
     }
