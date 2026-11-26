@@ -38,7 +38,7 @@ struct SwiftDataSessionStoreTests {
   @Test func savedNightComesBackEqual() async throws {
     let (store, _) = try makeStore()
     let session = night(events: [event(at: 0, clip: "a.m4a"), event(at: 600, category: .sleepTalking)])
-    try await store.save(session, summary: session.summary())
+    try await store.save(session, summary: session.summary(), scoreVersion: "v")
     #expect(try await store.session(id: session.id) == session)
   }
 
@@ -47,18 +47,18 @@ struct SwiftDataSessionStoreTests {
     let late = event(at: 7200)
     let early = event(at: 0)
     let session = night(events: [late, early])
-    try await store.save(session, summary: session.summary())
+    try await store.save(session, summary: session.summary(), scoreVersion: "v")
     #expect(try await store.session(id: session.id).events.map(\.id) == [early.id, late.id])
   }
 
   @Test func savingAgainReplacesTheNightAndItsEvents() async throws {
     let (store, container) = try makeStore()
     var session = night(events: [event(at: 0), event(at: 600), event(at: 1200)])
-    try await store.save(session, summary: session.summary())
+    try await store.save(session, summary: session.summary(), scoreVersion: "v")
 
     session.events = [event(at: 3600)]
     session.sleepStages = []
-    try await store.save(session, summary: session.summary())
+    try await store.save(session, summary: session.summary(), scoreVersion: "v")
 
     #expect(try await store.session(id: session.id) == session)
     #expect(try eventRecordCount(container) == 1) // the three old events are gone
@@ -67,7 +67,7 @@ struct SwiftDataSessionStoreTests {
   @Test func deleteRemovesTheNightAndItsEvents() async throws {
     let (store, container) = try makeStore()
     let session = night(events: [event(at: 0), event(at: 600)])
-    try await store.save(session, summary: session.summary())
+    try await store.save(session, summary: session.summary(), scoreVersion: "v")
 
     try await store.delete(id: session.id)
 
@@ -86,14 +86,14 @@ struct SwiftDataSessionStoreTests {
   @Test func observeSummariesYieldsCurrentThenChanges() async throws {
     let (store, _) = try makeStore()
     let older = night(events: [event(at: 0)])
-    try await store.save(older, summary: older.summary())
+    try await store.save(older, summary: older.summary(), scoreVersion: "v")
     var updates = await store.observeSummaries().makeAsyncIterator()
 
     #expect(await updates.next() == [older.summary()])
     #expect(older.summary().loudestIntensity != nil) // the stored summary keeps it
 
     let newer = night(startOffset: 86400)
-    try await store.save(newer, summary: newer.summary())
+    try await store.save(newer, summary: newer.summary(), scoreVersion: "v")
     #expect(await updates.next()?.map(\.id) == [newer.id, older.id])
 
     try await store.delete(id: older.id)
@@ -107,7 +107,7 @@ struct SwiftDataSessionStoreTests {
     let url = directory.appendingPathComponent("nights.store")
     let session = night(events: [event(at: 0, clip: "a.m4a")])
 
-    try await SleepPersistence.makeSessionRepository(storeURL: url).save(session, summary: session.summary())
+    try await SleepPersistence.makeSessionRepository(storeURL: url).save(session, summary: session.summary(), scoreVersion: "v")
     let reopened = try SleepPersistence.makeSessionRepository(storeURL: url)
 
     #expect(try await reopened.session(id: session.id) == session)
@@ -117,7 +117,7 @@ struct SwiftDataSessionStoreTests {
   @Test func unknownStoredValuesReadAsDefaults() async throws {
     let (store, container) = try makeStore()
     let session = night(events: [event(at: 0)])
-    try await store.save(session, summary: session.summary())
+    try await store.save(session, summary: session.summary(), scoreVersion: "v")
 
     let context = ModelContext(container)
     let record = try #require(try context.fetch(FetchDescriptor<EventRecord>()).first)
@@ -164,5 +164,43 @@ struct FileSessionStoreTests {
     #expect(store.url(forFileNamed: "missing.m4a") == nil)
     #expect(store.url(forFileNamed: "../keep.txt") == nil)
     #expect(store.url(forFileNamed: "") == nil)
+  }
+}
+
+/// Score versions (F13-T2).
+extension SwiftDataSessionStoreTests {
+  @Test func nightsFromAnotherScoreVersionAreStale() async throws {
+    let (store, _) = try makeStore()
+    let current = night()
+    let old = night(startOffset: -86400)
+    let unversioned = night(startOffset: -2 * 86400)
+    try await store.save(current, summary: current.summary(), scoreVersion: "2-a")
+    try await store.save(old, summary: old.summary(), scoreVersion: "1-a")
+    try await store.save(unversioned, summary: unversioned.summary(), scoreVersion: "")
+
+    #expect(try await store.staleNightIDs(currentVersion: "2-a") == [unversioned.id, old.id]) // oldest first
+  }
+
+  @Test func updatingSummariesKeepsEventsAndStampsTheVersion() async throws {
+    let (store, container) = try makeStore()
+    let session = night(events: [event(at: 0, clip: "a.m4a")])
+    try await store.save(session, summary: session.summary(), scoreVersion: "1-a")
+    let eventID = try ModelContext(container).fetch(FetchDescriptor<EventRecord>()).first?.persistentModelID
+    var newer = session.summary()
+    newer = NightSummary(
+      id: newer.id, start: newer.start, end: newer.end, score: 42, snoringDuration: newer.snoringDuration,
+      eventCount: newer.eventCount, loudestIntensity: newer.loudestIntensity)
+
+    try await store.updateSummaries([newer, night(startOffset: 86400).summary()], scoreVersion: "2-a") // second is unknown
+
+    var summaries: [NightSummary] = []
+    for await current in await store.observeSummaries() {
+      summaries = current
+      break
+    }
+    #expect(summaries.map(\.score) == [42])
+    #expect(try await store.staleNightIDs(currentVersion: "2-a").isEmpty)
+    #expect(try await store.session(id: session.id) == session)
+    #expect(try ModelContext(container).fetch(FetchDescriptor<EventRecord>()).first?.persistentModelID == eventID)
   }
 }

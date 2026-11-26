@@ -28,6 +28,9 @@ final class SessionRecord {
   var eventCount = 0
   /// `SnoreIntensity` raw value; `nil` for a night without events.
   var loudestIntensity: String?
+  /// `SleepScore.cacheVersion(for:)` of the formula and config that made the
+  /// summary. "" (every night stored before versions were) reads as stale.
+  var scoreVersion = ""
 
   @Relationship(deleteRule: .cascade, inverse: \EventRecord.session)
   var events: [EventRecord] = []

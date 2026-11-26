@@ -27,7 +27,7 @@ Fixes this app's verdicts from the principal-level architecture review of the th
 | ID | Task | Type | Status | Depends On | Where |
 |----|------|------|--------|------------|-------|
 | F13-T1 | Adopt shared 0.30.0 and `SaveRules` | Dependency | Done | — | all packages, AppShell |
-| F13-T2 | Stored scores carry their version; refresh at launch (Q9) | Bug / Data | Backlog | T1 | SleepDomain, SleepPersistence, AppShell |
+| F13-T2 | Stored scores carry their version; refresh at launch (Q9) | Bug / Data | Done | T1 | SleepDomain, SleepPersistence, AppShell |
 | F13-T3 | Detail load is read-only; narrow stage writes (Q34, Q37) | Refactor | Backlog | T2 | SleepDomain, SleepPersistence, SessionDetailFeature |
 | F13-T4 | Observation follows the store (Q37) | Bug | Backlog | T3 | SleepPersistence |
 | F13-T5 | "We couldn't open your data" + shared 0.31.0 (Q55) | Data safety | Backlog | T4 | shared, AppShell |
@@ -63,3 +63,23 @@ Fixes this app's verdicts from the principal-level architecture review of the th
 - Verified on the release (`TUIST_SHARED_RELEASE=1`): all four brands build; Core 65, Adapters 18, Presentation 18, Features 6, AppShell 70, hosted 9 × 4 pass; layering, view size and strings checks pass.
 - SwiftFormat 0.55.5 flags three files this task didn't touch (`FileMelodyStoreTests`, `AVMelodyRecorder`, `SnoreInterrupter`), already on `main`; left alone.
 - Branch `feature/f13/t1-shared-0-30-save-rules`
+
+### F13-T2 — Stored scores carry their version; refresh at launch
+
+| Field | Value |
+|-------|-------|
+| Status | Done |
+| Started | 2026-11-26 |
+| Completed | 2026-11-26 |
+
+**Acceptance Criteria:**
+- [x] Every saved summary stores `SleepScore.cacheVersion(for:)`; nights stored before read as stale (`scoreVersion = ""`, additive)
+- [x] `RefreshStaleSummaries` recomputes stale summaries at launch, in batches, writing summary columns only
+- [x] It runs before the morning briefing reads scores
+- [x] Tests: use case (fake), adapter (stale query, events untouched), and a pre-change store opens
+
+**Notes:**
+- Port: `save(_:summary:scoreVersion:)`, `staleNightIDs(currentVersion:)` (reads id, start, version only), `updateSummaries(_:scoreVersion:)` (one save and one list update per batch of 20; a night deleted meanwhile is skipped).
+- A night that fails to load stays stale and is retried at the next launch. A refresh failure is logged and doesn't block the storage limits.
+- Checked on the simulator: a store from 2026-11-18 (14 nights, no version column) opened after the change with every night intact, and all 14 came out stamped `2-…` (scores 70–100).
+- Branch `feature/f13/t2-score-version`

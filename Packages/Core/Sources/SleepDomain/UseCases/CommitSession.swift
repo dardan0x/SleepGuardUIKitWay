@@ -42,7 +42,7 @@ public struct CommitSession: Sendable {
   public func callAsFunction(_ night: Night) async throws {
     guard saveRules.isLongEnough(night.duration) else { throw Failure.tooShort }
     let summary = night.summary(using: scoreConfig)
-    try await sessions.save(night, summary: summary)
+    try await sessions.save(night, summary: summary, scoreVersion: SleepScore.cacheVersion(for: scoreConfig))
     await checkpoints.clear()
     if let health, await preferences?.load().syncToHealth == true {
       await health.save(night, summary: summary)

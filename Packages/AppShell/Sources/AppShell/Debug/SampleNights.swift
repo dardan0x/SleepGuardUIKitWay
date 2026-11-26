@@ -51,7 +51,8 @@ enum SampleNights {
       }
     }.value
     for session in nights {
-      try await repository.save(session, summary: session.summary())
+      try await repository.save(
+        session, summary: session.summary(), scoreVersion: SleepScore.cacheVersion(for: .default))
     }
   }
 

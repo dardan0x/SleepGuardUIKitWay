@@ -15,6 +15,7 @@ struct CommitSessionTests {
     #expect(await repository.savedIDs == [night.id])
     #expect(await repository.sessions[night.id] == night)
     #expect(await repository.summaries[night.id] == night.summary())
+    #expect(await repository.scoreVersions[night.id] == SleepScore.cacheVersion(for: .default))
     #expect(await checkpoints.night == nil)
   }
 

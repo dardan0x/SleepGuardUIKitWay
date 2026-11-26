@@ -15,14 +15,32 @@ import SwiftData
 actor SwiftDataSessionStore: SessionRepository {
   private var observers: [UUID: AsyncStream<[NightSummary]>.Continuation] = [:]
 
-  func save(_ session: Night, summary: NightSummary) async throws {
+  func save(_ session: Night, summary: NightSummary, scoreVersion: String) async throws {
     let record = try record(id: session.id) ?? {
       let record = SessionRecord(id: session.id)
       modelContext.insert(record)
       return record
     }()
     record.update(from: session, summary: summary)
+    record.scoreVersion = scoreVersion
     replaceEvents(of: record, with: session.events)
+    try modelContext.save()
+    try publish()
+  }
+
+  func staleNightIDs(currentVersion: String) async throws -> [Night.ID] {
+    var descriptor = FetchDescriptor<SessionRecord>(
+      predicate: #Predicate { $0.scoreVersion != currentVersion }, sortBy: [SortDescriptor(\.start)])
+    descriptor.propertiesToFetch = [\.id, \.start, \.scoreVersion]
+    return try modelContext.fetch(descriptor).map(\.id)
+  }
+
+  func updateSummaries(_ summaries: [NightSummary], scoreVersion: String) async throws {
+    for summary in summaries {
+      guard let record = try record(id: summary.id) else { continue }
+      record.update(from: summary)
+      record.scoreVersion = scoreVersion
+    }
     try modelContext.save()
     try publish()
   }

@@ -26,6 +26,7 @@ public final class AppCoordinator {
   /// Resolved at launch, used once the tabs are up.
   private let recoverInterruptedSession: RecoverInterruptedSession
   private let enforceStorageLimits: EnforceStorageLimits
+  private let refreshStaleSummaries: RefreshStaleSummaries
   private let loadMorningBriefing: LoadMorningBriefing
   private let preferences: any PreferencesStore
   private let lifestyleLogs: any LifestyleLogStore
@@ -34,6 +35,7 @@ public final class AppCoordinator {
     self.container = container
     recoverInterruptedSession = container.recoverInterruptedSession()
     enforceStorageLimits = container.enforceStorageLimits()
+    refreshStaleSummaries = container.refreshStaleSummaries()
     loadMorningBriefing = container.loadMorningBriefing()
     preferences = container.preferencesStore()
     lifestyleLogs = container.lifestyleLogStore()
@@ -121,15 +123,24 @@ public final class AppCoordinator {
 
   /// A night interrupted by a crash, a kill or a dead battery comes back as
   /// its summary, for Save or Discard (SleepGuard does the same at launch).
-  /// Then the storage limits, as SleepGuard runs them at launch. An offered
-  /// night keeps its checkpoint until saved or discarded, so its files stay.
+  /// Then stored scores made by an older formula are recomputed (before the
+  /// briefing, which waits for this task, reads them), and the storage limits
+  /// run, as SleepGuard does at launch. An offered night keeps its checkpoint
+  /// until saved or discarded, so its files stay.
   private func offerInterruptedNight() {
     let recover = recoverInterruptedSession
+    let refreshScores = refreshStaleSummaries
     let enforceLimits = enforceStorageLimits
     recovery = Task { [weak self] in
       if let night = await recover() {
         Log.app.notice("Offering a night interrupted before it was saved")
         self?.presentRecording { $0.start(recovering: night) }
+      }
+      do {
+        let refreshed = try await refreshScores()
+        if refreshed > 0 { Log.storage.notice("Recomputed \(refreshed, privacy: .public) stale scores") }
+      } catch {
+        Log.storage.error("Score refresh failed at launch: \(error.localizedDescription, privacy: .public)")
       }
       do {
         try await enforceLimits()
