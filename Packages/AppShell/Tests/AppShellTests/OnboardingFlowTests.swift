@@ -98,6 +98,19 @@ struct FirstLaunchTests {
     #expect(app.recovery == nil)
   }
 
+  /// The nights database didn't open: that screen only, nothing behind it.
+  @Test func anUnavailableStoreShowsOnlyItsScreen() async {
+    let container = Container.test()
+    container.storeOpening.register { StoreOpening(repository: FakeSessionRepository(), isAvailable: false) }
+    let app = AppCoordinator(container: container)
+    let window = UIWindow()
+    app.start(in: window)
+    await app.launch?.value
+    #expect(window.rootViewController is StoreUnavailableViewController)
+    #expect(app.storeUnavailable)
+    #expect(app.launch == nil && app.mainTabs == nil && app.onboarding == nil && app.recovery == nil)
+  }
+
   @Test func laterLaunchesShowTheTabs() async {
     let (app, _) = app(onboarded: true)
     app.start(in: UIWindow())

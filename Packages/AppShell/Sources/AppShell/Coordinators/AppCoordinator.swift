@@ -1,4 +1,5 @@
 import BriefingFeature
+import OnboardingFeature
 import FactoryKit
 import ScreenKit
 import SleepAudio
@@ -23,6 +24,8 @@ public final class AppCoordinator {
   private(set) var recovery: Task<Void, Never>?
   /// The morning briefing, after the tabs (and any recovered night); awaited by tests.
   private(set) var briefing: Task<Void, Never>?
+  /// The nights database didn't open; only the store-unavailable screen shows.
+  private(set) var storeUnavailable = false
   /// Resolved at launch, used once the tabs are up.
   private let recoverInterruptedSession: RecoverInterruptedSession
   private let enforceStorageLimits: EnforceStorageLimits
@@ -56,6 +59,10 @@ public final class AppCoordinator {
     window.rootViewController = placeholder
     window.tintColor = UIColor(container.theme().palette.accent)
     window.makeKeyAndVisible()
+    guard container.storeOpening().isAvailable else {
+      showStoreUnavailable()
+      return
+    }
     let preferences = container.preferencesStore()
     launch = Task { [weak self] in
       let completed = await preferences.load().hasCompletedOnboarding
@@ -65,6 +72,18 @@ public final class AppCoordinator {
         self?.showOnboarding()
       }
     }
+  }
+
+  /// The nights database didn't open: this screen only, so no recovery, no
+  /// recording and no sample nights reach the in-memory fallback.
+  private func showStoreUnavailable() {
+    let device = container.deviceServices()
+    let update = container.brand().configuration.appStoreID
+      .flatMap { URL(string: "https://apps.apple.com/app/id\($0)") }
+      .map { url in { @MainActor in device.openURL(url) } }
+    window?.rootViewController = StoreUnavailableViewController(
+      viewModel: StoreUnavailableViewModel(update: update), theme: container.theme())
+    storeUnavailable = true
   }
 
   private func showOnboarding() {
