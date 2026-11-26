@@ -45,14 +45,24 @@ struct CaptureTests {
   /// SleepCore's score on this transform: snore-band tones high, a whistle low.
   @Test func aSnoreBandToneScoresHighAndAHighToneLow() throws {
     let processor = CaptureProcessor()
+    try processor.begin(format: tone(hz: 200).format, computesSpectrum: true)
+    defer { processor.end() }
     #expect(try processor.process(tone(hz: 200), at: .now).spectralScore > 0.9)
     #expect(try processor.process(tone(hz: 3000), at: .now).spectralScore < 0.1)
+  }
+
+  /// The FFT runs only when its score is logged (F13-T6).
+  @Test func withoutTheRawLogTheSpectrumIsSkipped() throws {
+    let processor = CaptureProcessor()
+    try processor.begin(format: tone(hz: 200).format, computesSpectrum: false)
+    defer { processor.end() }
+    #expect(try processor.process(tone(hz: 200), at: .now).spectralScore == 0)
   }
 
   @Test func confidencesStartAtZeroWithTheClassifierAttached() throws {
     let processor = CaptureProcessor()
     let buffer = try tone(hz: 200, frames: 4410)
-    processor.begin(format: buffer.format)
+    processor.begin(format: buffer.format, computesSpectrum: true)
     defer { processor.end() }
     let sample = processor.process(buffer, at: .now)
     #expect(sample.snoreConfidence == 0)

@@ -3,7 +3,14 @@ import SleepCore
 
 /// One night of recording: microphone samples in, a `RecordingDraft` out.
 ///
-/// Each capture sample is classified (SleepCore's `SnoreClassifier` preset
+/// The capture delivers one reading per buffer (about 43–47 Hz). SleepCore's
+/// `SampleDecimator` turns them into the fixed 20 Hz samples detection runs on
+/// in SleepGuard too, on a time grid, so both apps feed the same samples for
+/// the same sound. An interruption (a call) goes into the engine as
+/// `captureDidPause` / `captureDidResume`, so the time without a microphone
+/// becomes an interruption gap the score leaves out, not quiet sleep.
+///
+/// Each 20 Hz sample is classified (SleepCore's `SnoreClassifier` preset
 /// and `SpeechClassifier`) and sent, timestamped, into the shared
 /// `DetectionEngine`'s one ordered stream (ADR 0003, as in SleepGuard). The
 /// engine runs the detection state machine on its own actor and hands each
@@ -35,8 +42,8 @@ public actor RecordingSession {
   /// A checkpoint at least this often (sample time), besides one per event,
   /// so a quiet night survives a crash too (SleepGuard: about 2 minutes).
   static let checkpointInterval: TimeInterval = 120
-  /// Raw log samples are written in batches of this many (about a second).
-  static let rawLogBatch = 40
+  /// Raw log samples are written in batches of this many (a second at 20 Hz).
+  static let rawLogBatch = 20
 
   public private(set) var draft: RecordingDraft
   private let capture: any AudioCapture
@@ -44,6 +51,7 @@ public actor RecordingSession {
   private let settings: Settings
   private let rawLog: (any RawLogWriter)?
   private var rawSamples: [SnoreSample] = []
+  private var decimator = SampleDecimator<CaptureSample>()
   private let snoreClassifier: SnoreClassifier
   private let speechClassifier = SpeechClassifier()
   private let engine: DetectionEngine
@@ -117,8 +125,8 @@ public actor RecordingSession {
       }
     }
     samplesTask = Task {
-      for await sample in samples {
-        await receive(sample)
+      for await event in samples {
+        await receive(event)
       }
     }
     return stream
@@ -150,8 +158,28 @@ public actor RecordingSession {
 
   // MARK: - Samples
 
-  /// One sample from the capture: ingested, then a checkpoint when one is due.
-  func receive(_ sample: CaptureSample) async {
+  /// One capture event. A reading goes through the decimator; each 20 Hz
+  /// sample it yields is ingested, then a checkpoint follows when one is due.
+  /// An interruption pauses and resumes detection, and restarts the grid.
+  func receive(_ event: CaptureEvent) async {
+    switch event {
+    case let .sample(reading):
+      for sample in decimator.add(reading, at: reading.time) {
+        await receiveDecimated(CaptureSample(
+          time: sample.time, db: sample.reading.db, peakDB: sample.reading.peakDB,
+          spectralScore: sample.reading.spectralScore, snoreConfidence: sample.reading.snoreConfidence,
+          speechConfidence: sample.reading.speechConfidence))
+      }
+    case let .interrupted(time):
+      decimator.reset()
+      input.yield(.captureDidPause(at: time))
+    case let .resumed(time):
+      decimator.reset()
+      input.yield(.captureDidResume(at: time))
+    }
+  }
+
+  private func receiveDecimated(_ sample: CaptureSample) async {
     ingest(sample)
     if let rawLog, rawSamples.count >= Self.rawLogBatch {
       let batch = rawSamples
@@ -163,8 +191,8 @@ public actor RecordingSession {
     }
   }
 
-  /// Classifies one sample and sends it to the engine. Internal so tests can
-  /// script samples at exact times.
+  /// Classifies one 20 Hz sample and sends it to the engine. Internal so
+  /// tests can script samples at exact times (past the decimator).
   func ingest(_ sample: CaptureSample) {
     lastSampleTime = sample.time
     draft.add(level: sample.db)
@@ -252,8 +280,7 @@ public actor RecordingSession {
         melodyPlaying = false
         publish(time: batch.time, db: AudioLevels.floorDB, snoreState: .none, isSpeech: false)
       case let .interruptionGap(start, duration):
-        // Capture was interrupted (shared 0.30.0). This app doesn't send the
-        // capture messages yet, so it only records what the engine reports.
+        // The microphone was taken (a call): the score leaves this time out.
         draft.recordingGaps = draft.recordingGaps.adding(
           start: start, duration: duration, nightStart: draft.start, kind: .interruption)
       }
