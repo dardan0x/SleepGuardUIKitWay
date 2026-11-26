@@ -36,9 +36,11 @@ final class NightDetailNavigation {
   }
 
   func show(_ night: NightSummary) {
+    let report = BarItemActivity(label: Strings.a11yGeneratingReport)
     navigator.push(detail.make(
       night: night,
-      onReport: { [weak self] in self?.shareReport(night.id) },
+      report: report,
+      onReport: { [weak self] in self?.shareReport(night.id, activity: report) },
       onDelete: { [weak self] in self?.confirmDeleting(night.id) },
       routes: SessionDetailRoutes(
         showAllEvents: { [weak self] rows, events in self?.showEvents(rows, events) },
@@ -49,17 +51,23 @@ final class NightDetailNavigation {
 
   // MARK: - Sharing
 
-  /// The night's PDF report, in the share sheet.
-  func shareReport(_ id: Night.ID) {
+  /// The night's PDF report, in the share sheet. While it is made the
+  /// report button shows so (`activity`); a failure says so.
+  func shareReport(_ id: Night.ID, activity: BarItemActivity? = nil) {
     guard sharing == nil else { return }
-    sharing = Task { [weak self, nights] in
-      defer { self?.sharing = nil }
+    activity?.isRunning = true
+    sharing = Task { [weak self, nights, detail] in
+      defer {
+        activity?.isRunning = false
+        self?.sharing = nil
+      }
       do {
         let night = try await nights.session(id: id)
         let url = try NightReportExport.write(night, appName: Self.appName, to: FileManager.default.temporaryDirectory)
         self?.share(url)
       } catch {
         Log.storage.error("Report not made: \(error.localizedDescription, privacy: .public)")
+        self?.navigator.present(detail.makeReportFailedAlert(), style: .alert)
       }
     }
   }

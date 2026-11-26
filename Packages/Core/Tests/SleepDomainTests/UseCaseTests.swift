@@ -53,11 +53,43 @@ struct DeleteSessionTests {
       func updateSummaries(_: [NightSummary], scoreVersion _: String) async throws {}
       func session(id: Night.ID) async throws -> Night { try await wrapping.session(id: id) }
       func delete(id _: Night.ID) async throws { throw DiskFull() }
+      func delete(ids _: [Night.ID]) async throws { throw DiskFull() }
       func observeSummaries() async -> AsyncStream<[NightSummary]> { await wrapping.observeSummaries() }
       func nightFiles() async throws -> [NightFiles] { try await wrapping.nightFiles() }
       func removeClips(of id: Night.ID) async throws { try await wrapping.removeClips(of: id) }
       func deleteAll() async throws { throw DiskFull() }
     }
+  }
+}
+
+/// A day's nights at once (F13-T11).
+struct DeleteSessionsTests {
+  @Test func deletesEveryNightThenEveryClip() async throws {
+    let first = Sample.night(events: [NightEvent(start: Sample.at(60), duration: 60, intensity: .light, clipFileName: "a.m4a")])
+    let second = Sample.night(events: [NightEvent(start: Sample.at(60), duration: 60, intensity: .light, clipFileName: "b.m4a")])
+    let repository = FakeSessionRepository([first, second])
+    let files = FakeSessionFileStore()
+
+    try await DeleteSessions(sessions: repository, files: files)([first.id, second.id])
+
+    #expect(await repository.sessions.isEmpty)
+    #expect(await Set(files.removed) == ["a.m4a", "b.m4a"])
+  }
+
+  @Test func aFailedDeleteKeepsEveryNightAndEveryClip() async {
+    struct DiskFull: Error {}
+    let first = Sample.night(events: [NightEvent(start: Sample.at(60), duration: 60, intensity: .light, clipFileName: "a.m4a")])
+    let second = Sample.night()
+    let repository = FakeSessionRepository([first, second])
+    await repository.failDeletes(with: DiskFull())
+    let files = FakeSessionFileStore()
+
+    await #expect(throws: DiskFull.self) {
+      try await DeleteSessions(sessions: repository, files: files)([first.id, second.id])
+    }
+
+    #expect(await repository.sessions.count == 2)
+    #expect(await files.removed.isEmpty)
   }
 }
 

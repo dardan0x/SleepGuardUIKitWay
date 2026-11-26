@@ -78,6 +78,22 @@ actor SwiftDataSessionStore: SessionRepository {
     publish()
   }
 
+  func delete(ids: [Night.ID]) async throws {
+    var records: [SessionRecord] = []
+    for id in ids {
+      guard let record = try record(id: id) else { throw SessionError.notFound(id) }
+      records.append(record)
+    }
+    records.forEach(modelContext.delete) // events cascade
+    do {
+      try modelContext.save()
+    } catch {
+      modelContext.rollback() // nothing half-deleted stays pending for the next save
+      throw error
+    }
+    publish()
+  }
+
   func observeSummaries() async -> AsyncStream<[NightSummary]> {
     let (stream, continuation) = AsyncStream.makeStream(of: [NightSummary].self)
     let key = UUID()

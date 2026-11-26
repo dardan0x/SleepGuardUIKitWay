@@ -4,6 +4,7 @@ import Foundation
 import SleepCore
 import SleepDomain
 import SleepDomainTestSupport
+import SleepGuardDesignKit
 import SwiftUI
 import Testing
 import UIKit
@@ -85,6 +86,19 @@ struct PersonalizationFlowTests {
     guard case let .present(sheet, _) = spy.calls.last else { throw Unexpected() }
     let activity = try #require(sheet as? UIActivityViewController)
     #expect(activity.isKind(of: UIActivityViewController.self))
+  }
+
+  /// A report that can't be made says so, and the button comes back.
+  @Test func aFailedReportShowsAnAlertAndFreesTheButton() async throws {
+    let spy = NavigatorSpy()
+    let navigation = AppComposition(container: Container.test()).nightDetail(navigator: spy)
+    let activity = BarItemActivity(label: "")
+    navigation.shareReport(UUID(), activity: activity) // no such night
+    #expect(activity.isRunning)
+    await navigation.sharing?.value
+    #expect(!activity.isRunning)
+    guard case let .present(alert, .alert) = spy.calls.last else { throw Unexpected() }
+    #expect((alert as? UIAlertController)?.title == Strings.reportExportFailedTitle)
   }
 
   @Test func aClipOnlyGoesWhenItsFileIsThere() throws {

@@ -20,7 +20,7 @@ struct HistoryViewModelTests {
   {
     HistoryViewModel(
       dependencies: HistoryDependencies(
-        nights: repository, deleteNight: DeleteSession(sessions: repository, files: FakeSessionFileStore())),
+        nights: repository, deleteNights: DeleteSessions(sessions: repository, files: FakeSessionFileStore())),
       routes: HistoryRoutes(openNight: opened))
   }
 
@@ -90,5 +90,21 @@ struct HistoryViewModelTests {
     try viewModel.askToDelete(aDayWithTwoNights)
     await viewModel.confirmDelete()
     #expect(viewModel.alert == .deleteFailed)
+  }
+
+  /// A day is deleted in one write: when it fails, every night of the day is
+  /// still there (the old loop could leave half a day).
+  @Test func aFailedDayDeleteLeavesTheWholeDay() async throws {
+    let repository = FakeSessionRepository(nights)
+    let viewModel = viewModel(repository)
+    let day = try aDayWithTwoNights
+    viewModel.askToDelete(day)
+    struct Failure: Error {}
+    await repository.failDeletes(with: Failure())
+    await viewModel.confirmDelete()
+    #expect(viewModel.alert == .deleteFailed)
+    for night in day.nights {
+      #expect(await repository.sessions[night.id] != nil)
+    }
   }
 }

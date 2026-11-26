@@ -41,11 +41,11 @@ Last updated: 2026-11-26
 | F9 | Showcase polish | P2 | In Progress (T4: screenshots after the UI polish) | 3/4 | ████████░░ 75% | [tracker](trackers/f9-showcase-polish.md) |
 | F11 | UIKit screen containers | P2 | Done | 1/1 | ██████████ 100% | [tracker](trackers/f11-uikit-screen-containers.md) |
 | F12 | View models and factories | P2 | Done | 1/1 | ██████████ 100% | [tracker](trackers/f12-view-models.md) |
-| F13 | Architecture review fixes | P0/P1 | In Progress | 12/15 | ████████░░ 80% | [tracker](trackers/f13-architecture-review.md) |
+| F13 | Architecture review fixes | P0/P1 | In Progress | 13/15 | █████████░ 87% | [tracker](trackers/f13-architecture-review.md) |
 
 ## Currently Active
 
-- **F13-T11** — Atomic day delete; dynamic chrome.
+- **F13-T12** — Deep links.
 - **F9-T4** — README written; the brands' screenshots wait for the UI polish.
 - **F8 device checks** — Apple Health permission and writing, real sleep stages from an Apple Watch night, the start delay's notification and warm-up with the screen locked, raw audio on a real night, a Snore Interrupter melody with the microphone resuming after it, the onboarding's permission prompts on a fresh install, a morning briefing and a PDF report.
 - **F7 device check** — one short night on a phone (Debug saves after 2 min): microphone, locked screen, clips, recovery after a kill.
@@ -65,6 +65,7 @@ Last updated: 2026-11-26
 
 | Date | Task | Event | Notes |
 |------|------|-------|-------|
+| 2026-11-26 | F13-T11 | Completed | A day's nights deleted in one write (`delete(ids:)`, `DeleteSessions`), all or none; bar items with an activity (report button busy state); a failed report shows an alert. Branch `feature/f13/t11-day-delete-chrome` |
 | 2026-11-26 | F13-T10 | Completed | `RecordingFlow` split into `InterrupterSettingsNavigation` and `NightLifecycle` (248 → 154 lines); the interrupter's task no longer leaks. Branch `feature/f13/t10-recording-flow-split` |
 | 2026-11-26 | F13-T8 | Completed | `AppComposition` per brand (own container, no `Container.shared`); flows take what they use; per-container scope; bootstrap test resolves all 32 registrations and checks the list against the source; ADR 0009. Branch `feature/f13/t8-typed-composition` |
 | 2026-11-26 | F13-T5 | Completed | Shared 0.31.0 tagged by the owner and pinned; a store that doesn't open shows only "We couldn't open your sleep data" and keeps the file. All brands build and all lanes pass on the release. Branch `feature/f13/t5-store-unavailable` |
