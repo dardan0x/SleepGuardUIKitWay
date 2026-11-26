@@ -14,6 +14,8 @@ import UIKit
 open class ScreenController: UIViewController {
   public let theme: Theme
   public let chrome: ScreenChrome
+  /// An alert made and waiting for this screen to stop moving.
+  private var alertWaiting = false
   /// The child showing the current state (loading, empty, loaded, error).
   public private(set) var stateChild: UIViewController?
   /// The header's child, pinned under the safe area's top, above every state.
@@ -105,11 +107,27 @@ open class ScreenController: UIViewController {
   }
 
   /// Presents the alert for a view model's due `alert`, unless one is
-  /// already showing. Its actions answer the view model, which clears it;
-  /// call this from `render` so a newly due alert comes up.
+  /// already showing or waiting. Its actions answer the view model, which
+  /// clears it; call this from `render` so a newly due alert comes up. While
+  /// this screen is moving (pushed, popped), it waits for the move to end.
   public func presentAlert<Due>(_ due: Due?, make: (Due) -> UIAlertController) {
-    guard let due, !(presentedViewController is UIAlertController) else { return }
-    present(make(due), animated: viewIfLoaded?.window != nil)
+    guard let due, !alertWaiting, !(presentedViewController is UIAlertController) else { return }
+    let alert = make(due)
+    alertWaiting = true
+    whenIdle { [weak self] in
+      guard let self else { return }
+      alertWaiting = false
+      guard !(presentedViewController is UIAlertController) else { return }
+      present(alert, animated: viewIfLoaded?.window != nil)
+    }
+  }
+
+  private func whenIdle(_ operation: @escaping () -> Void) {
+    guard let transition = transitionCoordinator else {
+      operation()
+      return
+    }
+    transition.animate(alongsideTransition: nil) { [weak self] _ in self?.whenIdle(operation) }
   }
 
   /// Runs `render` now, and again after any `@Observable` value it read

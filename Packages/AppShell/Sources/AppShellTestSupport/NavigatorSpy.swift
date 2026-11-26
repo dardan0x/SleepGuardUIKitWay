@@ -10,7 +10,7 @@ public final class NavigatorSpy: Navigator {
     case pop
     case popToRoot
     case present(UIViewController, PresentationStyle)
-    case dismiss
+    case dismiss(UIViewController)
   }
 
   public private(set) var calls: [Call] = []
@@ -37,7 +37,7 @@ public final class NavigatorSpy: Navigator {
     calls.append(.present(controller, style))
   }
 
-  public func dismiss() {
-    calls.append(.dismiss)
+  public func dismiss(_ controller: UIViewController) {
+    calls.append(.dismiss(controller))
   }
 }

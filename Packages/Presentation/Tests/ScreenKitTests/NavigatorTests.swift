@@ -67,10 +67,10 @@ struct NavigatorTests {
     #expect(alert.modalPresentationStyle == .custom)
   }
 
-  @Test func dismissWithNothingPresentedLeavesTheStackAlone() {
+  @Test func dismissingAControllerThatIsNotPresentedLeavesTheStackAlone() {
     let navigator = NavigationControllerNavigator(animated: false)
     navigator.setRoot(first)
-    navigator.dismiss()
+    navigator.dismiss(UIViewController())
     #expect(navigator.navigationController.viewControllers == [first])
   }
 

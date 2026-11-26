@@ -41,12 +41,12 @@ Last updated: 2026-11-26
 | F9 | Showcase polish | P2 | In Progress (T4: screenshots after the UI polish) | 3/4 | ████████░░ 75% | [tracker](trackers/f9-showcase-polish.md) |
 | F11 | UIKit screen containers | P2 | Done | 1/1 | ██████████ 100% | [tracker](trackers/f11-uikit-screen-containers.md) |
 | F12 | View models and factories | P2 | Done | 1/1 | ██████████ 100% | [tracker](trackers/f12-view-models.md) |
-| F13 | Architecture review fixes | P0/P1 | In Progress | 6/15 | ████░░░░░░ 40% | [tracker](trackers/f13-architecture-review.md) |
+| F13 | Architecture review fixes | P0/P1 | In Progress | 7/15 | █████░░░░░ 47% | [tracker](trackers/f13-architecture-review.md) |
 
 ## Currently Active
 
 - **F13-T5** — waits for the owner to merge and tag shared 0.31.0.
-- **F13-T8** — Typed composition.
+- **F13-T8** — Typed composition (after T5 merges: both change the container).
 - **F9-T4** — README written; the brands' screenshots wait for the UI polish.
 - **F8 device checks** — Apple Health permission and writing, real sleep stages from an Apple Watch night, the start delay's notification and warm-up with the screen locked, raw audio on a real night, a Snore Interrupter melody with the microphone resuming after it, the onboarding's permission prompts on a fresh install, a morning briefing and a PDF report.
 - **F7 device check** — one short night on a phone (Debug saves after 2 min): microphone, locked screen, clips, recovery after a kill.
@@ -66,6 +66,7 @@ Last updated: 2026-11-26
 
 | Date | Task | Event | Notes |
 |------|------|-------|-------|
+| 2026-11-26 | F13-T9 | Completed | Navigator runs operations serially and picks presenters only when idle; targeted `dismiss(_:)` (an alert goes with its sheet); `presentAlert` waits for transitions; hosted race tests with a time limit. Branch `feature/f13/t9-navigator-races` |
 | 2026-11-26 | F13-T7 | Completed | Checkpoints through a latest-wins writer task, raw log through a serial one; the sample path never waits for the disk; `stop` drains both. Branch `feature/f13/t7-off-path-writes` |
 | 2026-11-26 | F13-T6 | Completed | 20 Hz decimation in `RecordingSession` (same samples as SleepGuard); interruptions reported by the adapter and sent to the engine as pause/resume (gaps left out of the score); resume without `.shouldResume` and after media-services reset; FFT only with the raw log; thermal state logged. Branch `feature/f13/t6-capture-parity` |
 | 2026-11-26 | F13-T5 | In progress | Store-unavailable screen built and checked on the simulator; shared 0.31.0 pushed on a branch for the owner to merge and tag. Branch `feature/f13/t5-store-unavailable` |

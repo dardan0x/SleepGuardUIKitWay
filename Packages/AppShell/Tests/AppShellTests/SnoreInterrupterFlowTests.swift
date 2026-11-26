@@ -81,7 +81,7 @@ struct SnoreInterrupterFlowTests {
     let choice = SnoreInterrupterChoice(mode: .thirtySeconds, melodyID: 3)
     settings.viewModel.routes.save(choice)
     await h.flow.interrupterTask?.value
-    #expect(h.spy.calls.last == .dismiss)
+    #expect(h.spy.calls.last == .dismiss(settings))
     #expect(handedBack == choice)
     let stored = await h.preferences.load()
     #expect(stored.interrupterMode == .thirtySeconds)
@@ -101,11 +101,11 @@ struct SnoreInterrupterFlowTests {
     let recorder = try presented(h, as: RecordMelodyViewController.self)
     let mine = Melody(id: 100, filename: "custom_100.m4a", customName: "Mine")
     recorder.viewModel.done(mine)
-    #expect(h.spy.calls.last == .dismiss)
+    #expect(h.spy.calls.last == .dismiss(recorder))
     #expect(recorded == mine)
 
     picker.viewModel.routes.done(4)
-    #expect(h.spy.calls.last == .dismiss)
+    #expect(h.spy.calls.last == .dismiss(picker))
     #expect(picked == 4)
   }
 
