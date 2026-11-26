@@ -55,8 +55,7 @@ public actor RecordingSession {
   private let rawLog: (any RawLogWriter)?
   private var rawSamples: [SnoreSample] = []
   private var decimator = SampleDecimator<CaptureSample>()
-  private let snoreClassifier: SnoreClassifier
-  private let speechClassifier = SpeechClassifier()
+  private let classifier: LiveSampleClassifier
   private let engine: DetectionEngine
   private let messages: AsyncStream<DetectionEngine.Message>
   private let input: AsyncStream<DetectionEngine.Message>.Continuation
@@ -97,11 +96,11 @@ public actor RecordingSession {
     self.settings = settings
     self.rawLog = settings.preserveRawAudio ? rawLog : nil
     draft = RecordingDraft(start: start)
-    let classifier = SnoreClassifier.preset(settings.sensitivity)
-    snoreClassifier = classifier
+    let classifier = LiveSampleClassifier(sensitivity: settings.sensitivity)
+    self.classifier = classifier
     engine = DetectionEngine(settings: DetectionStateMachine.Settings(
       minEventDuration: settings.sensitivity.minEventDuration,
-      highConfidenceGate: classifier.highConfidenceGate,
+      highConfidenceGate: classifier.snore.highConfidenceGate,
       detectSleepTalking: settings.detectSleepTalking))
     (messages, input) = DetectionEngine.makeStream()
   }
@@ -203,15 +202,15 @@ public actor RecordingSession {
   func ingest(_ sample: CaptureSample) {
     lastSampleTime = sample.time
     draft.add(level: sample.db)
-    // Loudness from the peak: snoring is impulsive, and one buffer's RMS
-    // under-reports it. The spectral score stays out of the verdict, as in
-    // SleepGuard: live detection has only been validated on the sound
-    // classifier. The engine still gets the score for the event's averages.
-    let state = snoreClassifier.classify(db: sample.peakDB, spectralScore: 0, snoreConfidence: sample.snoreConfidence)
-    let isSpeech = speechClassifier.classify(db: sample.db, speechConfidence: sample.speechConfidence)
-    let detection = DetectionInput(
-      db: sample.db, spectralScore: sample.spectralScore, snoreConfidence: sample.snoreConfidence,
-      snoreState: state, isSpeech: isSpeech, isMelodyPlaying: melodyPlaying)
+    // SleepCore's LiveSampleClassifier, as SleepGuard: the snore verdict on
+    // the peak, speech on the RMS level, the spectral score passed through.
+    let detection = classifier.input(
+      for: .init(
+        db: sample.db, peakDB: sample.peakDB, spectralScore: sample.spectralScore,
+        snoreConfidence: sample.snoreConfidence, speechConfidence: sample.speechConfidence),
+      isMelodyPlaying: melodyPlaying)
+    let state = detection.snoreState
+    let isSpeech = detection.isSpeech
     input.yield(.sample(detection, at: sample.time))
     if rawLog != nil {
       rawSamples.append(SnoreSample(

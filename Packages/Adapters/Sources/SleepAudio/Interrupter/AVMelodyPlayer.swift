@@ -1,5 +1,6 @@
 import AVFoundation
 import SleepDomain
+import SleepLogging
 
 /// `MelodyPlayer` over AVAudioPlayer, with SleepGuard's haptic nudge every
 /// 2 s while it plays (the shell supplies the nudge: haptics are UIKit's).

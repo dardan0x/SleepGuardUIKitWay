@@ -1,6 +1,7 @@
 import Foundation
 import SleepCore
 import SleepDomain
+import SleepLogging
 import SleepMelodies
 
 /// `MelodyStore` over files: recordings live in `directory` with a JSON list

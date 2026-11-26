@@ -43,6 +43,7 @@ Fixes this app's verdicts from the principal-level architecture review of the th
 | F13-T15 | Docs and close-out | Docs | Done | all | docs |
 | F13-T16 | Shared HealthKit and raw-log behaviour (shared 0.32.0) | Refactor | Done | T15 | SleepHealth, SleepPersistence |
 | F13-T17 | Shared settings (shared 0.33.0) | Refactor | Done | T16 | SleepDomain, SleepPersistence |
+| F13-T18 | Uniform the apps, release A (shared 0.34.0) | Refactor | Done | T17 | Adapters, SleepDomain, AppShell |
 
 ## Task Details
 
@@ -368,3 +369,15 @@ Added after F13's close-out, at the owner's request: behaviour both apps need li
 **Notes:**
 - The apps aren't in production (owner), so the interrupter's keys were renamed for the feature with no migration.
 - Branch `feature/f13/t17-shared-preferences`
+
+### F13-T18 — Uniform the apps, release A (shared 0.34.0)
+
+The owner's request: everything not unique to one app moves to the shared repo (plan approved 2026-11-26; releases A, B audio, C one SwiftData schema).
+- Logging: the per-file `Logger(...)` statics and the two private `Log` enums are the shared `SleepLogging` `Log`.
+- `RecordingSession` classifies with SleepCore's `LiveSampleClassifier` (SleepGuard's tracker uses the same).
+- `RawRecording` and `NightFiles` come from SleepCore; `EnforceStorageLimits` decides with `StorageSweep`.
+- File stores wrap the shared `NightCheckpoint`, `ProfileFile`, `LifestyleLogFile` and `ClipFolder`; the checkpoint file format is the one SleepGuard writes. A new survey answer for a night now replaces the old one.
+- `StorageLocation` and `SampleNights` are the shared ones (`AppShell/Storage/StorageLocation.swift`, `AppShell/Debug/SampleNights.swift` and their tests removed, approved); seeding also writes the sample survey answers.
+- `DeviceServices` uses the shared `StartNotification`.
+- Verified on 0.34.0: four brands, all lanes, checks.
+- Branch `feature/f13/t18-shared-small-pieces`

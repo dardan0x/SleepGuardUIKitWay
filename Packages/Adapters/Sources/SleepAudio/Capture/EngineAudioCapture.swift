@@ -1,5 +1,6 @@
 import AVFoundation
 import SleepDomain
+import SleepLogging
 
 /// `AudioCapture` over AVAudioEngine, as SleepGuard's recorder captures:
 ///

@@ -51,23 +51,7 @@ public protocol SessionRepository: Sendable {
   func deleteAll() async throws
 }
 
-/// A night's files, for the storage limits.
-public struct NightFiles: Equatable, Sendable {
-  public let id: Night.ID
-  public let start: Date
-  public let clipFileNames: [String]
-
-  public init(id: Night.ID, start: Date, clipFileNames: [String]) {
-    self.id = id
-    self.start = start
-    self.clipFileNames = clipFileNames
-  }
-
-  /// Its clips and raw recording (which may not exist).
-  public var allFileNames: [String] {
-    clipFileNames + RawRecording.fileNames(for: id)
-  }
-}
+// `NightFiles` (a night's clips and raw recording) is SleepCore's.
 
 public enum SessionError: Error, Equatable {
   case notFound(Night.ID)

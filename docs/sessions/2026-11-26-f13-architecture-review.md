@@ -21,6 +21,7 @@ title: F13 architecture review fixes, T1–T15 (shared 0.30.0 and 0.31.0)
 - F13-T10: `RecordingFlow` split into interrupter navigation and the night's device lifecycle.
 - F13-T11: atomic day delete; the report button shows its work and failures.
 - F13-T12: deep links routed by the app coordinator.
+- F13-T18: uniform the apps, release A (0.34.0): logging, classifier, sample nights, layout, file stores, storage sweep, start notification from the shared repo.
 - F13-T17: settings are the shared `SleepPreferences`, stored by the shared `PreferencesDefaults` (0.33.0).
 - F13-T16: HealthKit and the raw log wrap shared 0.32.0 behaviour (`SleepHealthKit`, `SleepFiles`), the same code as SleepGuard.
 - F13-T15: ADRs 0010–0012, architecture doc, README, AGENTS/CLAUDE, workflow, feature doc `docs/features/f13-architecture-review.md`. F13 done.

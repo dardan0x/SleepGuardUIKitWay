@@ -1,7 +1,7 @@
 import Foundation
-import os
 import SleepCore
 import SleepDomain
+import SleepLogging
 import SwiftData
 
 /// `SessionRepository` over SwiftData.
@@ -22,7 +22,6 @@ import SwiftData
 /// write.
 @ModelActor
 actor SwiftDataSessionStore: SessionRepository {
-  private static let log = Logger(subsystem: Bundle.main.bundleIdentifier ?? "SleepGuardUIKitWay", category: "storage")
   private var observers: [UUID: AsyncStream<[NightSummary]>.Continuation] = [:]
 
   func save(_ session: Night, summary: NightSummary, scoreVersion: String) async throws {
@@ -159,7 +158,7 @@ actor SwiftDataSessionStore: SessionRepository {
     do {
       current = try summaries()
     } catch {
-      Self.log.error("Couldn't re-read the nights after a save: \(error.localizedDescription, privacy: .public)")
+      Log.storage.error("Couldn't re-read the nights after a save: \(error.localizedDescription, privacy: .public)")
       return
     }
     for continuation in observers.values {

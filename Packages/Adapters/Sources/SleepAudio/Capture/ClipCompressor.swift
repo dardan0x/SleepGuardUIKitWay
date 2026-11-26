@@ -1,5 +1,6 @@
 import AVFoundation
 import Foundation
+import SleepLogging
 
 /// Compresses a raw event clip (.caf) to mono HE-AAC (.m4a) at about 12 kbps,
 /// with the same codec choice as SleepGuard's `EventClipCompressor`.

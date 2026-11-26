@@ -18,7 +18,7 @@ let package = Package(
     .package(path: "../Adapters"),
     .package(path: "../Presentation"),
     .package(path: "../Features"),
-    .package(url: "https://github.com/dardan0x/SleepGuardShared.git", exact: "0.33.0"),
+    .package(url: "https://github.com/dardan0x/SleepGuardShared.git", exact: "0.34.0"),
     .package(url: "https://github.com/hmlongco/Factory", exact: "3.5.2"),
   ],
   targets: [
@@ -39,6 +39,9 @@ let package = Package(
         .product(name: "BriefingFeature", package: "Features"),
         .product(name: "SleepGuardDesignKit", package: "SleepGuardShared"),
         .product(name: "SleepCore", package: "SleepGuardShared"),
+        .product(name: "SleepFiles", package: "SleepGuardShared"),
+        .product(name: "SleepLogging", package: "SleepGuardShared"),
+        .product(name: "SleepNotifications", package: "SleepGuardShared"),
         .product(name: "FactoryKit", package: "Factory"),
       ],
       swiftSettings: [
@@ -65,6 +68,7 @@ let package = Package(
         .product(name: "SleepDomain", package: "Core"),
         .product(name: "SleepDomainTestSupport", package: "Core"),
         .product(name: "SleepCore", package: "SleepGuardShared"),
+        .product(name: "SleepFiles", package: "SleepGuardShared"),
         .product(name: "ScreenKit", package: "Presentation"),
         .product(name: "HistoryFeature", package: "Features"),
         .product(name: "SessionDetailFeature", package: "Features"),

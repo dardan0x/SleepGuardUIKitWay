@@ -2,7 +2,9 @@ import FactoryKit
 import SleepAudio
 import SleepCore
 import SleepDomain
+import SleepFiles
 import SleepGuardDesignKit
+import SleepLogging
 import SleepPersistence
 import UIKit
 
@@ -26,7 +28,11 @@ extension Container {
   }
 
   var storageLocation: Factory<StorageLocation> {
-    self { StorageLocation.resolve() }.cached
+    self {
+      // The shared layout (SleepGuard's too), under this app's folder.
+      StorageLocation.resolve(
+        appGroup: Bundle.main.object(forInfoDictionaryKey: "SGAppGroup") as? String, folder: "SleepGuardUIKitWay")
+    }.cached
   }
 
   /// The nights database, opened once. If the file can't be opened, this

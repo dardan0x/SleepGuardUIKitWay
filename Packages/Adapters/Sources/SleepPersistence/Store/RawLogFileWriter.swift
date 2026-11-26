@@ -1,8 +1,8 @@
 import Foundation
-import os
 import SleepCore
 import SleepDomain
 import SleepFiles
+import SleepLogging
 
 /// `RawLogWriter` into the clips folder over the shared `RawLogFile`
 /// (SleepGuardShared), the same file SleepGuard writes: `RawLog` format 3,
@@ -12,7 +12,6 @@ import SleepFiles
 actor RawLogFileWriter: RawLogWriter {
   private let directory: URL
   private var file: RawLogFile?
-  private static let log = Logger(subsystem: Bundle.main.bundleIdentifier ?? "SleepGuardUIKitWay", category: "storage")
 
   init(directory: URL) {
     self.directory = directory
@@ -22,7 +21,7 @@ actor RawLogFileWriter: RawLogWriter {
     do {
       file = try RawLogFile(night: id, metadata: metadata, directory: directory)
     } catch {
-      Self.log.error("Raw log not started: \(error.localizedDescription, privacy: .public)")
+      Log.storage.error("Raw log not started: \(error.localizedDescription, privacy: .public)")
       file = nil
     }
   }
@@ -31,7 +30,7 @@ actor RawLogFileWriter: RawLogWriter {
     do {
       try await file?.append(samples)
     } catch {
-      Self.log.error("Raw log write failed: \(error.localizedDescription, privacy: .public)")
+      Log.storage.error("Raw log write failed: \(error.localizedDescription, privacy: .public)")
     }
   }
 
