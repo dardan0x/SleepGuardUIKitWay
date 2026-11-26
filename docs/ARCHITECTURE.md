@@ -37,8 +37,10 @@ graph TD
   Features --> SleepDomain
   Features --> ContentKit[SleepGuardContentKit]
   SleepPersistence --> SleepDomain
+  SleepPersistence --> SleepStore
+  SleepPersistence --> SleepFiles
   SleepAudio --> SleepDomain
-  SleepAudio --> SleepMelodies
+  SleepAudio --> SleepAudioKit
   SleepHealth --> SleepDomain
   ScreenKit --> DesignKit[SleepGuardDesignKit]
   SleepDomain --> SleepCore
@@ -48,8 +50,10 @@ graph TD
 
   subgraph Shared["SleepGuardShared, pinned 0.36.0"]
     SleepCore
+    SleepStore
+    SleepAudioKit
+    SleepFiles
     SleepStrings
-    SleepMelodies
     DesignKit
     ContentKit
   end
@@ -63,8 +67,8 @@ The eight features are History, SessionDetail, Statistics, Recording, Settings, 
 |---|---|---|---|
 | `SleepCore` (shared) | — | Night values and every rule: score, detection state machine, statistics, playback, interrupter, onboarding pages, briefing, report | Import anything but Foundation |
 | `SleepDomain` (Core) | 26 / 1,400 | 14 ports, 12 use cases, the recording actor and its draft, preferences | Know about SwiftData, AVFoundation, HealthKit, UIKit or SwiftUI |
-| `SleepPersistence` | 11 / 703 | SwiftData records behind `SessionRepository`; files for clips, checkpoint, profile, raw log, survey answers; UserDefaults preferences | Leak a `@Model` past its ports |
-| `SleepAudio` | 11 / 1,099 | AVAudioEngine capture and analysis, clip compression and playback, waveforms, the interrupter's player, store and recorder | |
+| `SleepPersistence` | 8 / 368 | The shared `SleepStore` records behind `SessionRepository` (its actor); the shared files (`SleepFiles`) for clips, checkpoint, profile, raw log, survey answers; UserDefaults preferences (`SleepSettings`) | Leak a `@Model` past its ports |
+| `SleepAudio` | 2 / 78 | The shared `SleepAudioKit` (capture, compression, playback, waveforms, the interrupter's player, store and recorder; SleepGuard uses the same) conformed to the ports | |
 | `SleepHealth` | 1 / 45 | Apple Health through the shared `HealthKitSleep` (the same code as SleepGuard): write a night, read its sleep stages | Be linked by Lite |
 | `ScreenKit` (Presentation) | 6 / 615 | `ScreenController` (every screen's base: chrome, background, theme, one state child), `ContentListController` (a self-sizing UIKit list), `ScreenChrome`, `Navigator`, theme fonts for UIKit | |
 | Features | 60 / 3,737 | 22 UIKit screens (ADR 0007): collection views, a page view controller, a segmented control and alerts around the shared SwiftUI content. Each has a view model (ADR 0008, checked) that holds its state, calls the use cases and routes and says which alert is due, with no UI imports. Each screen has a `Dependencies` and a `Routes` value | Navigate, present anything but an alert, persist, inject, or touch `UIApplication`; import UI in a view model (checked) |
@@ -120,7 +124,7 @@ Identity (bundle id, display name, app group, URL scheme) lives in the Tuist bra
 
 `RecordingSession` (an actor in `SleepDomain`) turns microphone samples into a `RecordingDraft`:
 
-1. `AudioCapture` (`SleepAudio`'s AVAudioEngine tap) yields a `CaptureEvent`: a sample per buffer (about 43–47 Hz), or the microphone taken away (a call) and given back.
+1. `AudioCapture` (SleepAudioKit's `CaptureEngine`, through `SleepAudio`) yields a `CaptureEvent`: a sample per buffer (about 43–47 Hz), or the microphone taken away (a call) and given back.
 2. SleepCore's `SampleDecimator` turns the buffers into 20 Hz samples on a time grid, as SleepGuard does. Each is classified with SleepCore's snore and speech rules and sent, timestamped, into SleepCore's `DetectionEngine`: one ordered stream, on its own actor. A call goes in as `captureDidPause` / `captureDidResume` and becomes an interruption gap the score leaves out (ADR 0011).
 3. The engine's outputs come back in order: clips start, close or are discarded through the capture port; events and gaps go into the draft; the Snore Interrupter plays with the microphone paused.
 4. The draft is checkpointed by a writer task off the sample path (the newest night wins), so a killed app offers the night at the next launch; Save commits it through `CommitSession` (and to Apple Health when on), refusing a night shorter than the app's `SaveRules`.
@@ -171,6 +175,7 @@ About 290 package tests and 13 in-app tests per brand (pull requests run every b
 | [0010](adr/0010-stored-nights.md) | Stored nights: versioned scores, one writer, safe failures |
 | [0011](adr/0011-detection-input.md) | Detection runs on 20 Hz samples, off the disk |
 | [0012](adr/0012-deep-links.md) | Links open through the app coordinator |
+| [0013](adr/0013-uniform-apps.md) | The adapters' behaviour lives in the shared repo |
 
 ## Where to look first
 

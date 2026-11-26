@@ -46,6 +46,7 @@ Fixes this app's verdicts from the principal-level architecture review of the th
 | F13-T18 | Uniform the apps, release A (shared 0.34.0) | Refactor | Done | T17 | Adapters, SleepDomain, AppShell |
 | F13-T19 | Uniform the apps, release B: shared audio (shared 0.35.0) | Refactor | Done | T18 | SleepAudio, SleepDomain |
 | F13-T20 | Uniform the apps, release C: one SwiftData schema (shared 0.36.0) | Refactor | Done | T19 | SleepPersistence |
+| F13-T21 | Uniform the apps, close-out (ADR 0013, docs) | Docs | Done | T20 | docs |
 
 ## Task Details
 
@@ -397,3 +398,8 @@ The owner's request: everything not unique to one app moves to the shared repo (
 - Deleted (approved): `Records/Records.swift`, `RecordMapping.swift`, `PersistenceSchema.swift`; the mapping and the event replacement are the shared ones.
 - Event records now also keep the spectral stats (0 here).
 - Verified on 0.36.0: four brands, all lanes, checks (a first Dawn hosted run failed on navigation timing while another app was brought to the front on the shared simulator; a rerun passed 13/13). Branch `feature/f13/t20-shared-store`
+
+### F13-T21 — Uniform the apps, close-out
+
+- ADR 0013 (the adapters' behaviour lives in the shared repo), ARCHITECTURE (graph, adapter rows, ADR list), AGENTS/CLAUDE (no escape hatch left here), the F13 feature doc.
+- Owed: a device night with the shared audio kit and store. Branch `feature/f13/t21-close-out`

@@ -120,7 +120,7 @@ Notes: `docs/architecture/brands.md`.
 
 ## Concurrency
 
-- Swift 6 language mode in every target, including the three apps. No `@unchecked Sendable`, `nonisolated(unsafe)`, `@preconcurrency` or unchecked lock state (`uncheckedState`, `withLockUnchecked`), test code included. The one exception is the lock in the realtime audio tap (`SleepAudio/Capture/CaptureProcessor.swift`): the tap's thread can't await, and the lock guards AVFoundation objects that aren't `Sendable`. It is the only entry in `ESCAPE_HATCH_ALLOWLIST`.
+- Swift 6 language mode in every target, including the three apps. No `@unchecked Sendable`, `nonisolated(unsafe)`, `@preconcurrency` or unchecked lock state (`uncheckedState`, `withLockUnchecked`), test code included. There are no exceptions here: the one lock with unchecked state (the realtime audio tap's) is in the shared repo's `SleepAudioKit`, and `ESCAPE_HATCH_ALLOWLIST` is empty.
 - `SleepDomain` and adapters: no default isolation. Features, `ScreenKit`, `AppShell`: `.defaultIsolation(MainActor.self)`. A diffable identifier type in a feature is `nonisolated`.
 - `async/await` only. No Combine, no GCD, no completion handlers, no NotificationCenter as an event bus.
 - No fire-and-forget `Task` in a load path. Tests `await`; they never poll or sleep.
