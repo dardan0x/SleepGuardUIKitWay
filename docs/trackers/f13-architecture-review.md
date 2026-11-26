@@ -47,6 +47,7 @@ Fixes this app's verdicts from the principal-level architecture review of the th
 | F13-T19 | Uniform the apps, release B: shared audio (shared 0.35.0) | Refactor | Done | T18 | SleepAudio, SleepDomain |
 | F13-T20 | Uniform the apps, release C: one SwiftData schema (shared 0.36.0) | Refactor | Done | T19 | SleepPersistence |
 | F13-T21 | Uniform the apps, close-out (ADR 0013, docs) | Docs | Done | T20 | docs |
+| F13-T22 | Explicit imports, no re-exports (shared 0.37.0) | Refactor | Done | T21 | Features, AppShell, scripts |
 
 ## Task Details
 
@@ -403,3 +404,10 @@ The owner's request: everything not unique to one app moves to the shared repo (
 
 - ADR 0013 (the adapters' behaviour lives in the shared repo), ARCHITECTURE (graph, adapter rows, ADR list), AGENTS/CLAUDE (no escape hatch left here), the F13 feature doc.
 - Owed: a device night with the shared audio kit and store. Branch `feature/f13/t21-close-out`
+
+### F13-T22 — Explicit imports, no re-exports (shared 0.37.0)
+
+The owner's call: re-exports hide dependencies. Shared 0.37.0 dropped the kits' re-exports (content kit → design kit → strings).
+- 34 source files and 6 AppShell test files import `SleepGuardDesignKit` / `SleepStrings` where they use them; 10 targets declare them (Features' 8 feature targets, AppShell and its tests).
+- `check-layering.py` rule 10 rejects `@_exported import` (probed); rule 8 no longer counts re-exports as declarations. AGENTS/CLAUDE and the Features manifest comment updated.
+- Verified on 0.37.0: four brands, all lanes, checks. Branch `feature/f13/t22-explicit-imports`

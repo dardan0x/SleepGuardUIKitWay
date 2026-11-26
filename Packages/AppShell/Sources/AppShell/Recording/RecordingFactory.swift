@@ -4,6 +4,7 @@ import ScreenKit
 import SleepCore
 import SleepDomain
 import SleepGuardDesignKit
+import SleepStrings
 import UIKit
 
 /// Builds the recording screens: dependencies, then the view model, then the

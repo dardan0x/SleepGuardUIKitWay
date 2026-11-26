@@ -5,6 +5,7 @@ import SleepCore
 import SleepDomain
 import SleepDomainTestSupport
 import SleepGuardDesignKit
+import SleepStrings
 import SwiftUI
 import Testing
 import UIKit

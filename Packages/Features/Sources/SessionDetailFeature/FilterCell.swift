@@ -1,5 +1,6 @@
 import SleepCore
 import SleepGuardContentKit
+import SleepGuardDesignKit
 import UIKit
 
 /// The event filter as a native segmented control, in the theme's font.

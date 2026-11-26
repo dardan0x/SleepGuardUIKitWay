@@ -1,6 +1,8 @@
 import ScreenKit
 import SleepCore
 import SleepGuardContentKit
+import SleepGuardDesignKit
+import SleepStrings
 import UIKit
 
 /// Every recorded night in a UIKit list whose cells are the shared day cards.

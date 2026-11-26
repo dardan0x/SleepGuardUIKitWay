@@ -2,6 +2,7 @@ import ScreenKit
 import SleepCore
 import SleepDomain
 import SleepGuardContentKit
+import SleepGuardDesignKit
 import UIKit
 
 /// Choosing the interrupter's sound, drawn from `MelodyPickerViewModel` in

@@ -1,5 +1,6 @@
 import ScreenKit
 import SleepGuardContentKit
+import SleepGuardDesignKit
 import UIKit
 
 /// The store-unavailable screen, drawn by the shared `StoreUnavailableContent`.

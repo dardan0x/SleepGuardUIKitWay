@@ -1,5 +1,6 @@
 import ScreenKit
 import SleepGuardDesignKit
+import SleepStrings
 import UIKit
 
 /// One tab's flow: it owns that tab's navigation.

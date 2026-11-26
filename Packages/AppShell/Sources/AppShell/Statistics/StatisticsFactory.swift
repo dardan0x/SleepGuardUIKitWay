@@ -1,6 +1,7 @@
 import FactoryKit
 import ScreenKit
 import SleepGuardDesignKit
+import SleepStrings
 import StatisticsFeature
 import UIKit
 

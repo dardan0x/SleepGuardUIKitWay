@@ -1,6 +1,7 @@
 import ScreenKit
 import SleepCore
 import SleepGuardContentKit
+import SleepGuardDesignKit
 import UIKit
 
 /// The last 7 recorded days in the shared `LastSevenNightsContent`; the

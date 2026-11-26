@@ -12,7 +12,7 @@ let package = Package(
     .library(name: "ScreenKit", targets: ["ScreenKit"]),
   ],
   dependencies: [
-    .package(url: "https://github.com/dardan0x/SleepGuardShared.git", exact: "0.36.0"),
+    .package(url: "https://github.com/dardan0x/SleepGuardShared.git", exact: "0.37.0"),
   ],
   targets: [
     .target(

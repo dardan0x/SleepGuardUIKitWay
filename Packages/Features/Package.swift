@@ -7,10 +7,9 @@ import PackageDescription
 /// UIKit (ADR 0007) also sees UIKit and `ScreenKit`. Never Factory, adapters
 /// or each other.
 ///
-/// No target declares `SleepGuardDesignKit`: `SleepGuardContentKit` re-exports
-/// it (`@_exported import`), and it re-exports `SleepStrings`, so declaring the
-/// content kit brings `Theme`, the components and `Strings`. Declare the design
-/// kit only in a target that imports it without the content kit.
+/// Nothing is re-exported (shared 0.37.0): a target declares every module its
+/// files import, the content kit, the design kit (`Theme`, components) and
+/// `SleepStrings` (`Strings`) alike.
 let package = Package(
   name: "Features",
   platforms: [.iOS(.v17)],
@@ -27,7 +26,7 @@ let package = Package(
   dependencies: [
     .package(path: "../Core"),
     .package(path: "../Presentation"),
-    .package(url: "https://github.com/dardan0x/SleepGuardShared.git", exact: "0.36.0"),
+    .package(url: "https://github.com/dardan0x/SleepGuardShared.git", exact: "0.37.0"),
   ],
   targets: [
     .target(
@@ -37,6 +36,8 @@ let package = Package(
         .product(name: "SleepDomain", package: "Core"),
         .product(name: "SleepCore", package: "SleepGuardShared"),
         .product(name: "SleepGuardContentKit", package: "SleepGuardShared"),
+        .product(name: "SleepGuardDesignKit", package: "SleepGuardShared"),
+        .product(name: "SleepStrings", package: "SleepGuardShared"),
       ],
       swiftSettings: [
         .swiftLanguageMode(.v6),
@@ -49,6 +50,8 @@ let package = Package(
         .product(name: "SleepDomain", package: "Core"),
         .product(name: "SleepCore", package: "SleepGuardShared"),
         .product(name: "SleepGuardContentKit", package: "SleepGuardShared"),
+        .product(name: "SleepGuardDesignKit", package: "SleepGuardShared"),
+        .product(name: "SleepStrings", package: "SleepGuardShared"),
       ],
       swiftSettings: [
         .swiftLanguageMode(.v6),
@@ -73,6 +76,7 @@ let package = Package(
         .product(name: "SleepDomain", package: "Core"),
         .product(name: "SleepCore", package: "SleepGuardShared"),
         .product(name: "SleepGuardContentKit", package: "SleepGuardShared"),
+        .product(name: "SleepGuardDesignKit", package: "SleepGuardShared"),
       ],
       swiftSettings: [
         .swiftLanguageMode(.v6),
@@ -85,6 +89,8 @@ let package = Package(
         .product(name: "SleepDomain", package: "Core"),
         .product(name: "SleepCore", package: "SleepGuardShared"),
         .product(name: "SleepGuardContentKit", package: "SleepGuardShared"),
+        .product(name: "SleepGuardDesignKit", package: "SleepGuardShared"),
+        .product(name: "SleepStrings", package: "SleepGuardShared"),
       ],
       swiftSettings: [
         .swiftLanguageMode(.v6),
@@ -96,6 +102,8 @@ let package = Package(
         .product(name: "ScreenKit", package: "Presentation"),
         .product(name: "SleepCore", package: "SleepGuardShared"),
         .product(name: "SleepGuardContentKit", package: "SleepGuardShared"),
+        .product(name: "SleepGuardDesignKit", package: "SleepGuardShared"),
+        .product(name: "SleepStrings", package: "SleepGuardShared"),
       ],
       swiftSettings: [
         .swiftLanguageMode(.v6),
@@ -107,6 +115,7 @@ let package = Package(
         .product(name: "ScreenKit", package: "Presentation"),
         .product(name: "SleepCore", package: "SleepGuardShared"),
         .product(name: "SleepGuardContentKit", package: "SleepGuardShared"),
+        .product(name: "SleepGuardDesignKit", package: "SleepGuardShared"),
       ],
       swiftSettings: [
         .swiftLanguageMode(.v6),
@@ -117,6 +126,7 @@ let package = Package(
       dependencies: [
         .product(name: "ScreenKit", package: "Presentation"),
         .product(name: "SleepGuardContentKit", package: "SleepGuardShared"),
+        .product(name: "SleepGuardDesignKit", package: "SleepGuardShared"),
       ],
       swiftSettings: [
         .swiftLanguageMode(.v6),
@@ -129,6 +139,8 @@ let package = Package(
         .product(name: "SleepDomain", package: "Core"),
         .product(name: "SleepCore", package: "SleepGuardShared"),
         .product(name: "SleepGuardContentKit", package: "SleepGuardShared"),
+        .product(name: "SleepGuardDesignKit", package: "SleepGuardShared"),
+        .product(name: "SleepStrings", package: "SleepGuardShared"),
       ],
       swiftSettings: [
         .swiftLanguageMode(.v6),
