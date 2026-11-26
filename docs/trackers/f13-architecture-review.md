@@ -38,7 +38,7 @@ Fixes this app's verdicts from the principal-level architecture review of the th
 | F13-T10 | Split `RecordingFlow` (Q44) | Refactor | Backlog | T8 | AppShell |
 | F13-T11 | Atomic day delete; dynamic chrome (Q38, Q43) | Bug / UI | Backlog | T5 | SleepDomain, SleepPersistence, ScreenKit, features |
 | F13-T12 | Deep links (Q28) | Feature | Backlog | T8 | Apps, AppShell |
-| F13-T13 | Port contract tests (Q59) | Tests | Backlog | — | SleepDomain, Adapters |
+| F13-T13 | Port contract tests (Q59) | Tests | Done | — | SleepDomain, Adapters |
 | F13-T14 | Structural lint, theme check, CI (Q63, Q51, Q62) | Tooling | Backlog | — | ScreenKit, scripts, CI |
 | F13-T15 | Docs and close-out | Docs | Backlog | all | docs |
 
@@ -187,3 +187,20 @@ Fixes this app's verdicts from the principal-level architecture review of the th
 **Notes:**
 - Scope grew from the plan: a targeted dismiss alone would drop a dismiss asked for before its present had happened. The serial queue covers that; `presentAlert` doesn't go through it (screens own their alerts, ADR 0008).
 - Branch `feature/f13/t9-navigator-races`
+
+### F13-T13 — Port contract tests
+
+| Field | Value |
+|-------|-------|
+| Status | Done |
+| Started | 2026-11-26 |
+| Completed | 2026-11-26 |
+
+**Acceptance Criteria:**
+- [x] `SleepDomainTestSupport.PortContracts`: one contract per port with state (`SessionRepository`, `RecordingCheckpointStore`, `ProfileStore`, `LifestyleLogStore`, `PreferencesStore`, `MelodyStore`), returning violations as lines (the support module needs no test framework)
+- [x] Run against every fake (SleepDomainTests) and every adapter (SleepPersistenceTests, SleepAudioTests; both now declare `SleepDomainTestSupport`)
+- [x] The drift it found is fixed: `FakeSessionRepository` returned events in save order; now in time order, as the port and the SwiftData store do. Every adapter already met its contract
+- [x] Effect-only fakes (players, capture, Health, recorder) stay spies, as the contract file says
+
+**Notes:**
+- Branch `feature/f13/t13-port-contracts`
