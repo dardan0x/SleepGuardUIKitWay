@@ -21,7 +21,7 @@ struct HistoryFlowTests {
     let repository = FakeSessionRepository(nights)
     let container = Container.test(repository: repository)
     let spy = NavigatorSpy()
-    return (HistoryFlow(navigator: spy, container: container), spy, repository)
+    return (AppComposition(container: container).historyFlow(navigator: spy), spy, repository)
   }
 
   @Test func startShowsTheListTitledSessions() throws {

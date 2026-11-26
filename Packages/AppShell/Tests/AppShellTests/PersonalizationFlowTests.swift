@@ -38,7 +38,7 @@ struct PersonalizationFlowTests {
     container.preferencesStore.register { store }
     let logs = FakeLifestyleLogStore()
     container.lifestyleLogStore.register { logs }
-    let app = AppCoordinator(container: container)
+    let app = AppCoordinator(composition: AppComposition(container: container))
     app.start(in: UIWindow())
     await app.launch?.value
     await app.briefing?.value
@@ -60,7 +60,7 @@ struct PersonalizationFlowTests {
     let preferences = FakePreferencesStore()
     container.preferencesStore.register { preferences }
     let spy = NavigatorSpy()
-    let flow = StatisticsFlow(navigator: spy, container: container, onStartRecording: {})
+    let flow = AppComposition(container: container).statisticsFlow(navigator: spy, onStartRecording: {})
     flow.start()
     guard case let .setRoot(root) = spy.calls.first, let dashboard = root as? StatisticsViewController else {
       throw Unexpected()
@@ -79,7 +79,7 @@ struct PersonalizationFlowTests {
     let saved = night()
     let container = Container.test(repository: FakeSessionRepository([saved]))
     let spy = NavigatorSpy()
-    let navigation = NightDetailNavigation(navigator: spy, container: container)
+    let navigation = AppComposition(container: container).nightDetail(navigator: spy)
     navigation.shareReport(saved.id)
     await navigation.sharing?.value
     guard case let .present(sheet, _) = spy.calls.last else { throw Unexpected() }
@@ -93,7 +93,7 @@ struct PersonalizationFlowTests {
     try FileManager.default.createDirectory(at: clips, withIntermediateDirectories: true)
     let name = "\(UUID().uuidString).m4a"
     let spy = NavigatorSpy()
-    let navigation = NightDetailNavigation(navigator: spy, container: container)
+    let navigation = AppComposition(container: container).nightDetail(navigator: spy)
     navigation.shareClip(of: night(clip: name).events[0])
     #expect(spy.calls.isEmpty)
     try Data([1]).write(to: clips.appendingPathComponent(name))

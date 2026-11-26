@@ -13,7 +13,7 @@ import UIKit
 struct StatisticsTabInAppTests {
   @Test func dashboardOpensTheCalendarFromItsTitleRow() async throws {
     let tabs = try await HostedApp.tabBar()
-    let index = try #require(Container.shared.brand().configuration.tabs.firstIndex(of: .statistics))
+    let index = try #require(try HostedApp.container().brand().configuration.tabs.firstIndex(of: .statistics))
     tabs.selectedIndex = index
     let navigation = try #require(tabs.selectedViewController as? UINavigationController)
     navigation.popToRootViewController(animated: false)

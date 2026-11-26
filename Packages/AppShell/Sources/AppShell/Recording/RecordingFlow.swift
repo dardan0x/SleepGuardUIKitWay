@@ -1,4 +1,3 @@
-import FactoryKit
 import RecordingFeature
 import ScreenKit
 import SleepCore
@@ -37,14 +36,23 @@ final class RecordingFlow {
   private(set) var interrupterTask: Task<Void, Never>?
   private let preferences: any PreferencesStore
 
-  init(navigator: any Navigator, container: Container, compactHeight: Bool, onClose: @escaping @MainActor () -> Void) {
+  init(
+    navigator: any Navigator,
+    factory: RecordingFactory,
+    commit: CommitSession,
+    discardRecording: DiscardRecording,
+    enforceStorageLimits: EnforceStorageLimits,
+    device: DeviceServices,
+    preferences: any PreferencesStore,
+    onClose: @escaping @MainActor () -> Void)
+  {
     self.navigator = navigator
-    factory = RecordingFactory(container: container, compactHeight: compactHeight)
-    commit = container.commitSession()
-    discardRecording = container.discardRecording()
-    enforceStorageLimits = container.enforceStorageLimits()
-    device = container.deviceServices()
-    preferences = container.preferencesStore()
+    self.factory = factory
+    self.commit = commit
+    self.discardRecording = discardRecording
+    self.enforceStorageLimits = enforceStorageLimits
+    self.device = device
+    self.preferences = preferences
     self.onClose = onClose
   }
 

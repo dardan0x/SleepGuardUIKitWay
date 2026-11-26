@@ -52,7 +52,7 @@ struct RecordingFlowTests {
     }
     let spy = NavigatorSpy()
     var closes = 0
-    let flow = RecordingFlow(navigator: spy, container: container, compactHeight: false) { closes += 1 }
+    let flow = AppComposition(container: container).recordingFlow(navigator: spy, compactHeight: false) { closes += 1 }
     return Harness(
       flow: flow, spy: spy, repository: repository, files: files, checkpoints: checkpoints, device: device,
       closed: { closes })
@@ -266,7 +266,7 @@ struct LaunchRecoveryTests {
     container.deviceServices.register {
       DeviceServices(keepScreenOn: { _ in }, openSettings: {}, isCharging: { true }, batteryLevel: { nil })
     }
-    return AppCoordinator(container: container)
+    return AppCoordinator(composition: AppComposition(container: container))
   }
 
   @Test func anInterruptedNightIsOffered() async throws {

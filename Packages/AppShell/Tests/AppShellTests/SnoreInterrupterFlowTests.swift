@@ -29,7 +29,7 @@ struct SnoreInterrupterFlowTests {
     let stored = FakePreferencesStore(preferences)
     container.preferencesStore.register { stored }
     let spy = NavigatorSpy()
-    let flow = RecordingFlow(navigator: spy, container: container, compactHeight: false) {}
+    let flow = AppComposition(container: container).recordingFlow(navigator: spy, compactHeight: false) {}
     flow.start()
     return Harness(flow: flow, spy: spy, container: container, preferences: stored)
   }

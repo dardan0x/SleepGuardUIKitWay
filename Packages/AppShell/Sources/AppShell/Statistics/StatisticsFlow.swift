@@ -1,4 +1,3 @@
-import FactoryKit
 import ScreenKit
 import SettingsFeature
 import SleepDomain
@@ -19,13 +18,20 @@ final class StatisticsFlow: TabFlow {
   /// Counting a dismissed profile prompt; awaited by tests.
   private(set) var dismissing: Task<Void, Never>?
 
-  init(navigator: any Navigator, container: Container, onStartRecording: @escaping @MainActor () -> Void) {
+  init(
+    navigator: any Navigator,
+    screens: StatisticsFactory,
+    settings: SettingsFactory,
+    preferences: any PreferencesStore,
+    nightDetail: NightDetailNavigation,
+    onStartRecording: @escaping @MainActor () -> Void)
+  {
     self.navigator = navigator
+    self.screens = screens
+    self.settings = settings
+    self.preferences = preferences
+    self.nightDetail = nightDetail
     self.onStartRecording = onStartRecording
-    screens = StatisticsFactory(container: container)
-    settings = SettingsFactory(container: container)
-    preferences = container.preferencesStore()
-    nightDetail = NightDetailNavigation(navigator: navigator, container: container)
   }
 
   func start() {

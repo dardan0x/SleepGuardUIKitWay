@@ -1,4 +1,3 @@
-import FactoryKit
 import HistoryFeature
 import ScreenKit
 import SleepCore
@@ -13,10 +12,10 @@ final class HistoryFlow: TabFlow {
   let nightDetail: NightDetailNavigation
   private let history: HistoryScreenFactory
 
-  init(navigator: any Navigator, container: Container) {
+  init(navigator: any Navigator, history: HistoryScreenFactory, nightDetail: NightDetailNavigation) {
     self.navigator = navigator
-    history = HistoryScreenFactory(container: container)
-    nightDetail = NightDetailNavigation(navigator: navigator, container: container)
+    self.history = history
+    self.nightDetail = nightDetail
   }
 
   func start() {

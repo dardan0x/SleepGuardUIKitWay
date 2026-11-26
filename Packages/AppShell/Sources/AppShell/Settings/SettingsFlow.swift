@@ -1,7 +1,5 @@
-import FactoryKit
 import ScreenKit
 import SettingsFeature
-import SleepAudio
 import SleepDomain
 import UIKit
 
@@ -14,24 +12,30 @@ final class SettingsFlow: TabFlow {
   private let factory: SettingsFactory
   private let device: DeviceServices
   private let appStoreID: String?
-  private let container: Container
+  /// Debug builds: writes the sample nights into the store; `nil` in Release.
+  private let seedSampleNights: (@MainActor () -> Task<Void, Never>)?
   /// Debug: re-seeding the sample nights; awaited by tests.
   private(set) var seeding: Task<Void, Never>?
 
-  init(navigator: any Navigator, container: Container) {
+  init(
+    navigator: any Navigator,
+    factory: SettingsFactory,
+    device: DeviceServices,
+    appStoreID: String?,
+    seedSampleNights: (@MainActor () -> Task<Void, Never>)?)
+  {
     self.navigator = navigator
-    self.container = container
-    factory = SettingsFactory(container: container)
-    device = container.deviceServices()
-    appStoreID = container.brand().configuration.appStoreID
+    self.factory = factory
+    self.device = device
+    self.appStoreID = appStoreID
+    self.seedSampleNights = seedSampleNights
   }
 
   func start() {
-    #if DEBUG
-    let addSampleNights: (@MainActor () -> Void)? = { [weak self] in self?.addSampleNights() }
-    #else
-    let addSampleNights: (@MainActor () -> Void)? = nil
-    #endif
+    var addSampleNights: (@MainActor () -> Void)?
+    if seedSampleNights != nil {
+      addSampleNights = { [weak self] in self?.addSampleNights() }
+    }
     var rateApp: (@MainActor () -> Void)?
     if let url = appStoreID.flatMap(Self.reviewURL(appStoreID:)) {
       rateApp = { [device] in device.openURL(url) }
@@ -54,19 +58,7 @@ final class SettingsFlow: TabFlow {
     }
   }
 
-  #if DEBUG
   private func addSampleNights() {
-    let repository = container.sessionRepository()
-    let clips = container.storageLocation().clipsDirectory
-    seeding = Task {
-      do {
-        try await SampleNights.seed(repository) { name, seconds, intensity in
-          try SleepAudio.writeSampleClip(to: clips.appendingPathComponent(name), seconds: seconds, intensity: intensity)
-        }
-      } catch {
-        Log.storage.error("Seeding sample nights failed: \(error.localizedDescription, privacy: .public)")
-      }
-    }
+    seeding = seedSampleNights?()
   }
-  #endif
 }

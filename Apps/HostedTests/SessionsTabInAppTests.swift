@@ -17,7 +17,7 @@ struct SessionsTabInAppTests {
   @Test func openingANightPushesItsDetail() async throws {
     let tabs = try await HostedApp.tabBar()
     let window = try #require(tabs.view.window)
-    let index = try #require(Container.shared.brand().configuration.tabs.firstIndex(of: .history))
+    let index = try #require(try HostedApp.container().brand().configuration.tabs.firstIndex(of: .history))
     tabs.selectedIndex = index
     let navigation = try #require(tabs.selectedViewController as? UINavigationController)
     navigation.popToRootViewController(animated: false)
@@ -33,7 +33,7 @@ struct SessionsTabInAppTests {
     if let screenshots { try await capture(window, to: screenshots, name: "sessions-detail") }
 
     // "Show all": the events sheet at medium and large; close returns to the detail.
-    let loaded = try await Container.shared.loadSessionDetail()(#require(nights.first).id)
+    let loaded = try await HostedApp.container().loadSessionDetail()(#require(nights.first).id)
     let rows = EventListRow.rows(for: loaded.session)
     detail.viewModel.routes.showAllEvents(rows, loaded.session.events)
     let sheet = try #require(await until { navigation.presentedViewController as? UINavigationController })
@@ -51,7 +51,7 @@ struct SessionsTabInAppTests {
   /// closure, a render task, the flow) keeps the screen alive.
   @Test func aPoppedDetailIsReleased() async throws {
     let tabs = try await HostedApp.tabBar()
-    let index = try #require(Container.shared.brand().configuration.tabs.firstIndex(of: .history))
+    let index = try #require(try HostedApp.container().brand().configuration.tabs.firstIndex(of: .history))
     tabs.selectedIndex = index
     let navigation = try #require(tabs.selectedViewController as? UINavigationController)
     navigation.popToRootViewController(animated: false)
@@ -83,7 +83,8 @@ struct SessionsTabInAppTests {
   }
 
   private func firstNonEmptyList() async -> [NightSummary] {
-    for await nights in await Container.shared.sessionRepository().observeSummaries() where !nights.isEmpty {
+    guard let repository = try? HostedApp.container().sessionRepository() else { return [] }
+    for await nights in await repository.observeSummaries() where !nights.isEmpty {
       return nights
     }
     return []
