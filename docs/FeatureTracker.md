@@ -16,8 +16,8 @@ Last updated: 2026-11-26
 | Backlog | 0 |
 | Blocked | 0 |
 | — | — |
-| Total Tasks | 79 |
-| Tasks Done | 78 |
+| Total Tasks | 80 |
+| Tasks Done | 79 |
 | Tasks In Progress | 1 |
 | Tasks Blocked | 0 |
 | Tasks Backlog | 0 |
@@ -41,7 +41,7 @@ Last updated: 2026-11-26
 | F9 | Showcase polish | P2 | In Progress (T4: screenshots after the UI polish) | 3/4 | ████████░░ 75% | [tracker](trackers/f9-showcase-polish.md) |
 | F11 | UIKit screen containers | P2 | Done | 1/1 | ██████████ 100% | [tracker](trackers/f11-uikit-screen-containers.md) |
 | F12 | View models and factories | P2 | Done | 1/1 | ██████████ 100% | [tracker](trackers/f12-view-models.md) |
-| F13 | Architecture review fixes | P0/P1 | Done | 15/15 | ██████████ 100% | [tracker](trackers/f13-architecture-review.md) |
+| F13 | Architecture review fixes | P0/P1 | Done | 16/16 | ██████████ 100% | [tracker](trackers/f13-architecture-review.md) |
 
 ## Currently Active
 
@@ -65,6 +65,7 @@ Last updated: 2026-11-26
 
 | Date | Task | Event | Notes |
 |------|------|-------|-------|
+| 2026-11-26 | F13-T16 | Completed | Shared 0.32.0: HealthKit and the raw log are shared behaviour (`HealthKitSleep`, `RawLogFile`) wrapped by this app's adapters, as in SleepGuard. Branch `feature/f13/t16-shared-healthkit-rawlog` |
 | 2026-11-26 | F13-T15 | Completed | ADRs 0010–0012, architecture doc, README, AGENTS/CLAUDE, workflow, feature doc. F13 done; the owner merges `feature/f13-architecture-review` into main. Branch `feature/f13/t15-docs` |
 | 2026-11-26 | F13-T12 | Completed | Deep links: `AppRoute` (start, session, last 7 nights) from the scene delegate to `AppCoordinator`, held while busy, dropped when meaningless. Branch `feature/f13/t12-deep-links` |
 | 2026-11-26 | F13-T11 | Completed | A day's nights deleted in one write (`delete(ids:)`, `DeleteSessions`), all or none; bar items with an activity (report button busy state); a failed report shows an alert. Branch `feature/f13/t11-day-delete-chrome` |

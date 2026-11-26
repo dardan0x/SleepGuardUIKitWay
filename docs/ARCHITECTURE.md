@@ -2,7 +2,7 @@
 
 SleepGuardUIKitWay is SleepGuard (a SwiftUI sleep and snoring app) rebuilt the way a large UIKit team would build it. UIKit owns the app and its navigation, SwiftUI draws the screens, the business rules sit in a domain core behind ports, and four brands ship from one codebase. The rules, strings, design kit and screen layouts are shared with SleepGuard through a separate repo, so both apps compute and draw the same things from the same inputs.
 
-Everything below was checked against the code on 2026-11-26 (shared release 0.31.0). Counts and names come from the source, not from the plans.
+Everything below was checked against the code on 2026-11-26 (shared release 0.32.0). Counts and names come from the source, not from the plans.
 
 ## Module graph
 
@@ -46,7 +46,7 @@ graph TD
   DesignKit --> SleepStrings
   DesignKit --> SleepCore
 
-  subgraph Shared["SleepGuardShared, pinned 0.31.0"]
+  subgraph Shared["SleepGuardShared, pinned 0.32.0"]
     SleepCore
     SleepStrings
     SleepMelodies
@@ -65,7 +65,7 @@ The eight features are History, SessionDetail, Statistics, Recording, Settings, 
 | `SleepDomain` (Core) | 26 / 1,400 | 14 ports, 12 use cases, the recording actor and its draft, preferences | Know about SwiftData, AVFoundation, HealthKit, UIKit or SwiftUI |
 | `SleepPersistence` | 11 / 703 | SwiftData records behind `SessionRepository`; files for clips, checkpoint, profile, raw log, survey answers; UserDefaults preferences | Leak a `@Model` past its ports |
 | `SleepAudio` | 11 / 1,099 | AVAudioEngine capture and analysis, clip compression and playback, waveforms, the interrupter's player, store and recorder | |
-| `SleepHealth` | 1 / 87 | HealthKit: write a night, read its sleep stages | Be linked by Lite |
+| `SleepHealth` | 1 / 45 | Apple Health through the shared `HealthKitSleep` (the same code as SleepGuard): write a night, read its sleep stages | Be linked by Lite |
 | `ScreenKit` (Presentation) | 6 / 615 | `ScreenController` (every screen's base: chrome, background, theme, one state child), `ContentListController` (a self-sizing UIKit list), `ScreenChrome`, `Navigator`, theme fonts for UIKit | |
 | Features | 60 / 3,737 | 22 UIKit screens (ADR 0007): collection views, a page view controller, a segmented control and alerts around the shared SwiftUI content. Each has a view model (ADR 0008, checked) that holds its state, calls the use cases and routes and says which alert is due, with no UI imports. Each screen has a `Dependencies` and a `Routes` value | Navigate, present anything but an alert, persist, inject, or touch `UIApplication`; import UI in a view model (checked) |
 | `AppShell` | 31 / 2,350 | Launch and links, the composition root (`AppComposition`, ADR 0009), 6 flows with their navigation helpers, coordinators, factories, the Factory container (33 registrations) | Be imported by anything but the apps and its test support |

@@ -41,6 +41,7 @@ Fixes this app's verdicts from the principal-level architecture review of the th
 | F13-T13 | Port contract tests (Q59) | Tests | Done | — | SleepDomain, Adapters |
 | F13-T14 | Structural lint, theme check, CI (Q63, Q51, Q62) | Tooling | Done | — | ScreenKit, scripts, CI |
 | F13-T15 | Docs and close-out | Docs | Done | all | docs |
+| F13-T16 | Shared HealthKit and raw-log behaviour (shared 0.32.0) | Refactor | Done | T15 | SleepHealth, SleepPersistence |
 
 ## Task Details
 
@@ -328,3 +329,23 @@ Fixes this app's verdicts from the principal-level architecture review of the th
 
 **Notes:**
 - Branch `feature/f13/t15-docs`
+
+### F13-T16 — Shared HealthKit and raw-log behaviour (shared 0.32.0)
+
+| Field | Value |
+|-------|-------|
+| Status | Done |
+| Started | 2026-11-26 |
+| Completed | 2026-11-26 |
+
+Added after F13's close-out, at the owner's request: behaviour both apps need lives in the shared repo, so one fix reaches both (SleepGuard F27-T18). Protocols stay per app.
+
+**Acceptance Criteria:**
+- [x] Pinned 0.32.0 (`SleepHealthKit`, `SleepFiles`, tagged by the owner)
+- [x] `HealthKitAccess` wraps `HealthKitSleep`; the adapter keeps the port's shape and the logging
+- [x] `RawLogFileWriter` wraps `RawLogFile`; `FileRawLogWriter.swift` removed (approved). Samples now written in time order, an empty log removed, as SleepGuard does
+- [x] A test that the domain's raw-log name is the shared one (cleanup finds the file); the stage-mapping test checks the shared mapping
+- [x] Layering: SleepPersistence may import `SleepFiles`, SleepHealth `SleepHealthKit` (no direct HealthKit any more)
+
+**Notes:**
+- Branch `feature/f13/t16-shared-healthkit-rawlog`
