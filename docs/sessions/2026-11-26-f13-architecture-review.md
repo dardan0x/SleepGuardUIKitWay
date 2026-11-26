@@ -21,6 +21,7 @@ title: F13 architecture review fixes, T1–T15 (shared 0.30.0 and 0.31.0)
 - F13-T10: `RecordingFlow` split into interrupter navigation and the night's device lifecycle.
 - F13-T11: atomic day delete; the report button shows its work and failures.
 - F13-T12: deep links routed by the app coordinator.
+- F13-T22: explicit imports, no re-exports (shared 0.37.0).
 - F13-T21: close-out: ADR 0013, ARCHITECTURE, AGENTS/CLAUDE.
 - F13-T20: release C (0.36.0): the repository stores the shared SleepStore records and schema.
 - F13-T19: release B (0.35.0): the audio adapters are the shared SleepAudioKit behind the unchanged ports.

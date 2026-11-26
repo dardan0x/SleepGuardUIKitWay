@@ -1,5 +1,7 @@
 import ScreenKit
 import SleepGuardContentKit
+import SleepGuardDesignKit
+import SleepStrings
 import UIKit
 
 /// Placeholder gauge, stats and rows while the night loads, in UIKit.

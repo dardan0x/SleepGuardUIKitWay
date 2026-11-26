@@ -1,6 +1,7 @@
 import ScreenKit
 import SleepCore
 import SleepGuardContentKit
+import SleepGuardDesignKit
 import UIKit
 
 /// For routes of screens that list nights (Last 7 Nights, Calendar).

@@ -4,6 +4,7 @@ import ScreenKit
 import SessionDetailFeature
 import SleepCore
 import SleepGuardDesignKit
+import SleepStrings
 import UIKit
 
 /// Builds the History list: dependencies, then its view model, then the

@@ -1,6 +1,7 @@
 import ScreenKit
 import SleepCore
 import SleepGuardContentKit
+import SleepGuardDesignKit
 import SwiftUI
 import UIKit
 

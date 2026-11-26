@@ -4,6 +4,7 @@ import SleepCore
 import SleepDomain
 import SleepGuardDesignKit
 import SleepLogging
+import SleepStrings
 import UIKit
 
 /// Opening a night, from any tab: push its detail, present its events and

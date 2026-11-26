@@ -18,7 +18,7 @@ let package = Package(
     .package(path: "../Adapters"),
     .package(path: "../Presentation"),
     .package(path: "../Features"),
-    .package(url: "https://github.com/dardan0x/SleepGuardShared.git", exact: "0.36.0"),
+    .package(url: "https://github.com/dardan0x/SleepGuardShared.git", exact: "0.37.0"),
     .package(url: "https://github.com/hmlongco/Factory", exact: "3.5.2"),
   ],
   targets: [
@@ -43,6 +43,7 @@ let package = Package(
         .product(name: "SleepLogging", package: "SleepGuardShared"),
         .product(name: "SleepNotifications", package: "SleepGuardShared"),
         .product(name: "FactoryKit", package: "Factory"),
+        .product(name: "SleepStrings", package: "SleepGuardShared"),
       ],
       swiftSettings: [
         .swiftLanguageMode(.v6),
@@ -80,6 +81,7 @@ let package = Package(
         .product(name: "BriefingFeature", package: "Features"),
         .product(name: "SleepGuardDesignKit", package: "SleepGuardShared"),
         .product(name: "FactoryKit", package: "Factory"),
+        .product(name: "SleepStrings", package: "SleepGuardShared"),
       ],
       swiftSettings: [
         .swiftLanguageMode(.v6),

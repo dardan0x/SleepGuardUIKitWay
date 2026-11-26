@@ -1,6 +1,7 @@
 import AppShellTestSupport
 import FactoryKit
 import SleepGuardDesignKit
+import SleepStrings
 import SwiftUI
 import Testing
 import UIKit

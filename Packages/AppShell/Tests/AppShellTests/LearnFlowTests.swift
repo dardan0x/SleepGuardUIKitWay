@@ -2,6 +2,7 @@ import AppShellTestSupport
 import FactoryKit
 import Foundation
 import SleepGuardDesignKit
+import SleepStrings
 import Testing
 import UIKit
 @testable import AppShell

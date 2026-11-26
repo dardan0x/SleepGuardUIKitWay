@@ -2,6 +2,7 @@ import FactoryKit
 import ScreenKit
 import SettingsFeature
 import SleepGuardDesignKit
+import SleepStrings
 import UIKit
 
 /// Builds the Settings screens: dependencies, then the view model, then the

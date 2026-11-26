@@ -2,6 +2,7 @@ import Foundation
 import ScreenKit
 import SleepCore
 import SleepGuardContentKit
+import SleepGuardDesignKit
 import UIKit
 
 /// The start delay, drawn from `RecordingCountdownViewModel` in the shared

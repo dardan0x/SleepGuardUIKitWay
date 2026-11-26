@@ -2,6 +2,7 @@ import ScreenKit
 import SleepCore
 import SleepDomain
 import SleepGuardContentKit
+import SleepGuardDesignKit
 import UIKit
 
 /// One night, drawn from `SessionDetailViewModel`: a UIKit layout of the

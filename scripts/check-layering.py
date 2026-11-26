@@ -24,8 +24,7 @@ So this script checks imports against the module table in AGENTS.md, plus:
   7. Every screen has a view model: a feature class that subclasses
      `ScreenController` declares `let viewModel` (ADR 0008).
   8. Declared imports: every target (tests included) imports a package module
-     only if its Package.swift declares it, directly or through a module that
-     `@_exported import`s it. The workspace build doesn't check this, and a
+     only if its Package.swift declares it (nothing is re-exported, rule 10). The workspace build doesn't check this, and a
      standalone build only does when no sibling target built the module
      first. Manifests are read with `swift package dump-package`.
   9. Themed hosting: only ScreenKit creates `UIHostingController` or
@@ -33,6 +32,9 @@ So this script checks imports against the module table in AGENTS.md, plus:
      (`host`, `render`, `hosted`, `Theme.hosting`), which put the brand's
      theme in the environment; the environment's default is SleepGuard's, so
      a hand-made host would draw another brand in SleepGuard's colours.
+ 10. No `@_exported import`: it hides where a type comes from and what a
+     target depends on. A file imports every module it uses (shared 0.37.0
+     removed the kits' re-exports too).
 
 A screen presenting anything but an alert is a compile error
 (`ScreenController.present` is unavailable), so rule 5's `present(` pattern
@@ -91,6 +93,7 @@ ESCAPE_HATCH_ALLOWLIST: dict[str, str] = {
 }
 
 PRINT_CALL = re.compile(r"(?<![\w.])print\(")
+REEXPORT = re.compile(r"^\s*@_exported\s+import\b")
 SHARED = re.compile(r"\b([A-Z]\w*)\.shared\b")
 SHARED_ALLOWLIST = {
     # The device switches (screen on, Settings link, permissions), in one place.
@@ -233,6 +236,8 @@ def main() -> int:
                 violations.append(f"{rel}:{number}: concurrency escape hatch: {line.strip()}")
             if PRINT_CALL.search(line):
                 violations.append(f"{rel}:{number}: print( — log through os.Logger")
+            if REEXPORT.search(line):
+                violations.append(f"{rel}:{number}: @_exported import — import the module where it is used and declare it")
             if module:
                 for match in SHARED.finditer(line):
                     if (rel, match.group(1)) not in SHARED_ALLOWLIST:

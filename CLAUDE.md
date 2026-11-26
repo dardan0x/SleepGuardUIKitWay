@@ -33,7 +33,7 @@ Features (UIKit)    ScreenKit      Adapters (SleepPersistence, SleepAudio, Sleep
 |---|---|---|
 | `SleepDomain` | Foundation, `SleepCore` | everything else |
 | Adapters | `SleepDomain`, `SleepCore`, the one Apple framework they wrap | SwiftUI, UIKit (except where the framework requires it), Factory, features |
-| Features | `SleepDomain`, `SleepCore`, `SleepGuardContentKit`, `SleepGuardDesignKit` (which re-exports `SleepStrings`), `ScreenKit`, UIKit, SwiftUI (to host the shared content) | Factory, adapters, other features |
+| Features | `SleepDomain`, `SleepCore`, `SleepGuardContentKit`, `SleepGuardDesignKit`, `SleepStrings`, `ScreenKit`, UIKit, SwiftUI (to host the shared content) | Factory, adapters, other features |
 | A feature's `…ViewModel.swift` | Foundation, Observation, `SleepDomain`, `SleepCore` | UIKit, SwiftUI, `ScreenKit`, the kits (so no `Strings`) |
 | `ScreenKit` | UIKit, SwiftUI, `SleepGuardDesignKit` | domain, features, Factory |
 | `AppShell` | everything except `SleepHealth` | — |
@@ -113,7 +113,7 @@ Notes: `docs/architecture/brands.md`.
 
 ## Localization
 
-- Every user-facing string goes through `Strings.x`. The catalog is `SleepStrings` in the shared repo; `SleepGuardDesignKit` re-exports it (`@_exported import SleepStrings`), so a file that imports the design kit can use `Strings` without a second import. This matches SleepGuard, where `DesignSystem` does the same. Never a literal in `Text`, `Button`, a `ScreenChrome` title, or an alert. Never `String(localized:)` directly.
+- Every user-facing string goes through `Strings.x`. The catalog is `SleepStrings` in the shared repo; a file that uses `Strings` imports `SleepStrings` and its target declares it. Nothing is re-exported, here or in the shared repo (`@_exported import` fails `check-layering.py`, rule 10), as in SleepGuard. Never a literal in `Text`, `Button`, a `ScreenChrome` title, or an alert. Never `String(localized:)` directly.
 - Strings are added in `../SleepGuardShared` (see its README). A new string affects SleepGuard too.
 - Text that names the app takes the brand name as an argument from `BrandConfiguration`.
 - Only views, controllers, factories (for chrome titles) and content engines whose output is text may use `Strings`. A content engine that isn't a view imports `SleepStrings` directly rather than the design kit.
