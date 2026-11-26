@@ -32,7 +32,7 @@ Fixes this app's verdicts from the principal-level architecture review of the th
 | F13-T4 | Observation follows the store (Q37) | Bug | Done | T3 | SleepPersistence |
 | F13-T5 | "We couldn't open your data" + shared 0.31.0 (Q55) | Data safety | In Progress (waits for the 0.31.0 tag) | T4 | shared, AppShell |
 | F13-T6 | Same samples as SleepGuard; interruptions; FFT; thermal (Q14, Q17) | Detection | Done | T1 | SleepDomain, SleepAudio |
-| F13-T7 | Writes leave the sample path (Q13, Q39) | Performance | Backlog | T6 | SleepDomain |
+| F13-T7 | Writes leave the sample path (Q13, Q39) | Performance | Done | T6 | SleepDomain |
 | F13-T8 | Typed composition (Q47, Q48) | Architecture | Backlog | T5 | AppShell, Apps |
 | F13-T9 | Navigator races (Q45) | Bug | Backlog | — | ScreenKit, AppShell |
 | F13-T10 | Split `RecordingFlow` (Q44) | Refactor | Backlog | T8 | AppShell |
@@ -150,3 +150,21 @@ Fixes this app's verdicts from the principal-level architecture review of the th
 - `docs/ARCHITECTURE.md`'s capture section is left for T15: the file has the owner's uncommitted edits.
 - Simulator raw-log spacing check skipped: the decimator tests prove the spacing; the device night (owner) covers the microphone.
 - Branch `feature/f13/t6-capture-parity`
+
+### F13-T7 — Writes leave the sample path
+
+| Field | Value |
+|-------|-------|
+| Status | Done |
+| Started | 2026-11-26 |
+| Completed | 2026-11-26 |
+
+**Acceptance Criteria:**
+- [x] `receive` and `perform` never await disk I/O: checkpoints go to a latest-wins writer task, raw-log batches to a serial one (both on the session actor, so ordering needs no locks)
+- [x] A stuck disk for twenty minutes of night: samples keep flowing (about 24,000), and once it frees only the stuck save and the newest night are written (`[0, 1080]`), not ten
+- [x] `stop` drains both writers before its final save; nothing lands after it (so commit's `clear` and discard always win)
+- [x] Raw log still gets every sample, in order
+
+**Notes:**
+- No sequence gate needed, unlike SleepGuard's F27-T6: here the writers belong to the session and `stop` awaits them, and the checkpoint is only cleared after `stop` returns (`CommitSession`, discard).
+- Branch `feature/f13/t7-off-path-writes`
