@@ -28,7 +28,8 @@ struct SessionDetailFactory {
     night: NightSummary, onReport: @escaping @MainActor () -> Void, onDelete: @escaping @MainActor () -> Void,
     routes: SessionDetailRoutes) -> UIViewController
   {
-    let dependencies = SessionDetailDependencies(nightID: night.id, loadDetail: container.loadSessionDetail())
+    let dependencies = SessionDetailDependencies(
+      nightID: night.id, loadDetail: container.loadSessionDetail(), enrichDetail: container.enrichNightWithStages())
     return SessionDetailViewController(
       viewModel: SessionDetailViewModel(dependencies: dependencies, routes: routes),
       theme: container.theme(),

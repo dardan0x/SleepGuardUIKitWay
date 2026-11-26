@@ -61,7 +61,11 @@ extension Container {
   }
 
   var loadSessionDetail: Factory<LoadSessionDetail> {
-    self { LoadSessionDetail(sessions: self.sessionRepository(), sleepStages: self.sleepStageSource()) }
+    self { LoadSessionDetail(sessions: self.sessionRepository()) }
+  }
+
+  var enrichNightWithStages: Factory<EnrichNightWithStages> {
+    self { EnrichNightWithStages(sessions: self.sessionRepository(), sleepStages: self.sleepStageSource()) }
   }
 
   var checkpointStore: Factory<any RecordingCheckpointStore> {

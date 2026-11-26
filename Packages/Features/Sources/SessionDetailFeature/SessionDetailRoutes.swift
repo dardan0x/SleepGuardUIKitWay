@@ -3,12 +3,15 @@ import SleepDomain
 
 public struct SessionDetailDependencies: Sendable {
   public var nightID: Night.ID
-  /// Loads the night, adding sleep stages when available.
+  /// Loads the night (reads only).
   public var loadDetail: LoadSessionDetail
+  /// Then adds sleep stages when available.
+  public var enrichDetail: EnrichNightWithStages
 
-  public init(nightID: Night.ID, loadDetail: LoadSessionDetail) {
+  public init(nightID: Night.ID, loadDetail: LoadSessionDetail, enrichDetail: EnrichNightWithStages) {
     self.nightID = nightID
     self.loadDetail = loadDetail
+    self.enrichDetail = enrichDetail
   }
 }
 
