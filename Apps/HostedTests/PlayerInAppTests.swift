@@ -15,13 +15,13 @@ import UIKit
 struct PlayerInAppTests {
   @Test func playsAnEpisodeAndStopsOnClose() async throws {
     let tabs = try await HostedApp.tabBar()
-    tabs.selectedIndex = try #require(Container.shared.brand().configuration.tabs.firstIndex(of: .history))
+    tabs.selectedIndex = try #require(try HostedApp.container().brand().configuration.tabs.firstIndex(of: .history))
     let navigation = try #require(tabs.selectedViewController as? UINavigationController)
     navigation.popToRootViewController(animated: false)
     let list = try #require(navigation.viewControllers.first as? HistoryViewController)
 
     // A night with a snoring episode of more than one clip.
-    let repository = Container.shared.sessionRepository()
+    let repository = try HostedApp.container().sessionRepository()
     var summaries: [NightSummary] = []
     for await nights in await repository.observeSummaries() where !nights.isEmpty {
       summaries = nights

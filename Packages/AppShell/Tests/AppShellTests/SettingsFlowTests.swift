@@ -17,7 +17,7 @@ import UIKit
 struct SettingsFlowTests {
   private func makeFlow(brand: TestBrand = TestBrand()) -> (SettingsFlow, NavigatorSpy) {
     let spy = NavigatorSpy()
-    return (SettingsFlow(navigator: spy, container: Container.test(brand: brand)), spy)
+    return (AppComposition(container: Container.test(brand: brand)).settingsFlow(navigator: spy), spy)
   }
 
   private func settings(_ spy: NavigatorSpy) throws -> SettingsViewController {
@@ -90,7 +90,7 @@ struct RecordingDelayFlowTests {
       return device
     }
     let spy = NavigatorSpy()
-    let flow = RecordingFlow(navigator: spy, container: container, compactHeight: false) {}
+    let flow = AppComposition(container: container).recordingFlow(navigator: spy, compactHeight: false) {}
     return (flow, spy, capture, log)
   }
 

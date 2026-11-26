@@ -11,8 +11,8 @@ So this script checks imports against the module table in AGENTS.md, plus:
   2. Concurrency escape hatches (`@unchecked Sendable`, `nonisolated(unsafe)`,
      `@preconcurrency`) anywhere in Packages/ or Apps/, tests included.
   3. No `print(`: use os.Logger.
-  4. No `.shared` singletons in packages (Factory's `Container.shared` in
-     AppShell's bootstrap is the one exception).
+  4. No `.shared` singletons in packages, `Container.shared` included: the
+     app's container is `AppComposition`'s own (ADR 0009).
   5. Feature modules (Packages/Features/) don't use SwiftUI navigation or
      persistence APIs, DI property wrappers, UIKit globals, or UIKit
      navigation: coordinators own navigation (a screen presents only a
@@ -94,7 +94,6 @@ ESCAPE_HATCH_ALLOWLIST: dict[str, str] = {
 PRINT_CALL = re.compile(r"(?<![\w.])print\(")
 SHARED = re.compile(r"\b([A-Z]\w*)\.shared\b")
 SHARED_ALLOWLIST = {
-    ("Packages/AppShell/Sources/AppShell/AppShell.swift", "Container"),
     # The device switches (screen on, Settings link, permissions), in one place.
     ("Packages/AppShell/Sources/AppShell/Recording/DeviceServices.swift", "UIApplication"),
     ("Packages/AppShell/Sources/AppShell/Recording/DeviceServices.swift", "AVAudioApplication"),

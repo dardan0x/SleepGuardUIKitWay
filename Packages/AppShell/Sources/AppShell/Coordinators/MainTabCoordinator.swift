@@ -1,4 +1,3 @@
-import FactoryKit
 import ScreenKit
 import SleepGuardDesignKit
 import UIKit
@@ -14,23 +13,16 @@ final class MainTabCoordinator {
   let tabBarController = UITabBarController()
   private(set) var flows: [any TabFlow] = []
 
-  /// `onStartRecording`: the recording flow is the app coordinator's, not a tab's.
-  init(container: Container, onStartRecording: @escaping @MainActor () -> Void = {}) {
-    let theme = container.theme()
-
-    let navigationControllers = container.brand().configuration.tabs.map { tab in
+  /// `makeFlow` builds a tab's flow over its navigator (`AppComposition`).
+  init(theme: Theme, tabs: [AppTab], makeFlow: (AppTab, any Navigator) -> any TabFlow) {
+    let navigationControllers = tabs.map { tab in
       let navigator = NavigationControllerNavigator()
       let navigation = navigator.navigationController
       navigation.tabBarItem = UITabBarItem(title: tab.title, image: UIImage(systemName: tab.iconName), selectedImage: nil)
       navigation.navigationBar.prefersLargeTitles = true
       Appearance.apply(theme, to: navigation.navigationBar)
 
-      let flow: any TabFlow = switch tab {
-      case .history: HistoryFlow(navigator: navigator, container: container)
-      case .statistics: StatisticsFlow(navigator: navigator, container: container, onStartRecording: onStartRecording)
-      case .settings: SettingsFlow(navigator: navigator, container: container)
-      case .learn: LearnFlow(navigator: navigator, container: container)
-      }
+      let flow = makeFlow(tab, navigator)
       flow.start()
       flows.append(flow)
       return navigation

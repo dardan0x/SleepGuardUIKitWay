@@ -33,7 +33,7 @@ Fixes this app's verdicts from the principal-level architecture review of the th
 | F13-T5 | "We couldn't open your data" + shared 0.31.0 (Q55) | Data safety | Done | T4 | shared, AppShell |
 | F13-T6 | Same samples as SleepGuard; interruptions; FFT; thermal (Q14, Q17) | Detection | Done | T1 | SleepDomain, SleepAudio |
 | F13-T7 | Writes leave the sample path (Q13, Q39) | Performance | Done | T6 | SleepDomain |
-| F13-T8 | Typed composition (Q47, Q48) | Architecture | Backlog | T5 | AppShell, Apps |
+| F13-T8 | Typed composition (Q47, Q48) | Architecture | Done | T5 | AppShell, Apps |
 | F13-T9 | Navigator races (Q45) | Bug | Done | — | ScreenKit, AppShell |
 | F13-T10 | Split `RecordingFlow` (Q44) | Refactor | Backlog | T8 | AppShell |
 | F13-T11 | Atomic day delete; dynamic chrome (Q38, Q43) | Bug / UI | Backlog | T5 | SleepDomain, SleepPersistence, ScreenKit, features |
@@ -234,3 +234,24 @@ Fixes this app's verdicts from the principal-level architecture review of the th
 - Locally, the in-app lane with a reference brand: about 50 s instead of about 2½ min.
 - Flake seen once: `PlayerInAppTests.playsAnEpisodeAndStopsOnClose` timed out (60 s) in Dawn's full run; it passed alone twice (19 s) and in a full Dawn rerun. It plays real audio on the simulator; watch it in CI.
 - Branch `feature/f13/t14-structural-checks`
+
+### F13-T8 — Typed composition
+
+| Field | Value |
+|-------|-------|
+| Status | Done |
+| Started | 2026-11-26 |
+| Completed | 2026-11-26 |
+
+**Acceptance Criteria:**
+- [x] `AppComposition(brand:)` owns its own container with the brand registered before anything resolves; the app never uses `Container.shared` (layering now bans it)
+- [x] Flows, `NightDetailNavigation` and `MainTabCoordinator` take exactly what they use; `AppComposition` builds them. Screen factories stay composition code
+- [x] `try!` replaced by a `fatalError` with the reason; the brand default's message points at `AppComposition`
+- [x] `BrandBootstrapTests` resolves all 32 registrations by name and checks the list against the `Factory` declarations in the source
+- [x] ADR 0009
+
+**Notes:**
+- Registrations are `.cached` (once per container) instead of `.singleton` (once per process), so two compositions never share objects.
+- In-app tests reach the running app through `AppShell.launched` (main-actor, weak); the app never reads it.
+- Kept Factory under the composition: a fully hand-written graph would be ~30 properties for the same result; the bootstrap test is the guard (see the ADR's limits).
+- Branch `feature/f13/t8-typed-composition`

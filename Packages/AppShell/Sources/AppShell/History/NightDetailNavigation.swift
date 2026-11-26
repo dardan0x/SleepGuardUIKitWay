@@ -1,4 +1,3 @@
-import FactoryKit
 import ScreenKit
 import SessionDetailFeature
 import SleepCore
@@ -18,12 +17,18 @@ final class NightDetailNavigation {
   /// Writing a report to share; awaited by tests.
   private(set) var sharing: Task<Void, Never>?
 
-  init(navigator: any Navigator, container: Container) {
+  init(
+    navigator: any Navigator,
+    detail: SessionDetailFactory,
+    deleteSession: DeleteSession,
+    nights: any SessionRepository,
+    clipsDirectory: URL)
+  {
     self.navigator = navigator
-    detail = SessionDetailFactory(container: container)
-    deleteSession = container.deleteSession()
-    nights = container.sessionRepository()
-    clipsDirectory = container.storageLocation().clipsDirectory
+    self.detail = detail
+    self.deleteSession = deleteSession
+    self.nights = nights
+    self.clipsDirectory = clipsDirectory
   }
 
   deinit {

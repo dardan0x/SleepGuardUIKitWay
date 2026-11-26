@@ -30,7 +30,7 @@ struct OnboardingFlowTests {
     container.preferencesStore.register { preferences }
     let spy = NavigatorSpy()
     var finished: [Bool] = []
-    let flow = OnboardingFlow(navigator: spy, container: container) { finished.append($0) }
+    let flow = AppComposition(container: container).onboardingFlow(navigator: spy) { finished.append($0) }
     flow.start()
     return Harness(flow: flow, spy: spy, preferences: preferences, finished: { finished })
   }
@@ -86,7 +86,7 @@ struct FirstLaunchTests {
     preferences.hasCompletedOnboarding = onboarded
     let store = FakePreferencesStore(preferences)
     container.preferencesStore.register { store }
-    return (AppCoordinator(container: container), store)
+    return (AppCoordinator(composition: AppComposition(container: container)), store)
   }
 
   @Test func firstLaunchShowsTheOnboardingAndNothingElse() async {
@@ -102,7 +102,7 @@ struct FirstLaunchTests {
   @Test func anUnavailableStoreShowsOnlyItsScreen() async {
     let container = Container.test()
     container.storeOpening.register { StoreOpening(repository: FakeSessionRepository(), isAvailable: false) }
-    let app = AppCoordinator(container: container)
+    let app = AppCoordinator(composition: AppComposition(container: container))
     let window = UIWindow()
     app.start(in: window)
     await app.launch?.value

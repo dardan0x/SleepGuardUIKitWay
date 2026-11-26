@@ -7,12 +7,18 @@ import SleepPersistence
 import UIKit
 
 /// The shell's registrations. Everything derives from `brand`, the one value
-/// supplied from outside (`AppShell.bootstrap(brand:)`). Only `AppShell`
-/// imports Factory; packages below it take plain initializer arguments.
+/// supplied from outside. Only `AppShell` imports Factory; packages below it
+/// take plain initializer arguments, and so do the flows (`AppComposition`
+/// builds them).
+///
+/// The app never uses `Container.shared`: `AppComposition` makes its own
+/// container and registers the brand before returning it, so nothing can
+/// resolve without a brand. The default below is unreachable from the app;
+/// it only catches a test container made without one.
 extension Container {
   var brand: Factory<any BrandComposition> {
-    self { preconditionFailure("AppShell.bootstrap(brand:) registers the brand before anything resolves") }
-      .singleton
+    self { fatalError("A container needs its brand: make it through AppComposition(brand:)") }
+      .cached
   }
 
   var theme: Factory<Theme> {
@@ -20,7 +26,7 @@ extension Container {
   }
 
   var storageLocation: Factory<StorageLocation> {
-    self { StorageLocation.resolve() }.singleton
+    self { StorageLocation.resolve() }.cached
   }
 
   /// The nights database, opened once. If the file can't be opened, this
@@ -35,8 +41,13 @@ extension Container {
         return try StoreOpening(repository: SleepPersistence.makeSessionRepository(storeURL: url), isAvailable: true)
       } catch {
         Log.storage.fault("Couldn't open the nights store: \(error.localizedDescription, privacy: .public)")
-        // In memory can only fail if SwiftData itself can't start.
-        return try! StoreOpening(repository: SleepPersistence.makeSessionRepository(storeURL: nil), isAvailable: false)
+        do {
+          return try StoreOpening(repository: SleepPersistence.makeSessionRepository(storeURL: nil), isAvailable: false)
+        } catch {
+          // Not even an in-memory store: SwiftData itself can't start, and
+          // there is no app to show.
+          fatalError("SwiftData can't create an in-memory store: \(error)")
+        }
       }
     }
     // Once per container (`.singleton` would be one for every container in
@@ -49,7 +60,7 @@ extension Container {
   }
 
   var sessionFileStore: Factory<any SessionFileStore> {
-    self { SleepPersistence.makeSessionFileStore(directory: self.storageLocation().clipsDirectory) }.singleton
+    self { SleepPersistence.makeSessionFileStore(directory: self.storageLocation().clipsDirectory) }.cached
   }
 
   /// The brand's Apple Health reads the stages; a brand without it has none.
@@ -57,7 +68,7 @@ extension Container {
     self {
       guard let health = self.healthAccess() else { return NoSleepStages() as any SleepStageSource }
       return health
-    }.singleton
+    }.cached
   }
 
   var deleteSession: Factory<DeleteSession> {
@@ -77,7 +88,7 @@ extension Container {
   }
 
   var checkpointStore: Factory<any RecordingCheckpointStore> {
-    self { SleepPersistence.makeCheckpointStore(url: self.storageLocation().checkpointURL) }.singleton
+    self { SleepPersistence.makeCheckpointStore(url: self.storageLocation().checkpointURL) }.cached
   }
 
   /// When a stopped night is long enough to save. The shipped rule is 30
@@ -103,15 +114,15 @@ extension Container {
   }
 
   var preferencesStore: Factory<any PreferencesStore> {
-    self { SleepPersistence.makePreferencesStore() }.singleton
+    self { SleepPersistence.makePreferencesStore() }.cached
   }
 
   var profileStore: Factory<any ProfileStore> {
-    self { SleepPersistence.makeProfileStore(url: self.storageLocation().profileURL) }.singleton
+    self { SleepPersistence.makeProfileStore(url: self.storageLocation().profileURL) }.cached
   }
 
   var lifestyleLogStore: Factory<any LifestyleLogStore> {
-    self { SleepPersistence.makeLifestyleLogStore(url: self.storageLocation().lifestyleLogURL) }.singleton
+    self { SleepPersistence.makeLifestyleLogStore(url: self.storageLocation().lifestyleLogURL) }.cached
   }
 
   var loadMorningBriefing: Factory<LoadMorningBriefing> {
@@ -203,7 +214,7 @@ extension Container {
   }
 
   var clipWaveformSource: Factory<any ClipWaveformSource> {
-    self { SleepAudio.makeClipWaveformSource() }.singleton
+    self { SleepAudio.makeClipWaveformSource() }.cached
   }
 
   /// Makes a player per player sheet (the sheet's state owner releases it).

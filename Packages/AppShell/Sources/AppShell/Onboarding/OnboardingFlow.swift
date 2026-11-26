@@ -1,4 +1,3 @@
-import FactoryKit
 import OnboardingFeature
 import ScreenKit
 import SettingsFeature
@@ -11,19 +10,26 @@ import UIKit
 /// back whether the person chose "Start recording".
 final class OnboardingFlow {
   private let navigator: any Navigator
-  private let container: Container
+  private let factory: OnboardingFactory
+  private let preferences: any PreferencesStore
   private let onFinish: @MainActor (_ startRecording: Bool) -> Void
   /// Saving the choices, awaited by tests.
   private(set) var finishing: Task<Void, Never>?
 
-  init(navigator: any Navigator, container: Container, onFinish: @escaping @MainActor (_ startRecording: Bool) -> Void) {
+  init(
+    navigator: any Navigator,
+    factory: OnboardingFactory,
+    preferences: any PreferencesStore,
+    onFinish: @escaping @MainActor (_ startRecording: Bool) -> Void)
+  {
     self.navigator = navigator
-    self.container = container
+    self.factory = factory
+    self.preferences = preferences
     self.onFinish = onFinish
   }
 
   func start() {
-    navigator.setRoot(OnboardingFactory(container: container).make(routes: OnboardingRoutes(
+    navigator.setRoot(factory.make(routes: OnboardingRoutes(
       finish: { [weak self] healthGranted, startRecording in
         self?.finish(healthGranted: healthGranted, startRecording: startRecording)
       })))
@@ -32,7 +38,7 @@ final class OnboardingFlow {
   /// What the screen's finish route does; internal for tests.
   func finish(healthGranted: Bool, startRecording: Bool) {
     guard finishing == nil else { return }
-    let store = container.preferencesStore()
+    let store = preferences
     finishing = Task { [onFinish] in
       var preferences = await store.load()
       preferences.hasCompletedOnboarding = true

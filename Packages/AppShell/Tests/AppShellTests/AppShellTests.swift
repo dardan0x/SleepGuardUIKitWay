@@ -10,19 +10,19 @@ import UIKit
 /// Each test builds its own `Container`, so tests don't share the global one.
 struct MainTabCoordinatorTests {
   @Test func tabsFollowTheBrandsListAndOrder() {
-    let coordinator = MainTabCoordinator(container: container(TestBrand(tabs: [.history, .statistics, .settings])))
+    let coordinator = AppComposition(container: container(TestBrand(tabs: [.history, .statistics, .settings]))).mainTabs()
     let items = coordinator.tabBarController.viewControllers?.compactMap(\.tabBarItem)
     #expect(items?.map(\.title) == [Strings.tabSessions, Strings.tabStatistics, Strings.tabSettings])
     #expect(coordinator.flows.map(\.tab) == [.history, .statistics, .settings])
     #expect(coordinator.flows.first is HistoryFlow)
     #expect(coordinator.flows[1] is StatisticsFlow)
     #expect(coordinator.flows[2] is SettingsFlow)
-    let withLearn = MainTabCoordinator(container: container(TestBrand(tabs: [.statistics, .learn])))
+    let withLearn = AppComposition(container: container(TestBrand(tabs: [.statistics, .learn]))).mainTabs()
     #expect(withLearn.flows.last is LearnFlow)
   }
 
   @Test func everyTabStartsOnItsOwnHostedScreenWithItsTitle() throws {
-    let coordinator = MainTabCoordinator(container: container(TestBrand(tabs: [.statistics, .learn])))
+    let coordinator = AppComposition(container: container(TestBrand(tabs: [.statistics, .learn]))).mainTabs()
     let navigations = try #require(coordinator.tabBarController.viewControllers as? [UINavigationController])
     #expect(navigations.map(\.viewControllers.count) == [1, 1])
     #expect(navigations.map(\.viewControllers.first?.navigationItem.title) == [Strings.tabStatistics, Strings.tabLearn])
@@ -32,7 +32,7 @@ struct MainTabCoordinatorTests {
     var theme = Theme.sleepGuard
     theme.palette.accent = Color(hex: "#9B7BFF")
     theme.palette.bgSecondary = Color(hex: "#221640")
-    let coordinator = MainTabCoordinator(container: container(TestBrand(theme: theme, tabs: [.statistics])))
+    let coordinator = AppComposition(container: container(TestBrand(theme: theme, tabs: [.statistics]))).mainTabs()
 
     let tabBar = coordinator.tabBarController.tabBar
     #expect(tabBar.standardAppearance.backgroundColor == UIColor(theme.palette.bgSecondary))
@@ -45,7 +45,7 @@ struct MainTabCoordinatorTests {
   @Test func navigationTitlesUseTheThemesTypeDesign() throws {
     var theme = Theme.sleepGuard
     theme.typography = Typography(design: .rounded)
-    let coordinator = MainTabCoordinator(container: container(TestBrand(theme: theme, tabs: [.statistics])))
+    let coordinator = AppComposition(container: container(TestBrand(theme: theme, tabs: [.statistics]))).mainTabs()
     let navigation = try #require(coordinator.tabBarController.viewControllers?.first as? UINavigationController)
 
     let largeTitle = try #require(navigation.navigationBar.standardAppearance.largeTitleTextAttributes[.font] as? UIFont)

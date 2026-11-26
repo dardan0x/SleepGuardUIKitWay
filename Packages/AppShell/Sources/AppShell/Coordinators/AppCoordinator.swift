@@ -1,8 +1,6 @@
 import BriefingFeature
 import OnboardingFeature
-import FactoryKit
 import ScreenKit
-import SleepAudio
 import SleepCore
 import SleepDomain
 import UIKit
@@ -10,7 +8,7 @@ import UIKit
 /// Owns the window's content: the onboarding on first launch, then the main
 /// tabs, and the recording flow over them. Later it also handles deep links.
 public final class AppCoordinator {
-  private let container: Container
+  let composition: AppComposition
   private weak var window: UIWindow?
   /// Reads the preferences, then shows the onboarding or the tabs; awaited by tests.
   private(set) var launch: Task<Void, Never>?
@@ -34,14 +32,14 @@ public final class AppCoordinator {
   private let preferences: any PreferencesStore
   private let lifestyleLogs: any LifestyleLogStore
 
-  init(container: Container) {
-    self.container = container
-    recoverInterruptedSession = container.recoverInterruptedSession()
-    enforceStorageLimits = container.enforceStorageLimits()
-    refreshStaleSummaries = container.refreshStaleSummaries()
-    loadMorningBriefing = container.loadMorningBriefing()
-    preferences = container.preferencesStore()
-    lifestyleLogs = container.lifestyleLogStore()
+  init(composition: AppComposition) {
+    self.composition = composition
+    recoverInterruptedSession = composition.recoverInterruptedSession
+    enforceStorageLimits = composition.enforceStorageLimits
+    refreshStaleSummaries = composition.refreshStaleSummaries
+    loadMorningBriefing = composition.loadMorningBriefing
+    preferences = composition.preferences
+    lifestyleLogs = composition.lifestyleLogs
   }
 
   deinit {
@@ -55,15 +53,15 @@ public final class AppCoordinator {
   public func start(in window: UIWindow) {
     self.window = window
     let placeholder = UIViewController()
-    placeholder.view.backgroundColor = UIColor(container.theme().palette.bgPrimary)
+    placeholder.view.backgroundColor = UIColor(composition.theme.palette.bgPrimary)
     window.rootViewController = placeholder
-    window.tintColor = UIColor(container.theme().palette.accent)
+    window.tintColor = UIColor(composition.theme.palette.accent)
     window.makeKeyAndVisible()
-    guard container.storeOpening().isAvailable else {
+    guard composition.storeOpening.isAvailable else {
       showStoreUnavailable()
       return
     }
-    let preferences = container.preferencesStore()
+    let preferences = composition.preferences
     launch = Task { [weak self] in
       let completed = await preferences.load().hasCompletedOnboarding
       if completed {
@@ -77,18 +75,18 @@ public final class AppCoordinator {
   /// The nights database didn't open: this screen only, so no recovery, no
   /// recording and no sample nights reach the in-memory fallback.
   private func showStoreUnavailable() {
-    let device = container.deviceServices()
-    let update = container.brand().configuration.appStoreID
+    let device = composition.device
+    let update = composition.brand.configuration.appStoreID
       .flatMap { URL(string: "https://apps.apple.com/app/id\($0)") }
       .map { url in { @MainActor in device.openURL(url) } }
     window?.rootViewController = StoreUnavailableViewController(
-      viewModel: StoreUnavailableViewModel(update: update), theme: container.theme())
+      viewModel: StoreUnavailableViewModel(update: update), theme: composition.theme)
     storeUnavailable = true
   }
 
   private func showOnboarding() {
     let navigator = NavigationControllerNavigator()
-    let flow = OnboardingFlow(navigator: navigator, container: container) { [weak self] startRecording in
+    let flow = composition.onboardingFlow(navigator: navigator) { [weak self] startRecording in
       self?.onboarding = nil
       self?.showTabs()
       if startRecording { self?.startRecording() }
@@ -101,7 +99,7 @@ public final class AppCoordinator {
   /// The app proper. A night left unfinished and the Debug sample nights wait
   /// for it: nothing runs over the onboarding.
   private func showTabs() {
-    let mainTabs = MainTabCoordinator(container: container, onStartRecording: { [weak self] in self?.startRecording() })
+    let mainTabs = composition.mainTabs(onStartRecording: { [weak self] in self?.startRecording() })
     window?.rootViewController = mainTabs.tabBarController
     self.mainTabs = mainTabs
     offerInterruptedNight()
@@ -121,7 +119,7 @@ public final class AppCoordinator {
       var shown = await preferences.load()
       shown.lastBriefingShown = Date()
       await preferences.save(shown)
-      let sheet = BriefingFactory(container: container).make(
+      let sheet = composition.briefingFactory().make(
         briefing: due.briefing,
         routes: BriefingRoutes(
           answer: { [weak tabs] chip in
@@ -173,7 +171,7 @@ public final class AppCoordinator {
     guard recording == nil, let tabs = mainTabs?.tabBarController else { return }
     let navigator = NavigationControllerNavigator()
     let height = tabs.view.window?.windowScene?.screen.bounds.height ?? 0
-    let flow = RecordingFlow(navigator: navigator, container: container, compactHeight: height <= 874) { [weak self] in
+    let flow = composition.recordingFlow(navigator: navigator, compactHeight: height <= 874) { [weak self] in
       self?.recording = nil
       tabs.dismiss(animated: true)
     }
@@ -185,17 +183,7 @@ public final class AppCoordinator {
 
   private func seedSampleNightsInDebug() {
     #if DEBUG
-    let repository = container.sessionRepository()
-    let clips = container.storageLocation().clipsDirectory
-    seeding = Task {
-      do {
-        try await SampleNights.seedIfEmpty(repository) { name, seconds, intensity in
-          try SleepAudio.writeSampleClip(to: clips.appendingPathComponent(name), seconds: seconds, intensity: intensity)
-        }
-      } catch {
-        Log.storage.error("Seeding sample nights failed: \(error.localizedDescription, privacy: .public)")
-      }
-    }
+    seeding = composition.seedSampleNights(onlyIfEmpty: true)
     #endif
   }
 }

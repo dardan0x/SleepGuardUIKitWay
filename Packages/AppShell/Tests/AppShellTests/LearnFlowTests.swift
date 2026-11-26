@@ -13,7 +13,7 @@ import UIKit
 struct LearnFlowTests {
   private func root(learnURL: URL?) throws -> LearnViewController {
     let spy = NavigatorSpy()
-    let flow = LearnFlow(navigator: spy, container: Container.test(brand: TestBrand(tabs: [.learn], learnURL: learnURL)))
+    let flow = AppComposition(container: Container.test(brand: TestBrand(tabs: [.learn], learnURL: learnURL))).learnFlow(navigator: spy)
     flow.start()
     guard case let .setRoot(controller) = spy.calls.first,
           let screen = controller as? LearnViewController else { throw Unexpected() }
