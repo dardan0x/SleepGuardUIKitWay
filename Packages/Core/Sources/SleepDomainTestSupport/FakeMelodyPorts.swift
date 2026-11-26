@@ -83,7 +83,7 @@ public final class FakeMelodyRecorder: MelodyRecorder {
   public var elapsed: TimeInterval = 0
   public private(set) var isRecording = false
   public private(set) var discards = 0
-  /// A take exists until it's discarded, as in `AVMelodyRecorder`: stopping
+  /// A take exists until it's discarded, as in SleepAudioKit's `MelodyRecording`: stopping
   /// (by hand or at the limit) keeps it.
   private var hasTake = false
   private var onLimit: (@MainActor () -> Void)?

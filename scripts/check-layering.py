@@ -57,7 +57,7 @@ ALLOWED_IMPORTS = {
     "SleepDomain": {"SleepCore"},
     "SleepDomainTestSupport": {"SleepDomain", "SleepCore"},
     "SleepPersistence": {"SleepDomain", "SleepCore", "SleepFiles", "SleepSettings", "SleepLogging", "SwiftData"},
-    "SleepAudio": {"SleepDomain", "SleepCore", "SleepMelodies", "SleepLogging", "AVFoundation", "AVFAudio", "SoundAnalysis", "Accelerate"},
+    "SleepAudio": {"SleepDomain", "SleepCore", "SleepAudioKit"},
     "SleepHealth": {"SleepDomain", "SleepCore", "SleepHealthKit", "SleepLogging"},
     "ScreenKit": {"UIKit", "SwiftUI", "SleepGuardDesignKit"},
     "AppShell": {
@@ -88,8 +88,6 @@ ESCAPE_HATCH = re.compile(
     r"@unchecked\s+Sendable|nonisolated\(unsafe\)|@preconcurrency|uncheckedState|withLockUnchecked")
 # Paths allowed an escape hatch, with the reason. Keep it as short as you can.
 ESCAPE_HATCH_ALLOWLIST: dict[str, str] = {
-    "Packages/Adapters/Sources/SleepAudio/Capture/CaptureProcessor.swift":
-        "the audio tap's thread can't await; a lock guards the non-Sendable AVFoundation objects it uses",
 }
 
 PRINT_CALL = re.compile(r"(?<![\w.])print\(")

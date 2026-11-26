@@ -44,6 +44,7 @@ Fixes this app's verdicts from the principal-level architecture review of the th
 | F13-T16 | Shared HealthKit and raw-log behaviour (shared 0.32.0) | Refactor | Done | T15 | SleepHealth, SleepPersistence |
 | F13-T17 | Shared settings (shared 0.33.0) | Refactor | Done | T16 | SleepDomain, SleepPersistence |
 | F13-T18 | Uniform the apps, release A (shared 0.34.0) | Refactor | Done | T17 | Adapters, SleepDomain, AppShell |
+| F13-T19 | Uniform the apps, release B: shared audio (shared 0.35.0) | Refactor | Done | T18 | SleepAudio, SleepDomain |
 
 ## Task Details
 
@@ -381,3 +382,10 @@ The owner's request: everything not unique to one app moves to the shared repo (
 - `DeviceServices` uses the shared `StartNotification`.
 - Verified on 0.34.0: four brands, all lanes, checks.
 - Branch `feature/f13/t18-shared-small-pieces`
+
+### F13-T19 — Uniform the apps, release B: shared audio (shared 0.35.0)
+
+- The audio adapters' implementations moved to the shared SleepAudioKit (SleepGuard uses the same): `CaptureEngine`, `ClipCompressor`, `ClipPlayerEngine`, `ClipWaveform`, `MelodyPlayback`, `MelodyRecording`, `MelodyFiles`, `SampleClip`. `SleepAudio` keeps its factories and conforms the kit's types to the ports (`KitConformances.swift`); the ports didn't change.
+- `CaptureSample`, `CaptureEvent`, `AudioCaptureError` are SleepCore's (aliases in `Ports/AudioCapture.swift`).
+- Deleted (approved): the ten adapter files and four test files now in the shared repo; the escape-hatch allow-list entry for `CaptureProcessor` went with it (the lock lives in the shared repo now).
+- Verified on 0.35.0: four brands, all lanes, checks. Branch `feature/f13/t19-shared-audio`
