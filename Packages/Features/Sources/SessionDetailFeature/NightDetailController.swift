@@ -85,7 +85,7 @@ final class NightDetailController: UICollectionViewController {
   private func makeDataSource() -> UICollectionViewDiffableDataSource<Section, Item> {
     let hosted = UICollectionView.CellRegistration<UICollectionViewCell, Item> { [weak self] cell, _, item in
       guard let self else { return }
-      cell.contentConfiguration = UIHostingConfiguration { self.content(for: item).environment(\.theme, self.theme) }
+      cell.contentConfiguration = theme.hosting { self.content(for: item) }
         .margins(.all, 0)
     }
     let text = UICollectionView.CellRegistration<UICollectionViewListCell, Item> { [weak self] cell, _, item in

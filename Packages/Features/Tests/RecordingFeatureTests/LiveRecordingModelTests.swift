@@ -23,7 +23,8 @@ struct LiveRecordingModelTests {
     #expect(model.db == AudioLevels.floorDB && model.snoreState == .none && model.eventCount == 0)
     let running = Task { await model.run() }
     try await waitUntil { model.phase == .recording }
-    capture.send(sample(0.05, db: -30))
+    capture.send(sample(0.05, db: -30)) // anchors the 20 Hz grid
+    capture.send(sample(0.10, db: -30)) // the first sample
     try await waitUntil { model.snapshot != nil }
     #expect(model.db == -30)
     #expect(model.snoreState == .light)

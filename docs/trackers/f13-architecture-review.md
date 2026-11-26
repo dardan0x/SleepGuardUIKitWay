@@ -30,16 +30,16 @@ Fixes this app's verdicts from the principal-level architecture review of the th
 | F13-T2 | Stored scores carry their version; refresh at launch (Q9) | Bug / Data | Done | T1 | SleepDomain, SleepPersistence, AppShell |
 | F13-T3 | Detail load is read-only; narrow stage writes (Q34, Q37) | Refactor | Done | T2 | SleepDomain, SleepPersistence, SessionDetailFeature |
 | F13-T4 | Observation follows the store (Q37) | Bug | Done | T3 | SleepPersistence |
-| F13-T5 | "We couldn't open your data" + shared 0.31.0 (Q55) | Data safety | Backlog | T4 | shared, AppShell |
-| F13-T6 | Same samples as SleepGuard; interruptions; FFT; thermal (Q14, Q17) | Detection | Backlog | T1 | SleepDomain, SleepAudio |
-| F13-T7 | Writes leave the sample path (Q13, Q39) | Performance | Backlog | T6 | SleepDomain |
+| F13-T5 | "We couldn't open your data" + shared 0.31.0 (Q55) | Data safety | In Progress (waits for the 0.31.0 tag) | T4 | shared, AppShell |
+| F13-T6 | Same samples as SleepGuard; interruptions; FFT; thermal (Q14, Q17) | Detection | Done | T1 | SleepDomain, SleepAudio |
+| F13-T7 | Writes leave the sample path (Q13, Q39) | Performance | Done | T6 | SleepDomain |
 | F13-T8 | Typed composition (Q47, Q48) | Architecture | Backlog | T5 | AppShell, Apps |
-| F13-T9 | Navigator races (Q45) | Bug | Backlog | — | ScreenKit, AppShell |
+| F13-T9 | Navigator races (Q45) | Bug | Done | — | ScreenKit, AppShell |
 | F13-T10 | Split `RecordingFlow` (Q44) | Refactor | Backlog | T8 | AppShell |
 | F13-T11 | Atomic day delete; dynamic chrome (Q38, Q43) | Bug / UI | Backlog | T5 | SleepDomain, SleepPersistence, ScreenKit, features |
 | F13-T12 | Deep links (Q28) | Feature | Backlog | T8 | Apps, AppShell |
-| F13-T13 | Port contract tests (Q59) | Tests | Backlog | — | SleepDomain, Adapters |
-| F13-T14 | Structural lint, theme check, CI (Q63, Q51, Q62) | Tooling | Backlog | — | ScreenKit, scripts, CI |
+| F13-T13 | Port contract tests (Q59) | Tests | Done | — | SleepDomain, Adapters |
+| F13-T14 | Structural lint, theme check, CI (Q63, Q51, Q62) | Tooling | Done | — | ScreenKit, scripts, CI |
 | F13-T15 | Docs and close-out | Docs | Backlog | all | docs |
 
 ## Task Details
@@ -119,3 +119,108 @@ Fixes this app's verdicts from the principal-level architecture review of the th
 **Notes:**
 - **Scope changed from the plan, on evidence:** the plan said to observe other contexts' saves. There are none: the container makes one store (singleton) and nothing else opens the database (no widget, extension or sync). Observing `ModelContext.didSave` would be code for a writer that doesn't exist, and awkward under Swift 6 (contexts aren't Sendable). The store's doc now says a second writer needs persistent-history observation first.
 - Branch `feature/f13/t4-store-observation`
+
+### F13-T5 — "We couldn't open your data" + shared 0.31.0
+
+| Field | Value |
+|-------|-------|
+| Status | In Progress (waits for the owner's 0.31.0 tag) |
+| Started | 2026-11-26 |
+
+**Done so far:** shared branch `f13-store-unavailable-content` (pushed): `StoreUnavailableContent`, export-failed and day-delete-failed strings, `Night.minimumSaveDuration` removed; shared tests pass. Here, on `feature/f13/t5-store-unavailable` (pushed, not merged): `StoreOpening` (repository + whether the file opened), `AppCoordinator` shows only `StoreUnavailableViewController` when it didn't (no recovery, recording or seeding). Tested against the local shared checkout: corrupt-file test (file kept byte for byte), coordinator test; simulator: a corrupt store shows the screen and keeps the file; the real store was restored (14 nights). **Left:** bump to 0.31.0, all lanes on the release, merge.
+
+### F13-T6 — Same samples as SleepGuard; interruptions; FFT; thermal
+
+| Field | Value |
+|-------|-------|
+| Status | Done |
+| Started | 2026-11-26 |
+| Completed | 2026-11-26 |
+
+**Acceptance Criteria:**
+- [x] `RecordingSession` decimates readings to 20 Hz with SleepCore's `SampleDecimator` (43 Hz and 47 Hz input give the same events, about 600 samples per 30 s)
+- [x] The capture stream carries `CaptureEvent` (`sample`, `interrupted`, `resumed`); the session sends `captureDidPause` / `captureDidResume` and restarts the grid (a call mid-event ends the event and leaves a 60 s `.interruption` gap; mutation-checked)
+- [x] The adapter reports interruptions, resumes when one ends with or without `.shouldResume`, and after a media-services reset
+- [x] The FFT runs only with the raw recording; thermal state logged at start and on change
+- [x] README's parity sentence is accurate
+
+**Notes:**
+- No `didBecomeActive` retry: SleepAudio doesn't import UIKit (layering). A failed resume is logged and retried at the next route, configuration or media-services event. The device night should show whether that is enough.
+- Raw log and snapshots now run at 20 Hz; `rawLogBatch` 40 → 20 (one second).
+- `docs/ARCHITECTURE.md`'s capture section is left for T15: the file has the owner's uncommitted edits.
+- Simulator raw-log spacing check skipped: the decimator tests prove the spacing; the device night (owner) covers the microphone.
+- Branch `feature/f13/t6-capture-parity`
+
+### F13-T7 — Writes leave the sample path
+
+| Field | Value |
+|-------|-------|
+| Status | Done |
+| Started | 2026-11-26 |
+| Completed | 2026-11-26 |
+
+**Acceptance Criteria:**
+- [x] `receive` and `perform` never await disk I/O: checkpoints go to a latest-wins writer task, raw-log batches to a serial one (both on the session actor, so ordering needs no locks)
+- [x] A stuck disk for twenty minutes of night: samples keep flowing (about 24,000), and once it frees only the stuck save and the newest night are written (`[0, 1080]`), not ten
+- [x] `stop` drains both writers before its final save; nothing lands after it (so commit's `clear` and discard always win)
+- [x] Raw log still gets every sample, in order
+
+**Notes:**
+- No sequence gate needed, unlike SleepGuard's F27-T6: here the writers belong to the session and `stop` awaits them, and the checkpoint is only cleared after `stop` returns (`CommitSession`, discard).
+- Branch `feature/f13/t7-off-path-writes`
+
+### F13-T9 — Navigator races
+
+| Field | Value |
+|-------|-------|
+| Status | Done |
+| Started | 2026-11-26 |
+| Completed | 2026-11-26 |
+
+**Acceptance Criteria:**
+- [x] The navigator runs operations one at a time, in order; each waits until nothing is moving and picks its presenter only then
+- [x] `dismiss(_:)` dismisses the controller a flow presented (through its presenter, so an alert over it goes too); the untargeted `dismiss()` is gone. Flows use `present(style:) { close in … }`, whose `close` is bound to that controller
+- [x] `presentAlert` waits for the screen's own transition
+- [x] Hosted tests: an alert over a sheet goes with the sheet (mutation-checked: asking the sheet instead of its presenter leaves the sheet up); present, dismiss, present in one animated turn ends with the second sheet. The suite has a time limit and its waits end on cancellation, so a regression fails in a minute instead of hanging
+- [x] `NavigatorSpy` records the dismissed controller; flow tests assert the right one closes
+
+**Notes:**
+- Scope grew from the plan: a targeted dismiss alone would drop a dismiss asked for before its present had happened. The serial queue covers that; `presentAlert` doesn't go through it (screens own their alerts, ADR 0008).
+- Branch `feature/f13/t9-navigator-races`
+
+### F13-T13 — Port contract tests
+
+| Field | Value |
+|-------|-------|
+| Status | Done |
+| Started | 2026-11-26 |
+| Completed | 2026-11-26 |
+
+**Acceptance Criteria:**
+- [x] `SleepDomainTestSupport.PortContracts`: one contract per port with state (`SessionRepository`, `RecordingCheckpointStore`, `ProfileStore`, `LifestyleLogStore`, `PreferencesStore`, `MelodyStore`), returning violations as lines (the support module needs no test framework)
+- [x] Run against every fake (SleepDomainTests) and every adapter (SleepPersistenceTests, SleepAudioTests; both now declare `SleepDomainTestSupport`)
+- [x] The drift it found is fixed: `FakeSessionRepository` returned events in save order; now in time order, as the port and the SwiftData store do. Every adapter already met its contract
+- [x] Effect-only fakes (players, capture, Health, recorder) stay spies, as the contract file says
+
+**Notes:**
+- Branch `feature/f13/t13-port-contracts`
+
+### F13-T14 — Structural lint, theme check, CI
+
+| Field | Value |
+|-------|-------|
+| Status | Done |
+| Started | 2026-11-26 |
+| Completed | 2026-11-26 |
+
+**Acceptance Criteria:**
+- [x] A screen that presents anything but an alert doesn't compile: `ScreenController.present` is `@available(*, unavailable)` (checked that Swift accepts an unavailable override and rejects a subclass's call); `presentAlert` presents through `super`. The regex in rule 5 stays as a backstop for feature controllers that aren't screens
+- [x] Themed hosting: only ScreenKit creates `UIHostingController` / `UIHostingConfiguration` (layering rule 9; it flags the old hand-themed sites); `Theme.hosting { }` for collection views that aren't screens (History list, night detail). Chosen over a loud Debug default theme, which would need a shared-kit change
+- [x] Hosted leak check: a popped night detail is released with its view model
+- [x] CI: pull requests build and fully test the reference brand (SleepGuard) and run every other brand's bootstrap test; nightly, manual and brand-touching pull requests (`Apps/`, `Tuist/`, `Project.swift`, AppShell) cover every brand; SwiftPM caches keyed on the lockfiles. `run-tests.sh` gained `REFERENCE_BRAND`
+
+**Notes:**
+- **Changed from the plan:** the package lane stays on every pull request (it is where the package tests run; moving it nightly would lose them), and derived data isn't cached (fragile across Xcode updates). The workflow is valid YAML; it is only exercised on GitHub.
+- Locally, the in-app lane with a reference brand: about 50 s instead of about 2½ min.
+- Flake seen once: `PlayerInAppTests.playsAnEpisodeAndStopsOnClose` timed out (60 s) in Dawn's full run; it passed alone twice (19 s) and in a full Dawn rerun. It plays real audio on the simulator; watch it in CI.
+- Branch `feature/f13/t14-structural-checks`

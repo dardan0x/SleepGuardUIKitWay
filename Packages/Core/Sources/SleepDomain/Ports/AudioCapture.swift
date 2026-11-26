@@ -26,6 +26,17 @@ public struct CaptureSample: Sendable, Equatable {
   }
 }
 
+/// What the capture stream carries: buffers, and the moments the system took
+/// the microphone away (a call, another app's audio) and gave it back.
+public enum CaptureEvent: Sendable, Equatable {
+  /// One analysed buffer.
+  case sample(CaptureSample)
+  /// Listening stopped without being asked to (not `pause`).
+  case interrupted(at: Date)
+  /// Listening is back after `interrupted`.
+  case resumed(at: Date)
+}
+
 public enum AudioCaptureError: Error, Equatable {
   /// The device has no microphone input right now.
   case noMicrophone
@@ -51,12 +62,14 @@ public protocol AudioCapture: AnyObject, Sendable {
   func warmUp() throws
   /// Ends a warm-up that didn't become a night.
   func coolDown()
-  /// Starts listening. One sample per buffer, in order, until `stop` ends
-  /// the stream. An interruption (a call) or a route change pauses the
-  /// samples; listening resumes on its own when the system allows. With
-  /// `rawAudioFileName`, every buffer is also written to that file in the
-  /// clips folder (`RawRecording`).
-  func start(rawAudioFileName: String?) throws -> AsyncStream<CaptureSample>
+  /// Starts listening. One sample per buffer, in order, at whatever rate the
+  /// hardware delivers (the session decimates to 20 Hz), until `stop` ends
+  /// the stream. An interruption (a call) sends `interrupted`, then
+  /// `resumed` when listening comes back on its own; a route change only
+  /// pauses the samples briefly. With `rawAudioFileName`, every buffer is also
+  /// written to that file in the clips folder (`RawRecording`), and the
+  /// spectral score is computed (it is only logged; otherwise it is 0).
+  func start(rawAudioFileName: String?) throws -> AsyncStream<CaptureEvent>
   /// Writes the microphone into the clip for event `id` until `closeClip`
   /// or `discardClip`. A clip still open is discarded first.
   func startClip(id: UUID) throws
@@ -84,7 +97,7 @@ public protocol AudioCapture: AnyObject, Sendable {
 
 public extension AudioCapture {
   /// Starts listening without keeping the raw audio.
-  func start() throws -> AsyncStream<CaptureSample> {
+  func start() throws -> AsyncStream<CaptureEvent> {
     try start(rawAudioFileName: nil)
   }
 }

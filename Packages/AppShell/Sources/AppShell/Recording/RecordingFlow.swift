@@ -69,14 +69,16 @@ final class RecordingFlow {
     interrupterTask = Task { [preferences] in
       let stored = await preferences.load()
       let choice = SnoreInterrupterChoice(mode: stored.interrupterMode, melodyID: stored.melodyID)
-      navigator.present(factory.makeInterrupterSettings(choice: choice, store: store, routes: SnoreInterrupterRoutes(
-        chooseSound: { [weak self] current, picked in self?.chooseSound(current: current, store: store, picked: picked) },
-        save: { [weak self] choice in
-          self?.navigator.dismiss()
-          saved(choice)
-          self?.keep(choice)
-        },
-        cancel: { [weak self] in self?.navigator.dismiss() })), style: .sheet(detents: [.large]))
+      navigator.present(style: .sheet(detents: [.large])) { [factory] close in
+        factory.makeInterrupterSettings(choice: choice, store: store, routes: SnoreInterrupterRoutes(
+          chooseSound: { [weak self] current, picked in self?.chooseSound(current: current, store: store, picked: picked) },
+          save: { [weak self] choice in
+            close()
+            saved(choice)
+            self?.keep(choice)
+          },
+          cancel: close))
+      }
     }
   }
 
@@ -90,19 +92,23 @@ final class RecordingFlow {
   }
 
   private func chooseSound(current: Int, store: any MelodyStore, picked: @escaping @MainActor (Int) -> Void) {
-    navigator.present(factory.makeMelodyPicker(selectedID: current, store: store, routes: MelodyPickerRoutes(
-      record: { [weak self] saved in self?.recordMelody(store: store, saved: saved) },
-      done: { [weak self] id in
-        self?.navigator.dismiss()
-        picked(id)
-      })), style: .sheet(detents: [.large]))
+    navigator.present(style: .sheet(detents: [.large])) { [factory] close in
+      factory.makeMelodyPicker(selectedID: current, store: store, routes: MelodyPickerRoutes(
+        record: { [weak self] saved in self?.recordMelody(store: store, saved: saved) },
+        done: { id in
+          close()
+          picked(id)
+        }))
+    }
   }
 
   private func recordMelody(store: any MelodyStore, saved: @escaping @MainActor (Melody) -> Void) {
-    navigator.present(factory.makeRecordMelody(store: store) { [weak self] melody in
-      self?.navigator.dismiss()
-      if let melody { saved(melody) }
-    }, style: .sheet(detents: [.large]))
+    navigator.present(style: .sheet(detents: [.large])) { [factory] close in
+      factory.makeRecordMelody(store: store) { melody in
+        close()
+        if let melody { saved(melody) }
+      }
+    }
   }
 
   /// A night the app didn't get to finish, offered at launch: its summary.

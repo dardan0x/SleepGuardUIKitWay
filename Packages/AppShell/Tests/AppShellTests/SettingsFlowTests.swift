@@ -44,7 +44,7 @@ struct SettingsFlowTests {
     guard case let .present(controller, .sheet) = spy.calls.last,
           let editor = controller as? ProfileEditorViewController else { throw FlowError.unexpected }
     editor.viewModel.routes.close()
-    #expect(spy.calls.last == .dismiss)
+    #expect(spy.calls.last == .dismiss(controller))
   }
 
   @Test(arguments: [nil, "123"])

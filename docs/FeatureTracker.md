@@ -41,11 +41,12 @@ Last updated: 2026-11-26
 | F9 | Showcase polish | P2 | In Progress (T4: screenshots after the UI polish) | 3/4 | ████████░░ 75% | [tracker](trackers/f9-showcase-polish.md) |
 | F11 | UIKit screen containers | P2 | Done | 1/1 | ██████████ 100% | [tracker](trackers/f11-uikit-screen-containers.md) |
 | F12 | View models and factories | P2 | Done | 1/1 | ██████████ 100% | [tracker](trackers/f12-view-models.md) |
-| F13 | Architecture review fixes | P0/P1 | In Progress | 4/15 | ███░░░░░░░ 27% | [tracker](trackers/f13-architecture-review.md) |
+| F13 | Architecture review fixes | P0/P1 | In Progress | 9/15 | ██████░░░░ 60% | [tracker](trackers/f13-architecture-review.md) |
 
 ## Currently Active
 
-- **F13-T5** — "We couldn't open your data" + shared 0.31.0.
+- **F13-T5** — waits for the owner to merge and tag shared 0.31.0.
+- **F13-T8** — Typed composition (after T5 merges: both change the container).
 - **F9-T4** — README written; the brands' screenshots wait for the UI polish.
 - **F8 device checks** — Apple Health permission and writing, real sleep stages from an Apple Watch night, the start delay's notification and warm-up with the screen locked, raw audio on a real night, a Snore Interrupter melody with the microphone resuming after it, the onboarding's permission prompts on a fresh install, a morning briefing and a PDF report.
 - **F7 device check** — one short night on a phone (Debug saves after 2 min): microphone, locked screen, clips, recovery after a kill.
@@ -65,6 +66,12 @@ Last updated: 2026-11-26
 
 | Date | Task | Event | Notes |
 |------|------|-------|-------|
+| 2026-11-26 | F13-T14 | Completed | Screens can't present (compile error) except alerts; only ScreenKit hosts SwiftUI (layering rule 9, `Theme.hosting`); hosted leak check; CI tests one reference brand per PR, all brands nightly or when brand code changes, SwiftPM cache. Branch `feature/f13/t14-structural-checks` |
+| 2026-11-26 | F13-T13 | Completed | Port contracts in `SleepDomainTestSupport`, run against every fake and adapter; `FakeSessionRepository` now returns events in time order (the one drift found). Branch `feature/f13/t13-port-contracts` |
+| 2026-11-26 | F13-T9 | Completed | Navigator runs operations serially and picks presenters only when idle; targeted `dismiss(_:)` (an alert goes with its sheet); `presentAlert` waits for transitions; hosted race tests with a time limit. Branch `feature/f13/t9-navigator-races` |
+| 2026-11-26 | F13-T7 | Completed | Checkpoints through a latest-wins writer task, raw log through a serial one; the sample path never waits for the disk; `stop` drains both. Branch `feature/f13/t7-off-path-writes` |
+| 2026-11-26 | F13-T6 | Completed | 20 Hz decimation in `RecordingSession` (same samples as SleepGuard); interruptions reported by the adapter and sent to the engine as pause/resume (gaps left out of the score); resume without `.shouldResume` and after media-services reset; FFT only with the raw log; thermal state logged. Branch `feature/f13/t6-capture-parity` |
+| 2026-11-26 | F13-T5 | In progress | Store-unavailable screen built and checked on the simulator; shared 0.31.0 pushed on a branch for the owner to merge and tag. Branch `feature/f13/t5-store-unavailable` |
 | 2026-11-26 | F13-T4 | Completed | Publishing after a committed write no longer throws; every write publishes; single-writer assumption documented (cross-context observation dropped: no second writer exists). Branch `feature/f13/t4-store-observation` |
 | 2026-11-26 | F13-T3 | Completed | `LoadSessionDetail` is a query; `EnrichNightWithStages` stores stages through a narrow `updateStages` (no event rewrite); a failed stage save no longer stops a night from opening. Branch `feature/f13/t3-read-only-detail` |
 | 2026-11-26 | F13-T2 | Completed | Stored summaries carry their score version; `RefreshStaleSummaries` recomputes stale ones at launch in batches (summary columns only), before the briefing. A pre-change store with 14 nights opened and was refreshed on the simulator. Branch `feature/f13/t2-score-version` |

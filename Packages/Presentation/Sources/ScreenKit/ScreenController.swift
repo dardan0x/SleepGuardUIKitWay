@@ -14,6 +14,8 @@ import UIKit
 open class ScreenController: UIViewController {
   public let theme: Theme
   public let chrome: ScreenChrome
+  /// An alert made and waiting for this screen to stop moving.
+  private var alertWaiting = false
   /// The child showing the current state (loading, empty, loaded, error).
   public private(set) var stateChild: UIViewController?
   /// The header's child, pinned under the safe area's top, above every state.
@@ -101,15 +103,45 @@ open class ScreenController: UIViewController {
   /// A shared view as a cell's content, with this screen's theme and no
   /// margins (the shared view brings its own padding).
   public func hosted(@ViewBuilder _ content: () -> some View) -> any UIContentConfiguration {
-    UIHostingConfiguration { content().environment(\.theme, theme) }.margins(.all, 0)
+    theme.hosting(content).margins(.all, 0)
   }
 
   /// Presents the alert for a view model's due `alert`, unless one is
-  /// already showing. Its actions answer the view model, which clears it;
-  /// call this from `render` so a newly due alert comes up.
+  /// already showing or waiting. Its actions answer the view model, which
+  /// clears it; call this from `render` so a newly due alert comes up. While
+  /// this screen is moving (pushed, popped), it waits for the move to end.
   public func presentAlert<Due>(_ due: Due?, make: (Due) -> UIAlertController) {
-    guard let due, !(presentedViewController is UIAlertController) else { return }
-    present(make(due), animated: viewIfLoaded?.window != nil)
+    guard let due, !alertWaiting, !(presentedViewController is UIAlertController) else { return }
+    let alert = make(due)
+    alertWaiting = true
+    whenIdle { [weak self] in
+      guard let self else { return }
+      alertWaiting = false
+      guard !(presentedViewController is UIAlertController) else { return }
+      presentDirectly(alert, animated: viewIfLoaded?.window != nil)
+    }
+  }
+
+  /// Screens present only their alerts (`presentAlert`); everything else goes
+  /// through a flow's `Navigator`, which decides how and from where. Checked
+  /// by the compiler, not by a pattern: a screen that calls `present` doesn't
+  /// build. UIKit itself and the navigator still present through a plain
+  /// `UIViewController` reference, which this doesn't affect.
+  @available(*, unavailable, message: "A screen presents only alerts (presentAlert); anything else goes through its flow's Navigator.")
+  override public func present(_ controller: UIViewController, animated: Bool, completion: (() -> Void)? = nil) {
+    super.present(controller, animated: animated, completion: completion)
+  }
+
+  private func presentDirectly(_ controller: UIViewController, animated: Bool) {
+    super.present(controller, animated: animated, completion: nil)
+  }
+
+  private func whenIdle(_ operation: @escaping () -> Void) {
+    guard let transition = transitionCoordinator else {
+      operation()
+      return
+    }
+    transition.animate(alongsideTransition: nil) { [weak self] _ in self?.whenIdle(operation) }
   }
 
   /// Runs `render` now, and again after any `@Observable` value it read
@@ -127,6 +159,17 @@ open class ScreenController: UIViewController {
     let controller = UIHostingController(rootView: ThemedScreen(theme: theme, content: content))
     controller.view.backgroundColor = .clear
     return controller
+  }
+}
+
+public extension Theme {
+  /// A cell's SwiftUI content with this theme in its environment: what a
+  /// collection view that isn't a `ScreenController` uses. Creating hosting
+  /// configurations or controllers anywhere else is a layering error, so no
+  /// SwiftUI content can be drawn without the brand's theme (the
+  /// environment's default is SleepGuard's).
+  func hosting<Content: View>(@ViewBuilder _ content: () -> Content) -> UIHostingConfiguration<ThemedScreen<Content>, EmptyView> {
+    UIHostingConfiguration { ThemedScreen(theme: self, content: content()) }
   }
 }
 

@@ -159,7 +159,7 @@ struct RecordingSessionTests {
       capture.send(Harness.sample(at: Double(tick) * 0.05, db: -35, snore: 0.6, speech: 0))
     }
     let draft = await session.stop(at: Sample.at(4))
-    #expect(draft.sampleCount == 80)
+    #expect((78...79).contains(draft.sampleCount)) // 20 Hz; the first reading anchors the grid
     #expect(draft.events.count == 1)
   }
 
@@ -192,6 +192,7 @@ struct RecordingSessionTests {
     let harness = try await Harness(checkpoints: checkpoints)
     await harness.snore(3, db: -35, confidence: 0.6)
     await harness.silence(11)
+    await harness.session.flushWrites()
     let night = try #require(await checkpoints.night)
     #expect(night.events.count == 1)
     #expect(night.start == Sample.start)
@@ -202,10 +203,128 @@ struct RecordingSessionTests {
     let checkpoints = FakeRecordingCheckpointStore()
     let session = RecordingSession(capture: FakeAudioCapture(), checkpoints: checkpoints, start: Sample.start)
     _ = try await session.start()
-    for second in 0...250 {
-      await session.receive(Harness.sample(at: Double(second), db: -60, snore: 0, speech: 0))
+    for tick in 0...12500 { // 50 Hz readings for 250 s
+      await session.receive(.sample(Harness.sample(at: Double(tick) * 0.02, db: -60, snore: 0, speech: 0)))
     }
-    #expect(await checkpoints.saved.map { $0.end.timeIntervalSince(Sample.start) } == [0, 120, 240])
+    await session.flushWrites()
+    let times = await checkpoints.saved.map { ($0.end.timeIntervalSince(Sample.start) * 100).rounded() / 100 }
+    #expect(times == [0.05, 120.05, 240.05]) // the grid starts one window after the first reading
+  }
+
+  // MARK: - 20 Hz from any buffer rate, interruptions (F13-T6)
+
+  /// The tap's rate depends on the hardware; detection must not.
+  @Test func fortyThreeAndFortySevenHertzMakeTheSameNight() async throws {
+    func night(hertz: Double) async throws -> (lines: [String], samples: Int) {
+      let session = RecordingSession(capture: FakeAudioCapture(), start: Sample.start)
+      _ = try await session.start()
+      for index in 0..<Int(30 * hertz) {
+        let time = Double(index) / hertz
+        let snoring = time >= 5 && time < 15
+        await session.receive(.sample(Harness.sample(
+          at: time, db: snoring ? -35 : -60, snore: snoring ? 0.6 : 0, speech: 0)))
+      }
+      let draft = await session.stop(at: Sample.at(30))
+      let lines = draft.events.map {
+        "\($0.start.timeIntervalSince(Sample.start)) \($0.duration) \($0.averageDB) \($0.peakDB) \($0.bursts)"
+      }
+      return (lines, draft.sampleCount)
+    }
+    let slow = try await night(hertz: 43)
+    let fast = try await night(hertz: 47)
+    #expect(slow.lines.count == 1)
+    #expect(slow.lines == fast.lines)
+    #expect(abs(slow.samples - 600) <= 1 && abs(fast.samples - 600) <= 1) // 20 Hz for 30 s
+  }
+
+  /// A call mid-event ends the event at its last sample; the time without a
+  /// microphone is an interruption gap, not quiet sleep.
+  @Test func aCallEndsTheEventAndLeavesAnInterruptionGap() async throws {
+    let session = RecordingSession(capture: FakeAudioCapture(), start: Sample.start)
+    _ = try await session.start()
+    func feed(from start: Double, to end: Double, snoring: Bool) async {
+      for index in 0..<Int((end - start) * 50) {
+        await session.receive(.sample(Harness.sample(
+          at: start + Double(index) * 0.02, db: snoring ? -35 : -60, snore: snoring ? 0.6 : 0, speech: 0)))
+      }
+    }
+    await feed(from: 0, to: 2, snoring: false)
+    await feed(from: 2, to: 20, snoring: true)
+    await session.receive(.interrupted(at: Sample.at(20)))
+    await session.receive(.resumed(at: Sample.at(80)))
+    await feed(from: 80, to: 100, snoring: false)
+
+    let draft = await session.stop(at: Sample.at(100))
+
+    #expect(draft.events.count == 1)
+    #expect(try #require(draft.events.first).end <= Sample.at(20))
+    #expect(draft.recordingGaps.count == 1)
+    let gap = try #require(draft.recordingGaps.first)
+    #expect(gap.kind == .interruption)
+    #expect(gap.startOffset == 20 && gap.duration == 60)
+  }
+
+  /// Readings after the call don't replay as a burst of old samples.
+  @Test func aResumeRestartsTheGrid() async throws {
+    let session = RecordingSession(capture: FakeAudioCapture(), start: Sample.start)
+    _ = try await session.start()
+    for index in 0..<50 { // 1 s
+      await session.receive(.sample(Harness.sample(at: Double(index) * 0.02, db: -60, snore: 0, speech: 0)))
+    }
+    let before = await session.draft.sampleCount
+    await session.receive(.interrupted(at: Sample.at(1)))
+    await session.receive(.resumed(at: Sample.at(30)))
+    for index in 0..<50 { // 1 s more
+      await session.receive(.sample(Harness.sample(at: 30 + Double(index) * 0.02, db: -60, snore: 0, speech: 0)))
+    }
+    let after = await session.draft.sampleCount
+    #expect(abs(after - before - 20) <= 1)
+  }
+
+  // MARK: - Writes off the sample path (F13-T7)
+
+  /// The disk is stuck for twenty minutes of night: samples keep flowing, and
+  /// when it frees up only the newest night is written, not ten stale ones.
+  @Test(.timeLimit(.minutes(1)))
+  func aSlowDiskNeitherStallsSamplesNorQueuesStaleNights() async throws {
+    let store = GatedCheckpointStore()
+    let session = RecordingSession(capture: FakeAudioCapture(), checkpoints: store, start: Sample.start)
+    _ = try await session.start()
+    for tick in 0...60000 { // 50 Hz readings for 1200 s: ten checkpoints due
+      await session.receive(.sample(Harness.sample(at: Double(tick) * 0.02, db: -60, snore: 0, speech: 0)))
+    }
+    #expect(await session.draft.sampleCount > 23900)
+    #expect(await store.saved.isEmpty)
+
+    await store.open()
+    await session.flushWrites()
+
+    let ends = await store.saved.map { $0.end.timeIntervalSince(Sample.start).rounded() }
+    #expect(ends == [0, 1080]) // the save that was stuck, then only the newest
+  }
+
+  /// `stop` waits for the writers, so no checkpoint lands after the night is
+  /// handed over (to be committed, which clears it, or discarded).
+  @Test(.timeLimit(.minutes(1)))
+  func stopDrainsTheWritersBeforeItsFinalSave() async throws {
+    let store = GatedCheckpointStore()
+    let session = RecordingSession(capture: FakeAudioCapture(), checkpoints: store, start: Sample.start)
+    _ = try await session.start()
+    for tick in 0...100 {
+      await session.receive(.sample(Harness.sample(at: Double(tick) * 0.02, db: -60, snore: 0, speech: 0)))
+    }
+    let stopping = Task { await session.stop(at: Sample.at(2), endReason: .lowBattery) }
+    await store.open()
+    _ = await stopping.value
+    let afterStop = await store.saved.count
+
+    for _ in 0..<100 {
+      await Task.yield()
+    }
+
+    #expect(await store.saved.count == afterStop)
+    #expect(await store.saved.last?.endReason == .lowBattery)
+    #expect(await store.saved.last?.end == Sample.at(2))
   }
 
   @Test func stopCheckpointsTheWholeNightWithItsReason() async throws {
@@ -433,4 +552,30 @@ final class Harness {
 @MainActor
 final class TickClock {
   var tick = 0
+}
+
+/// A checkpoint store whose saves wait until the test opens it: a stuck disk.
+actor GatedCheckpointStore: RecordingCheckpointStore {
+  private(set) var saved: [Night] = []
+  private var isOpen = false
+  private var waiting: [CheckedContinuation<Void, Never>] = []
+
+  func open() {
+    isOpen = true
+    waiting.forEach { $0.resume() }
+    waiting = []
+  }
+
+  func save(_ night: Night) async {
+    if !isOpen {
+      await withCheckedContinuation { waiting.append($0) }
+    }
+    saved.append(night)
+  }
+
+  func load() async -> Night? {
+    saved.last
+  }
+
+  func clear() async {}
 }

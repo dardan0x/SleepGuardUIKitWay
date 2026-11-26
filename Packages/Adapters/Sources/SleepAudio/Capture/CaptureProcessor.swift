@@ -29,6 +29,9 @@ final class CaptureProcessor: Sendable {
     var clip: AVAudioFile?
     /// The whole night, when the raw audio is kept.
     var raw: AVAudioFile?
+    /// The FFT runs only when its score is logged (the raw recording is on):
+    /// detection's verdict doesn't use it, and it is the costliest step.
+    var computesSpectrum = false
   }
 
   private let state = OSAllocatedUnfairLock(uncheckedState: State())
@@ -36,11 +39,12 @@ final class CaptureProcessor: Sendable {
 
   /// Starts a sound analyzer for buffers of `format` (called at every engine
   /// start, since a new route can bring a new format).
-  func begin(format: AVAudioFormat) {
+  func begin(format: AVAudioFormat, computesSpectrum: Bool) {
     let analyzer = classifier.makeAnalyzer(format: format)
     state.withLockUnchecked {
       $0.analyzer = analyzer
       $0.framePosition = 0
+      $0.computesSpectrum = computesSpectrum
     }
   }
 
@@ -99,7 +103,7 @@ final class CaptureProcessor: Sendable {
           s.raw = nil
         }
       }
-      guard let magnitudes = Self.magnitudes(of: channel, transform: s.transform) else { return Float(0) }
+      guard s.computesSpectrum, let magnitudes = Self.magnitudes(of: channel, transform: s.transform) else { return Float(0) }
       return SpectralFeatures(magnitudes: magnitudes, binWidth: binWidth).spectralScore
     }
 

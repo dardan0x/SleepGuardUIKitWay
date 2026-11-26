@@ -111,7 +111,7 @@ struct HistoryFlowTests {
     #expect(close.accessibilityLabel == Strings.actionClose)
 
     close.primaryAction?.performWithSender(nil, target: nil)
-    #expect(spy.calls.last == .dismiss)
+    #expect(spy.calls.last == .dismiss(presented))
   }
 
   /// Play presents the player over the detail; close dismisses it.
@@ -140,7 +140,7 @@ struct HistoryFlowTests {
     #expect(player.navigationItem.title == Strings.eventPlayerNavigationTitle)
     #expect(player.viewModel.events == [snore])
     player.navigationItem.rightBarButtonItems?.first?.primaryAction?.performWithSender(nil, target: nil)
-    #expect(spy.calls.last == .dismiss)
+    #expect(spy.calls.last == .dismiss(presented))
   }
 
   /// The stages' info button presents the stages sheet; its close dismisses it.
@@ -167,7 +167,7 @@ struct HistoryFlowTests {
     let sheet = try #require(presented as? SleepStagesInfoViewController)
     #expect(sheet.viewModel.breakdown == stages)
     sheet.viewModel.close()
-    #expect(spy.calls.last == .dismiss)
+    #expect(spy.calls.last == .dismiss(presented))
   }
 
   /// Health brands read stages through their `HealthAccess`; Lite has none.
