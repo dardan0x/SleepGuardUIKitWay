@@ -1,8 +1,8 @@
 import Foundation
-import HealthKit
 import os
 import SleepCore
 import SleepDomain
+import SleepHealthKit
 
 /// Apple Health. Linked only by brands that use HealthKit (the Tuist brand
 /// list's `usesHealthKit`); the brand hands the shell its `HealthAccess`,
@@ -13,23 +13,18 @@ public enum SleepHealth {
   }
 }
 
-/// `HealthAccess` over HealthKit, as SleepGuard's `HealthKitSync`: read and
-/// write sleep; a saved night is one "asleep" sample with its snoring as
-/// metadata (SleepGuard's keys); stages are the staged sleep samples (Apple
-/// Watch) inside the night.
+/// `HealthAccess` over the shared `HealthKitSleep` (SleepGuardShared), which
+/// decides what a night looks like in Apple Health, the same as SleepGuard:
+/// one "asleep" sample with the snoring as metadata; stages read from the
+/// staged samples (Apple Watch) inside the night. This adapter adds the
+/// port's shape and the logging.
 struct HealthKitAccess: HealthAccess {
   private static let log = Logger(subsystem: Bundle.main.bundleIdentifier ?? "SleepGuardUIKitWay", category: "health")
-  private let store = HKHealthStore()
-
-  private var sleepType: HKCategoryType? {
-    HKObjectType.categoryType(forIdentifier: .sleepAnalysis)
-  }
+  private let health = HealthKitSleep()
 
   func requestAuthorization() async -> Bool {
-    guard HKHealthStore.isHealthDataAvailable(), let sleepType else { return false }
     do {
-      try await store.requestAuthorization(toShare: [sleepType], read: [sleepType])
-      return store.authorizationStatus(for: sleepType) == .sharingAuthorized
+      return try await health.requestAuthorization()
     } catch {
       Self.log.error("Health authorization failed: \(error.localizedDescription, privacy: .public)")
       return false
@@ -37,49 +32,12 @@ struct HealthKitAccess: HealthAccess {
   }
 
   func stages(from start: Date, to end: Date) async throws -> [SleepStageSegment] {
-    guard HKHealthStore.isHealthDataAvailable(), let sleepType else { return [] }
-    let descriptor = HKSampleQueryDescriptor(
-      predicates: [.categorySample(type: sleepType, predicate: HKQuery.predicateForSamples(withStart: start, end: end))],
-      sortDescriptors: [SortDescriptor(\.startDate)])
-    let samples = try await descriptor.result(for: store)
-    return samples.compactMap { sample in
-      Self.stage(for: sample.value).map {
-        SleepStageSegment(
-          stage: $0, startOffset: sample.startDate.timeIntervalSince(start),
-          duration: sample.endDate.timeIntervalSince(sample.startDate))
-      }
-    }
-  }
-
-  /// HealthKit's staged sleep values as stages (SleepGuard's mapping). Not
-  /// staged ("asleep", in bed, our own night sample) is no stage.
-  static func stage(for value: Int) -> SleepStage? {
-    switch HKCategoryValueSleepAnalysis(rawValue: value) {
-    case .asleepCore: .light
-    case .asleepDeep: .deep
-    case .asleepREM: .rem
-    case .awake: .awake
-    default: nil
-    }
+    try await health.stages(from: start, to: end)
   }
 
   func save(_ night: Night, summary: NightSummary) async {
-    guard HKHealthStore.isHealthDataAvailable(), let sleepType,
-          store.authorizationStatus(for: sleepType) == .sharingAuthorized else { return }
-    let sample = HKCategorySample(
-      type: sleepType,
-      value: HKCategoryValueSleepAnalysis.asleepUnspecified.rawValue,
-      start: night.start,
-      end: night.end,
-      metadata: [
-        HKMetadataKeyWasUserEntered: true,
-        "snoreEventsCount": summary.eventCount,
-        "snoringPercentage": summary.snoringShare * 100,
-        "averageDB": night.averageDB,
-        "peakDB": night.peakDB,
-      ])
     do {
-      try await store.save(sample)
+      try await health.save(night, summary: summary)
     } catch {
       Self.log.error("Writing the night to Health failed: \(error.localizedDescription, privacy: .public)")
     }

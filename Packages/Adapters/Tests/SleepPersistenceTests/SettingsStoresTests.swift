@@ -1,6 +1,7 @@
 import Foundation
 import SleepCore
 import SleepDomain
+import SleepFiles
 import Testing
 @testable import SleepPersistence
 
@@ -86,6 +87,13 @@ struct SettingsStoresTests {
     let log = try RawLog.decode(from: data)
     #expect(log.metadata == metadata)
     #expect(log.samples.count == 3)
+  }
+
+  /// Storage limits and cleanup find the log by the domain's name; the
+  /// shared writer must use the same one.
+  @Test func theRawLogNameIsTheSharedOne() {
+    let id = UUID()
+    #expect(RawRecording.logFileName(for: id) == RawLogFile.fileName(for: id))
   }
 
   @Test func theFileStoreKnowsItsFilesAndTheirSizes() async throws {

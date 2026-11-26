@@ -31,7 +31,7 @@ public enum SleepPersistence {
 
   /// Raw recordings' sample logs, beside the clips in `directory`.
   public static func makeRawLogWriter(directory: URL) -> any RawLogWriter {
-    FileRawLogWriter(directory: directory)
+    RawLogFileWriter(directory: directory)
   }
 
   /// The night in progress, as the file at `url`.

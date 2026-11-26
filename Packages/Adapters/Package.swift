@@ -14,7 +14,7 @@ let package = Package(
   ],
   dependencies: [
     .package(path: "../Core"),
-    .package(url: "https://github.com/dardan0x/SleepGuardShared.git", exact: "0.31.0"),
+    .package(url: "https://github.com/dardan0x/SleepGuardShared.git", exact: "0.32.0"),
   ],
   targets: [
     // SwiftData, files, UserDefaults.
@@ -23,6 +23,7 @@ let package = Package(
       dependencies: [
         .product(name: "SleepDomain", package: "Core"),
         .product(name: "SleepCore", package: "SleepGuardShared"),
+        .product(name: "SleepFiles", package: "SleepGuardShared"),
       ],
       swiftSettings: [.swiftLanguageMode(.v6)]),
     // AVFoundation, SoundAnalysis, Accelerate; the Snore Interrupter's sounds.
@@ -41,6 +42,7 @@ let package = Package(
         .product(name: "SleepDomain", package: "Core"),
         .product(name: "SleepDomainTestSupport", package: "Core"),
         .product(name: "SleepCore", package: "SleepGuardShared"),
+        .product(name: "SleepFiles", package: "SleepGuardShared"),
       ],
       swiftSettings: [.swiftLanguageMode(.v6)]),
     .testTarget(
@@ -58,6 +60,7 @@ let package = Package(
       dependencies: [
         .product(name: "SleepDomain", package: "Core"),
         .product(name: "SleepCore", package: "SleepGuardShared"),
+        .product(name: "SleepHealthKit", package: "SleepGuardShared"),
       ],
       swiftSettings: [.swiftLanguageMode(.v6)]),
 
@@ -66,6 +69,7 @@ let package = Package(
       dependencies: [
         "SleepHealth",
         .product(name: "SleepCore", package: "SleepGuardShared"),
+        .product(name: "SleepHealthKit", package: "SleepGuardShared"),
       ],
       swiftSettings: [.swiftLanguageMode(.v6)]),
   ])
