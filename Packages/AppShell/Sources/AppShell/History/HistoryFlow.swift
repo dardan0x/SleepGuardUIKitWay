@@ -6,7 +6,7 @@ import UIKit
 /// The Sessions tab: the list of nights, and a night's detail (through
 /// `NightDetailNavigation`). Screens say what the user asked for; this flow
 /// decides what happens.
-final class HistoryFlow: TabFlow {
+final class HistoryFlow: NightDetailHosting {
   let tab = AppTab.history
   let navigator: any Navigator
   let nightDetail: NightDetailNavigation

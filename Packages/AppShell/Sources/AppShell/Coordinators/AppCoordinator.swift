@@ -6,7 +6,8 @@ import SleepDomain
 import UIKit
 
 /// Owns the window's content: the onboarding on first launch, then the main
-/// tabs, and the recording flow over them. Later it also handles deep links.
+/// tabs, and the recording flow over them; and the links the app is opened
+/// with (`AppRoute`).
 public final class AppCoordinator {
   let composition: AppComposition
   private weak var window: UIWindow?
@@ -22,6 +23,12 @@ public final class AppCoordinator {
   private(set) var recovery: Task<Void, Never>?
   /// The morning briefing, after the tabs (and any recovered night); awaited by tests.
   private(set) var briefing: Task<Void, Never>?
+  /// A link that came while the app was busy (launching, the onboarding, a
+  /// night recording, a sheet up); opened once it's free. Kept in memory only:
+  /// a link doesn't outlive the launch it came in.
+  private(set) var pendingRoute: AppRoute?
+  /// Looking up a linked night; awaited by tests.
+  private(set) var routing: Task<Void, Never>?
   /// The nights database didn't open; only the store-unavailable screen shows.
   private(set) var storeUnavailable = false
   /// Resolved at launch, used once the tabs are up.
@@ -114,8 +121,9 @@ public final class AppCoordinator {
     let (load, preferences, logs) = (loadMorningBriefing, preferences, lifestyleLogs)
     briefing = Task { [weak self] in
       await self?.recovery?.value
-      guard let due = await load(), let self, recording == nil,
-            let tabs = mainTabs?.tabBarController, tabs.presentedViewController == nil else { return }
+      guard let self else { return }
+      guard let due = await load(), recording == nil,
+            let tabs = mainTabs?.tabBarController, tabs.presentedViewController == nil else { return openPendingRoute() }
       var shown = await preferences.load()
       shown.lastBriefingShown = Date()
       await preferences.save(shown)
@@ -124,12 +132,59 @@ public final class AppCoordinator {
         routes: BriefingRoutes(
           answer: { [weak tabs] chip in
             Task { try? await logs.save(LifestyleLog(night: due.night.start, chips: [chip])) }
-            tabs?.dismiss(animated: true)
+            tabs?.dismiss(animated: true) { [weak self] in self?.openPendingRoute() }
           },
-          close: { [weak tabs] in tabs?.dismiss(animated: true) }))
+          close: { [weak tabs, weak self] in tabs?.dismiss(animated: true) { self?.openPendingRoute() } }))
       sheet.sheetPresentationController?.detents = [.large()]
       tabs.present(sheet, animated: true)
     }
+  }
+
+  // MARK: - Links
+
+  /// A link the app was opened with. Unknown ones are ignored.
+  public func open(_ url: URL) {
+    guard let route = AppRoute(url: url) else {
+      Log.app.notice("Ignoring a link the app doesn't know")
+      return
+    }
+    handle(route)
+  }
+
+  /// Now when the app is free; otherwise kept until it is. "Start" while a
+  /// night is recording has nothing to start, so it's dropped.
+  func handle(_ route: AppRoute) {
+    if route == .startRecording, recording != nil { return }
+    guard let mainTabs, !isBusy(mainTabs) else {
+      pendingRoute = route
+      return
+    }
+    pendingRoute = nil
+    switch route {
+    case .startRecording:
+      startRecording()
+    case .lastSevenNights:
+      guard let flow = mainTabs.select(.statistics) as? StatisticsFlow else { return }
+      flow.navigator.popToRoot()
+      flow.showLastSevenNights()
+    case let .night(id):
+      let nights = composition.nights
+      routing = Task { [weak self] in
+        // A night deleted since the link was made: the app stays where it is.
+        guard let night = try? await nights.session(id: id), let tabs = self?.mainTabs else { return }
+        guard let flow = (tabs.select(.history) ?? tabs.select(.statistics)) as? NightDetailHosting else { return }
+        flow.navigator.popToRoot()
+        flow.nightDetail.show(night.summary())
+      }
+    }
+  }
+
+  private func isBusy(_ tabs: MainTabCoordinator) -> Bool {
+    recording != nil || tabs.tabBarController.presentedViewController.map { !$0.isBeingDismissed } ?? false
+  }
+
+  private func openPendingRoute() {
+    if let route = pendingRoute { handle(route) }
   }
 
   /// "Start recording" from any screen: the recording flow, full screen over
@@ -173,7 +228,7 @@ public final class AppCoordinator {
     let height = tabs.view.window?.windowScene?.screen.bounds.height ?? 0
     let flow = composition.recordingFlow(navigator: navigator, compactHeight: height <= 874) { [weak self] in
       self?.recording = nil
-      tabs.dismiss(animated: true)
+      tabs.dismiss(animated: true) { self?.openPendingRoute() }
     }
     begin(flow)
     recording = flow

@@ -7,7 +7,7 @@ import UIKit
 /// The Statistics tab: the dashboard, Trends, Last 7 Nights, the calendar, and
 /// a night's detail. Starting a recording isn't this tab's job: it goes up to
 /// `AppCoordinator`, which owns the recording flow.
-final class StatisticsFlow: TabFlow {
+final class StatisticsFlow: NightDetailHosting {
   let tab = AppTab.statistics
   let navigator: any Navigator
   let nightDetail: NightDetailNavigation
@@ -65,7 +65,8 @@ final class StatisticsFlow: TabFlow {
     navigator.push(screens.makeTrends())
   }
 
-  private func showLastSevenNights() {
+  /// Internal: a link opens it too (`AppRoute.lastSevenNights`).
+  func showLastSevenNights() {
     navigator.push(screens.makeLastSevenNights(routes: nightListRoutes))
   }
 

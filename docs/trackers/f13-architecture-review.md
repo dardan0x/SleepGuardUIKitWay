@@ -37,7 +37,7 @@ Fixes this app's verdicts from the principal-level architecture review of the th
 | F13-T9 | Navigator races (Q45) | Bug | Done | — | ScreenKit, AppShell |
 | F13-T10 | Split `RecordingFlow` (Q44) | Refactor | Done | T8 | AppShell |
 | F13-T11 | Atomic day delete; dynamic chrome (Q38, Q43) | Bug / UI | Done | T5 | SleepDomain, SleepPersistence, ScreenKit, features |
-| F13-T12 | Deep links (Q28) | Feature | Backlog | T8 | Apps, AppShell |
+| F13-T12 | Deep links (Q28) | Feature | Done | T8 | Apps, AppShell |
 | F13-T13 | Port contract tests (Q59) | Tests | Done | — | SleepDomain, Adapters |
 | F13-T14 | Structural lint, theme check, CI (Q63, Q51, Q62) | Tooling | Done | — | ScreenKit, scripts, CI |
 | F13-T15 | Docs and close-out | Docs | Backlog | all | docs |
@@ -291,3 +291,22 @@ Fixes this app's verdicts from the principal-level architecture review of the th
 - `ScreenController.swift` went over the 200-line view limit; `Theme.hosting` and `ThemedScreen` moved to `ThemedHosting.swift`.
 - Simulator check of the spinner skipped: the PDF is made in well under a second, so the state is covered by the tests instead.
 - Branch `feature/f13/t11-day-delete-chrome`
+
+### F13-T12 — Deep links
+
+| Field | Value |
+|-------|-------|
+| Status | Done |
+| Started | 2026-11-26 |
+| Completed | 2026-11-26 |
+
+**Acceptance Criteria:**
+- [x] `AppRoute` parses `<scheme>://start`, `session/<id>`, `last7nights` (SleepGuard's widget paths); unknown links are ignored
+- [x] The scene delegate hands over the launch link (`connectionOptions.urlContexts`) and later ones (`openURLContexts`) to `AppCoordinator.open(_:)`
+- [x] A night opens in Sessions (or Statistics when the brand has no Sessions tab), from the tab's root; a night that's gone changes nothing; Last 7 Nights opens from Statistics' root; start opens the recording flow
+- [x] While busy (launching, the onboarding, a night recording, a sheet up), a link waits and opens when the app is free (after the briefing or the night closes); "start" during a night is dropped; links live in memory only
+- [x] Tests: parsing, every route, waiting and dropping (9)
+
+**Notes:**
+- Simulator: `simctl openurl` reached the app, but iOS's "Open in SleepGuard?" prompt couldn't be tapped (the simulator's input connection failed twice), so the on-device routing is covered by the tests, not seen.
+- Branch `feature/f13/t12-deep-links`
