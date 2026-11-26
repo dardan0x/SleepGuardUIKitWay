@@ -76,11 +76,11 @@ struct SnoreInterrupterFlowTests {
     let h = makeFlow(interrupter: true)
     var handedBack: SnoreInterrupterChoice?
     try prestart(h).viewModel.routes.openInterrupter { handedBack = $0 }
-    await h.flow.interrupterTask?.value
+    await h.flow.interrupter.task?.value
     let settings = try presented(h, as: SnoreInterrupterViewController.self)
     let choice = SnoreInterrupterChoice(mode: .thirtySeconds, melodyID: 3)
     settings.viewModel.routes.save(choice)
-    await h.flow.interrupterTask?.value
+    await h.flow.interrupter.task?.value
     #expect(h.spy.calls.last == .dismiss(settings))
     #expect(handedBack == choice)
     let stored = await h.preferences.load()
@@ -91,7 +91,7 @@ struct SnoreInterrupterFlowTests {
   @Test func theSoundPickerAndTheRecorderOpenOverIt() async throws {
     let h = makeFlow(interrupter: true)
     try prestart(h).viewModel.routes.openInterrupter { _ in }
-    await h.flow.interrupterTask?.value
+    await h.flow.interrupter.task?.value
     var picked: Int?
     try presented(h, as: SnoreInterrupterViewController.self).viewModel.routes.chooseSound(6) { picked = $0 }
     let picker = try presented(h, as: MelodyPickerViewController.self)

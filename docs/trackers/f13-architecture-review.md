@@ -35,7 +35,7 @@ Fixes this app's verdicts from the principal-level architecture review of the th
 | F13-T7 | Writes leave the sample path (Q13, Q39) | Performance | Done | T6 | SleepDomain |
 | F13-T8 | Typed composition (Q47, Q48) | Architecture | Done | T5 | AppShell, Apps |
 | F13-T9 | Navigator races (Q45) | Bug | Done | — | ScreenKit, AppShell |
-| F13-T10 | Split `RecordingFlow` (Q44) | Refactor | Backlog | T8 | AppShell |
+| F13-T10 | Split `RecordingFlow` (Q44) | Refactor | Done | T8 | AppShell |
 | F13-T11 | Atomic day delete; dynamic chrome (Q38, Q43) | Bug / UI | Backlog | T5 | SleepDomain, SleepPersistence, ScreenKit, features |
 | F13-T12 | Deep links (Q28) | Feature | Backlog | T8 | Apps, AppShell |
 | F13-T13 | Port contract tests (Q59) | Tests | Done | — | SleepDomain, Adapters |
@@ -255,3 +255,19 @@ Fixes this app's verdicts from the principal-level architecture review of the th
 - In-app tests reach the running app through `AppShell.launched` (main-actor, weak); the app never reads it.
 - Kept Factory under the composition: a fully hand-written graph would be ~30 properties for the same result; the bootstrap test is the guard (see the ADR's limits).
 - Branch `feature/f13/t8-typed-composition`
+
+### F13-T10 — Split `RecordingFlow`
+
+| Field | Value |
+|-------|-------|
+| Status | Done |
+| Started | 2026-11-26 |
+| Completed | 2026-11-26 |
+
+**Acceptance Criteria:**
+- [x] `InterrupterSettingsNavigation`: the interrupter's settings, sound picker and recorder sheets; one task at a time, the one before cancelled (the reassigned `interrupterTask` used to leak; tested)
+- [x] `NightLifecycle`: the start delay's warm microphone and notification, the screen kept on, the battery watch (tested directly: cancel cools down, the capture is handed over once, the screen turns off once, the 2% line)
+- [x] `RecordingFlow` only sequences the steps: 248 → 154 lines; its tests unchanged except for the interrupter's task
+
+**Notes:**
+- Branch `feature/f13/t10-recording-flow-split`
