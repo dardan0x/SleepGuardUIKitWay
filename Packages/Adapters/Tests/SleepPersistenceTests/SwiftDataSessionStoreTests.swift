@@ -226,4 +226,29 @@ extension SwiftDataSessionStoreTests {
         scoreVersion: "2-a")
     }
   }
+
+  // F13-T4: every write reaches observers, the narrow ones included.
+  @Test func everyKindOfWriteReachesObservers() async throws {
+    let (store, _) = try makeStore()
+    let first = night(events: [event(at: 0, clip: "a.m4a")])
+    let second = night(startOffset: 86400)
+    var updates = await store.observeSummaries().makeAsyncIterator()
+    #expect(await updates.next() == []) // the current list
+
+    try await store.save(first, summary: first.summary(), scoreVersion: "1")
+    #expect(await updates.next()?.map(\.id) == [first.id])
+    try await store.save(second, summary: second.summary(), scoreVersion: "1")
+    #expect(await updates.next()?.map(\.id) == [second.id, first.id])
+
+    try await store.updateStages(of: first.id, stages: [], summary: first.summary(), scoreVersion: "2")
+    #expect(await updates.next()?.count == 2)
+    try await store.updateSummaries([second.summary()], scoreVersion: "2")
+    #expect(await updates.next()?.count == 2)
+    try await store.removeClips(of: first.id)
+    #expect(await updates.next()?.count == 2)
+    try await store.delete(id: second.id)
+    #expect(await updates.next()?.map(\.id) == [first.id])
+    try await store.deleteAll()
+    #expect(await updates.next() == [])
+  }
 }

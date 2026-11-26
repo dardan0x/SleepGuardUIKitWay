@@ -1,4 +1,5 @@
 import Foundation
+import os
 import SleepCore
 import SleepDomain
 import SwiftData
@@ -11,8 +12,17 @@ import SwiftData
 ///
 /// Observation is explicit: after each write the store sends the new summary
 /// list to its observers, rather than watching the context from outside.
+/// That holds because this actor is the only writer: the app makes one store
+/// (a container singleton) and nothing else opens the database. A second
+/// writer (a widget, an extension, sync) would need persistent-history
+/// observation first.
+///
+/// Publishing comes after the save has committed, so it never throws: a
+/// failed re-read is logged and observers keep their last list until the next
+/// write.
 @ModelActor
 actor SwiftDataSessionStore: SessionRepository {
+  private static let log = Logger(subsystem: Bundle.main.bundleIdentifier ?? "SleepGuardUIKitWay", category: "storage")
   private var observers: [UUID: AsyncStream<[NightSummary]>.Continuation] = [:]
 
   func save(_ session: Night, summary: NightSummary, scoreVersion: String) async throws {
@@ -25,7 +35,7 @@ actor SwiftDataSessionStore: SessionRepository {
     record.scoreVersion = scoreVersion
     replaceEvents(of: record, with: session.events)
     try modelContext.save()
-    try publish()
+    publish()
   }
 
   func staleNightIDs(currentVersion: String) async throws -> [Night.ID] {
@@ -43,7 +53,7 @@ actor SwiftDataSessionStore: SessionRepository {
     record.update(from: summary)
     record.scoreVersion = scoreVersion
     try modelContext.save()
-    try publish()
+    publish()
   }
 
   func updateSummaries(_ summaries: [NightSummary], scoreVersion: String) async throws {
@@ -53,7 +63,7 @@ actor SwiftDataSessionStore: SessionRepository {
       record.scoreVersion = scoreVersion
     }
     try modelContext.save()
-    try publish()
+    publish()
   }
 
   func session(id: Night.ID) async throws -> Night {
@@ -65,7 +75,7 @@ actor SwiftDataSessionStore: SessionRepository {
     guard let record = try record(id: id) else { throw SessionError.notFound(id) }
     modelContext.delete(record) // events cascade
     try modelContext.save()
-    try publish()
+    publish()
   }
 
   func observeSummaries() async -> AsyncStream<[NightSummary]> {
@@ -91,6 +101,7 @@ actor SwiftDataSessionStore: SessionRepository {
       event.clipFileName = nil
     }
     try modelContext.save()
+    publish()
   }
 
   func deleteAll() async throws {
@@ -98,7 +109,7 @@ actor SwiftDataSessionStore: SessionRepository {
       modelContext.delete(record) // events cascade
     }
     try modelContext.save()
-    try publish()
+    publish()
   }
 
   // MARK: - Private
@@ -126,9 +137,15 @@ actor SwiftDataSessionStore: SessionRepository {
     try modelContext.fetch(FetchDescriptor<SessionRecord>(sortBy: [SortDescriptor(\.start, order: .reverse)])).map(\.summary)
   }
 
-  private func publish() throws {
+  private func publish() {
     guard !observers.isEmpty else { return }
-    let current = try summaries()
+    let current: [NightSummary]
+    do {
+      current = try summaries()
+    } catch {
+      Self.log.error("Couldn't re-read the nights after a save: \(error.localizedDescription, privacy: .public)")
+      return
+    }
     for continuation in observers.values {
       continuation.yield(current)
     }

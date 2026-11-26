@@ -29,7 +29,7 @@ Fixes this app's verdicts from the principal-level architecture review of the th
 | F13-T1 | Adopt shared 0.30.0 and `SaveRules` | Dependency | Done | — | all packages, AppShell |
 | F13-T2 | Stored scores carry their version; refresh at launch (Q9) | Bug / Data | Done | T1 | SleepDomain, SleepPersistence, AppShell |
 | F13-T3 | Detail load is read-only; narrow stage writes (Q34, Q37) | Refactor | Done | T2 | SleepDomain, SleepPersistence, SessionDetailFeature |
-| F13-T4 | Observation follows the store (Q37) | Bug | Backlog | T3 | SleepPersistence |
+| F13-T4 | Observation follows the store (Q37) | Bug | Done | T3 | SleepPersistence |
 | F13-T5 | "We couldn't open your data" + shared 0.31.0 (Q55) | Data safety | Backlog | T4 | shared, AppShell |
 | F13-T6 | Same samples as SleepGuard; interruptions; FFT; thermal (Q14, Q17) | Detection | Backlog | T1 | SleepDomain, SleepAudio |
 | F13-T7 | Writes leave the sample path (Q13, Q39) | Performance | Backlog | T6 | SleepDomain |
@@ -102,3 +102,20 @@ Fixes this app's verdicts from the principal-level architecture review of the th
 - The failure is not logged: SleepDomain and the view models have no logger by design (layering). Same handling as the stage source failing, which was already silent.
 - `FakeSessionRepository.failStageUpdates(with:)` added for the view-model case.
 - Branch `feature/f13/t3-read-only-detail`
+
+### F13-T4 — Observation follows the store
+
+| Field | Value |
+|-------|-------|
+| Status | Done |
+| Started | 2026-11-26 |
+| Completed | 2026-11-26 |
+
+**Acceptance Criteria:**
+- [x] A committed write never throws because the re-read for observers failed (logged instead)
+- [x] Every write publishes, `removeClips` included (tested for all seven write kinds)
+- [x] The single-writer assumption is written down where it holds
+
+**Notes:**
+- **Scope changed from the plan, on evidence:** the plan said to observe other contexts' saves. There are none: the container makes one store (singleton) and nothing else opens the database (no widget, extension or sync). Observing `ModelContext.didSave` would be code for a writer that doesn't exist, and awkward under Swift 6 (contexts aren't Sendable). The store's doc now says a second writer needs persistent-history observation first.
+- Branch `feature/f13/t4-store-observation`
