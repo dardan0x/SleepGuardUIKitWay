@@ -2,9 +2,11 @@ import Foundation
 import SleepCore
 import SleepDomain
 import SleepLogging
+import SleepStore
 import SwiftData
 
-/// `SessionRepository` over SwiftData.
+/// `SessionRepository` over SwiftData: the shared SleepStore's records and
+/// schema (SleepGuard stores its nights the same way).
 ///
 /// A `@ModelActor`: the model context and every record live on this actor and
 /// never leave it. Callers get `Sendable` domain values, so no code outside can
@@ -26,19 +28,19 @@ actor SwiftDataSessionStore: SessionRepository {
 
   func save(_ session: Night, summary: NightSummary, scoreVersion: String) async throws {
     let record = try record(id: session.id) ?? {
-      let record = SessionRecord(id: session.id)
+      let record = NightRecord(id: session.id)
       modelContext.insert(record)
       return record
     }()
-    record.update(from: session, summary: summary)
-    record.scoreVersion = scoreVersion
-    replaceEvents(of: record, with: session.events)
+    record.update(from: session)
+    record.update(from: summary, scoreVersion: scoreVersion)
+    record.replaceEvents(with: session.events, in: modelContext)
     try modelContext.save()
     publish()
   }
 
   func staleNightIDs(currentVersion: String) async throws -> [Night.ID] {
-    var descriptor = FetchDescriptor<SessionRecord>(
+    var descriptor = FetchDescriptor<NightRecord>(
       predicate: #Predicate { $0.scoreVersion != currentVersion }, sortBy: [SortDescriptor(\.start)])
     descriptor.propertiesToFetch = [\.id, \.start, \.scoreVersion]
     return try modelContext.fetch(descriptor).map(\.id)
@@ -49,8 +51,7 @@ actor SwiftDataSessionStore: SessionRepository {
   {
     guard let record = try record(id: id) else { throw SessionError.notFound(id) }
     record.sleepStages = stages
-    record.update(from: summary)
-    record.scoreVersion = scoreVersion
+    record.update(from: summary, scoreVersion: scoreVersion)
     try modelContext.save()
     publish()
   }
@@ -58,8 +59,7 @@ actor SwiftDataSessionStore: SessionRepository {
   func updateSummaries(_ summaries: [NightSummary], scoreVersion: String) async throws {
     for summary in summaries {
       guard let record = try record(id: summary.id) else { continue }
-      record.update(from: summary)
-      record.scoreVersion = scoreVersion
+      record.update(from: summary, scoreVersion: scoreVersion)
     }
     try modelContext.save()
     publish()
@@ -78,7 +78,7 @@ actor SwiftDataSessionStore: SessionRepository {
   }
 
   func delete(ids: [Night.ID]) async throws {
-    var records: [SessionRecord] = []
+    var records: [NightRecord] = []
     for id in ids {
       guard let record = try record(id: id) else { throw SessionError.notFound(id) }
       records.append(record)
@@ -105,7 +105,7 @@ actor SwiftDataSessionStore: SessionRepository {
   }
 
   func nightFiles() async throws -> [NightFiles] {
-    try modelContext.fetch(FetchDescriptor<SessionRecord>(sortBy: [SortDescriptor(\.start)])).map { record in
+    try modelContext.fetch(FetchDescriptor<NightRecord>(sortBy: [SortDescriptor(\.start)])).map { record in
       NightFiles(id: record.id, start: record.start, clipFileNames: record.events.compactMap(\.clipFileName))
     }
   }
@@ -120,7 +120,7 @@ actor SwiftDataSessionStore: SessionRepository {
   }
 
   func deleteAll() async throws {
-    for record in try modelContext.fetch(FetchDescriptor<SessionRecord>()) {
+    for record in try modelContext.fetch(FetchDescriptor<NightRecord>()) {
       modelContext.delete(record) // events cascade
     }
     try modelContext.save()
@@ -129,27 +129,14 @@ actor SwiftDataSessionStore: SessionRepository {
 
   // MARK: - Private
 
-  private func record(id: UUID) throws -> SessionRecord? {
-    var descriptor = FetchDescriptor<SessionRecord>(predicate: #Predicate { $0.id == id })
+  private func record(id: UUID) throws -> NightRecord? {
+    var descriptor = FetchDescriptor<NightRecord>(predicate: #Predicate { $0.id == id })
     descriptor.fetchLimit = 1
     return try modelContext.fetch(descriptor).first
   }
 
-  /// Events are replaced wholesale: a saved night's events are a value.
-  private func replaceEvents(of record: SessionRecord, with events: [NightEvent]) {
-    for old in record.events {
-      modelContext.delete(old)
-    }
-    record.events = events.map { event in
-      let new = EventRecord(id: event.id)
-      new.update(from: event)
-      modelContext.insert(new)
-      return new
-    }
-  }
-
   private func summaries() throws -> [NightSummary] {
-    try modelContext.fetch(FetchDescriptor<SessionRecord>(sortBy: [SortDescriptor(\.start, order: .reverse)])).map(\.summary)
+    try modelContext.fetch(FetchDescriptor<NightRecord>(sortBy: [SortDescriptor(\.start, order: .reverse)])).map(\.summary)
   }
 
   private func publish() {

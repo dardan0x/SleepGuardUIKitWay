@@ -56,7 +56,7 @@ BASE = {"Foundation", "Swift", "os", "OSLog", "Observation"}
 ALLOWED_IMPORTS = {
     "SleepDomain": {"SleepCore"},
     "SleepDomainTestSupport": {"SleepDomain", "SleepCore"},
-    "SleepPersistence": {"SleepDomain", "SleepCore", "SleepFiles", "SleepSettings", "SleepLogging", "SwiftData"},
+    "SleepPersistence": {"SleepDomain", "SleepCore", "SleepFiles", "SleepSettings", "SleepLogging", "SleepStore", "SwiftData"},
     "SleepAudio": {"SleepDomain", "SleepCore", "SleepAudioKit"},
     "SleepHealth": {"SleepDomain", "SleepCore", "SleepHealthKit", "SleepLogging"},
     "ScreenKit": {"UIKit", "SwiftUI", "SleepGuardDesignKit"},

@@ -45,6 +45,7 @@ Fixes this app's verdicts from the principal-level architecture review of the th
 | F13-T17 | Shared settings (shared 0.33.0) | Refactor | Done | T16 | SleepDomain, SleepPersistence |
 | F13-T18 | Uniform the apps, release A (shared 0.34.0) | Refactor | Done | T17 | Adapters, SleepDomain, AppShell |
 | F13-T19 | Uniform the apps, release B: shared audio (shared 0.35.0) | Refactor | Done | T18 | SleepAudio, SleepDomain |
+| F13-T20 | Uniform the apps, release C: one SwiftData schema (shared 0.36.0) | Refactor | Done | T19 | SleepPersistence |
 
 ## Task Details
 
@@ -389,3 +390,10 @@ The owner's request: everything not unique to one app moves to the shared repo (
 - `CaptureSample`, `CaptureEvent`, `AudioCaptureError` are SleepCore's (aliases in `Ports/AudioCapture.swift`).
 - Deleted (approved): the ten adapter files and four test files now in the shared repo; the escape-hatch allow-list entry for `CaptureProcessor` went with it (the lock lives in the shared repo now).
 - Verified on 0.35.0: four brands, all lanes, checks. Branch `feature/f13/t19-shared-audio`
+
+### F13-T20 — Uniform the apps, release C: one SwiftData schema (shared 0.36.0)
+
+- `SwiftDataSessionStore` keeps its actor, port and contract, over the shared SleepStore's `NightRecord` / `NightEventRecord` and `SleepStoreSchema` (SleepGuard stores its nights in the same records).
+- Deleted (approved): `Records/Records.swift`, `RecordMapping.swift`, `PersistenceSchema.swift`; the mapping and the event replacement are the shared ones.
+- Event records now also keep the spectral stats (0 here).
+- Verified on 0.36.0: four brands, all lanes, checks (a first Dawn hosted run failed on navigation timing while another app was brought to the front on the shared simulator; a rerun passed 13/13). Branch `feature/f13/t20-shared-store`

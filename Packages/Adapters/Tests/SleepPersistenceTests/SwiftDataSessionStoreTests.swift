@@ -1,6 +1,7 @@
 import Foundation
 import SleepCore
 import SleepDomain
+import SleepStore
 import SwiftData
 import Testing
 @testable import SleepPersistence
@@ -27,12 +28,12 @@ struct SwiftDataSessionStoreTests {
   }
 
   private func makeStore() throws -> (SwiftDataSessionStore, ModelContainer) {
-    let container = try PersistenceSchema.container(at: nil)
+    let container = try SleepStoreSchema.container(at: nil)
     return (SwiftDataSessionStore(modelContainer: container), container)
   }
 
   private func eventRecordCount(_ container: ModelContainer) throws -> Int {
-    try ModelContext(container).fetchCount(FetchDescriptor<EventRecord>())
+    try ModelContext(container).fetchCount(FetchDescriptor<NightEventRecord>())
   }
 
   @Test func savedNightComesBackEqual() async throws {
@@ -120,9 +121,9 @@ struct SwiftDataSessionStoreTests {
     try await store.save(session, summary: session.summary(), scoreVersion: "v")
 
     let context = ModelContext(container)
-    let record = try #require(try context.fetch(FetchDescriptor<EventRecord>()).first)
-    record.category = "laughing"
-    record.intensity = "thunderous"
+    let record = try #require(try context.fetch(FetchDescriptor<NightEventRecord>()).first)
+    record.categoryRawValue = "laughing"
+    record.intensityRawValue = "thunderous"
     try context.save()
 
     let loaded = try await store.session(id: session.id).events[0]
@@ -185,7 +186,7 @@ extension SwiftDataSessionStoreTests {
     let (store, container) = try makeStore()
     let session = night(events: [event(at: 0, clip: "a.m4a")])
     try await store.save(session, summary: session.summary(), scoreVersion: "1-a")
-    let eventID = try ModelContext(container).fetch(FetchDescriptor<EventRecord>()).first?.persistentModelID
+    let eventID = try ModelContext(container).fetch(FetchDescriptor<NightEventRecord>()).first?.persistentModelID
     var newer = session.summary()
     newer = NightSummary(
       id: newer.id, start: newer.start, end: newer.end, score: 42, snoringDuration: newer.snoringDuration,
@@ -201,7 +202,7 @@ extension SwiftDataSessionStoreTests {
     #expect(summaries.map(\.score) == [42])
     #expect(try await store.staleNightIDs(currentVersion: "2-a").isEmpty)
     #expect(try await store.session(id: session.id) == session)
-    #expect(try ModelContext(container).fetch(FetchDescriptor<EventRecord>()).first?.persistentModelID == eventID)
+    #expect(try ModelContext(container).fetch(FetchDescriptor<NightEventRecord>()).first?.persistentModelID == eventID)
   }
 
   // F13-T3: stages are a narrow write, not a whole-night rewrite.
@@ -210,13 +211,13 @@ extension SwiftDataSessionStoreTests {
     var session = night(events: [event(at: 0, clip: "a.m4a"), event(at: 600)])
     session.sleepStages = []
     try await store.save(session, summary: session.summary(), scoreVersion: "1-a")
-    let before = try Set(ModelContext(container).fetch(FetchDescriptor<EventRecord>()).map(\.persistentModelID))
+    let before = try Set(ModelContext(container).fetch(FetchDescriptor<NightEventRecord>()).map(\.persistentModelID))
     let stages = [SleepStageSegment(stage: .rem, startOffset: 0, duration: 1800)]
     session.sleepStages = stages
 
     try await store.updateStages(of: session.id, stages: stages, summary: session.summary(), scoreVersion: "2-a")
 
-    let after = try Set(ModelContext(container).fetch(FetchDescriptor<EventRecord>()).map(\.persistentModelID))
+    let after = try Set(ModelContext(container).fetch(FetchDescriptor<NightEventRecord>()).map(\.persistentModelID))
     #expect(after == before)
     #expect(try await store.session(id: session.id) == session)
     #expect(try await store.staleNightIDs(currentVersion: "2-a").isEmpty)
