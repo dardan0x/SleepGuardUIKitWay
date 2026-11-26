@@ -5,6 +5,7 @@ import SleepAudio
 import SleepCore
 import SleepDomain
 import SleepGuardDesignKit
+import SleepLogging
 
 /// One brand's object graph: the composition root (ADR 0009).
 ///
@@ -148,18 +149,32 @@ public final class AppComposition {
 
   /// Debug: the sample nights and their clips, into the store (only an empty
   /// one, at launch; any, from Settings).
+  /// The nights are SleepCore's `SampleNights` (the same as SleepGuard's),
+  /// with their clips and survey answers. Real data is left alone.
   func seedSampleNights(onlyIfEmpty: Bool) -> Task<Void, Never> {
     let repository = container.sessionRepository()
+    let logs = container.lifestyleLogStore()
     let clips = container.storageLocation().clipsDirectory
     return Task {
-      let write: @Sendable (String, TimeInterval, SnoreIntensity) throws -> Void = { name, seconds, intensity in
-        try SleepAudio.writeSampleClip(to: clips.appendingPathComponent(name), seconds: seconds, intensity: intensity)
-      }
       do {
         if onlyIfEmpty {
-          try await SampleNights.seedIfEmpty(repository, writeClip: write)
-        } else {
-          try await SampleNights.seed(repository, writeClip: write)
+          var current = await repository.observeSummaries().makeAsyncIterator()
+          guard let existing = await current.next(), existing.isEmpty else { return }
+        }
+        let nights = SampleNights.make()
+        let samples = SampleNights.clips(of: nights)
+        try await Task.detached(priority: .utility) {
+          for clip in samples {
+            try SleepAudio.writeSampleClip(
+              to: clips.appendingPathComponent(clip.name), seconds: clip.seconds, intensity: clip.intensity)
+          }
+        }.value
+        let version = SleepScore.cacheVersion(for: .default)
+        for night in nights {
+          try await repository.save(night, summary: night.summary(), scoreVersion: version)
+        }
+        for log in SampleNights.lifestyleLogs(for: nights) {
+          try await logs.save(log)
         }
       } catch {
         Log.storage.error("Seeding sample nights failed: \(error.localizedDescription, privacy: .public)")

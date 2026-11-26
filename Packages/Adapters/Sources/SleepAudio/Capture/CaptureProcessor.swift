@@ -3,6 +3,7 @@ import AVFoundation
 import os
 import SleepCore
 import SleepDomain
+import SleepLogging
 import SoundAnalysis
 
 /// The audio-thread half of `EngineAudioCapture`.

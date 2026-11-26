@@ -3,6 +3,7 @@ import OnboardingFeature
 import ScreenKit
 import SleepCore
 import SleepDomain
+import SleepLogging
 import UIKit
 
 /// Owns the window's content: the onboarding on first launch, then the main

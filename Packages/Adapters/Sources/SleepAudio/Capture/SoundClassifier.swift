@@ -1,6 +1,7 @@
 import AVFoundation
 import os
 import SleepCore
+import SleepLogging
 import SoundAnalysis
 
 /// Apple's built-in sound classifier on the microphone. Keeps its latest snore
@@ -45,8 +46,4 @@ final class SoundClassifier: NSObject, SNResultsObserving, Sendable {
   func request(_: SNRequest, didFailWithError error: Error) {
     Log.audio.error("Sound classification failed: \(error.localizedDescription, privacy: .public)")
   }
-}
-
-enum Log {
-  static let audio = Logger(subsystem: Bundle.main.bundleIdentifier ?? "SleepGuardUIKitWay", category: "audio")
 }

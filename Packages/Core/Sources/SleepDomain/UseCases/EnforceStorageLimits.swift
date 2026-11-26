@@ -54,37 +54,35 @@ public struct EnforceStorageLimits: Sendable {
   public func callAsFunction() async throws -> Report {
     let settings = await preferences.load()
     let nights = try await sessions.nightFiles()
-    var sizes: [Night.ID: Int64] = [:]
-    for night in nights {
-      var bytes: Int64 = 0
-      for name in night.allFileNames {
-        bytes += await files.size(ofFileNamed: name)
-      }
-      sizes[night.id] = bytes
+    let allFiles = await files.allFileNames()
+    var sizes: [String: Int64] = [:]
+    for name in Set(allFiles) {
+      sizes[name] = await files.size(ofFileNamed: name)
     }
-    let plan = StoragePlan.make(
-      nights: nights.map { StoragePlan.Night(id: $0.id, start: $0.start, bytes: sizes[$0.id] ?? 0) },
-      now: now(), maxDays: settings.maxDaysLimit, maxMB: settings.maxMegabytesLimit)
+    // SleepCore's StorageSweep decides, as in SleepGuard: which nights lose
+    // their audio, and which files no night (or the night in progress) names.
+    let sweep = await StorageSweep.make(
+      nights: nights, sizes: sizes, allFiles: allFiles, inProgress: checkpoints.load(), now: now(),
+      maxDays: settings.maxDaysLimit, maxMB: settings.maxMegabytesLimit)
 
     var report = Report()
     let byID = Dictionary(nights.map { ($0.id, $0) }, uniquingKeysWith: { first, _ in first })
-    for id in plan.all {
+    for id in sweep.plan.all {
       guard let night = byID[id] else { continue }
       let removed = try await removeAudio(of: night)
       report.filesRemoved += removed.files
       report.bytesRemoved += removed.bytes
       if removed.files > 0 {
-        if plan.dayLimited.contains(id) { report.dayLimitNights += 1 } else { report.sizeLimitNights += 1 }
+        if sweep.plan.dayLimited.contains(id) { report.dayLimitNights += 1 } else { report.sizeLimitNights += 1 }
       }
     }
 
-    let leftovers = await leftoverFiles(nights: nights)
-    for name in leftovers {
-      report.bytesRemoved += await files.size(ofFileNamed: name)
+    for name in sweep.leftovers {
+      report.bytesRemoved += sizes[name] ?? 0
     }
-    await files.removeFiles(named: leftovers)
-    report.leftoverFiles = leftovers.count
-    report.filesRemoved += leftovers.count
+    await files.removeFiles(named: sweep.leftovers)
+    report.leftoverFiles = sweep.leftovers.count
+    report.filesRemoved += sweep.leftovers.count
     return report
   }
 
@@ -105,14 +103,5 @@ public struct EnforceStorageLimits: Sendable {
     }
     await files.removeFiles(named: existing)
     return (existing.count, bytes)
-  }
-
-  private func leftoverFiles(nights: [NightFiles]) async -> [String] {
-    var referenced = Set(nights.flatMap(\.allFileNames))
-    if let inProgress = await checkpoints.load() {
-      referenced.formUnion(inProgress.events.compactMap(\.clipFileName))
-      referenced.formUnion(RawRecording.fileNames(for: inProgress.id))
-    }
-    return await files.allFileNames().filter { !referenced.contains($0) }
   }
 }

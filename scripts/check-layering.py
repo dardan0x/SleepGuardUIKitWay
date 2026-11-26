@@ -56,14 +56,15 @@ BASE = {"Foundation", "Swift", "os", "OSLog", "Observation"}
 ALLOWED_IMPORTS = {
     "SleepDomain": {"SleepCore"},
     "SleepDomainTestSupport": {"SleepDomain", "SleepCore"},
-    "SleepPersistence": {"SleepDomain", "SleepCore", "SleepFiles", "SleepSettings", "SwiftData"},
-    "SleepAudio": {"SleepDomain", "SleepCore", "SleepMelodies", "AVFoundation", "AVFAudio", "SoundAnalysis", "Accelerate"},
-    "SleepHealth": {"SleepDomain", "SleepCore", "SleepHealthKit"},
+    "SleepPersistence": {"SleepDomain", "SleepCore", "SleepFiles", "SleepSettings", "SleepLogging", "SwiftData"},
+    "SleepAudio": {"SleepDomain", "SleepCore", "SleepMelodies", "SleepLogging", "AVFoundation", "AVFAudio", "SoundAnalysis", "Accelerate"},
+    "SleepHealth": {"SleepDomain", "SleepCore", "SleepHealthKit", "SleepLogging"},
     "ScreenKit": {"UIKit", "SwiftUI", "SleepGuardDesignKit"},
     "AppShell": {
         "UIKit", "SwiftUI", "FactoryKit", "SleepDomain", "SleepCore", "SleepPersistence", "SleepAudio",
         "ScreenKit", "SleepGuardDesignKit", "SleepStrings", "HistoryFeature", "SessionDetailFeature", "StatisticsFeature", "RecordingFeature",
         "SettingsFeature", "OnboardingFeature", "LearnFeature", "BriefingFeature",
+        "SleepFiles", "SleepLogging", "SleepNotifications",
         # DeviceServices: the microphone permission and the start delay's notification.
         "AVFAudio", "UserNotifications",
     },

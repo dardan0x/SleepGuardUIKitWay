@@ -1,5 +1,6 @@
 import Foundation
 import SleepDomain
+import SleepLogging
 
 /// The device around a night: the microphone kept warm and a notification
 /// through the start delay, the screen kept on, the battery watched while

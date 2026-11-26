@@ -1,8 +1,8 @@
 import Foundation
-import os
 import SleepCore
 import SleepDomain
 import SleepHealthKit
+import SleepLogging
 
 /// Apple Health. Linked only by brands that use HealthKit (the Tuist brand
 /// list's `usesHealthKit`); the brand hands the shell its `HealthAccess`,
@@ -19,14 +19,13 @@ public enum SleepHealth {
 /// staged samples (Apple Watch) inside the night. This adapter adds the
 /// port's shape and the logging.
 struct HealthKitAccess: HealthAccess {
-  private static let log = Logger(subsystem: Bundle.main.bundleIdentifier ?? "SleepGuardUIKitWay", category: "health")
   private let health = HealthKitSleep()
 
   func requestAuthorization() async -> Bool {
     do {
       return try await health.requestAuthorization()
     } catch {
-      Self.log.error("Health authorization failed: \(error.localizedDescription, privacy: .public)")
+      Log.health.error("Health authorization failed: \(error.localizedDescription, privacy: .public)")
       return false
     }
   }
@@ -39,7 +38,7 @@ struct HealthKitAccess: HealthAccess {
     do {
       try await health.save(night, summary: summary)
     } catch {
-      Self.log.error("Writing the night to Health failed: \(error.localizedDescription, privacy: .public)")
+      Log.health.error("Writing the night to Health failed: \(error.localizedDescription, privacy: .public)")
     }
   }
 }
