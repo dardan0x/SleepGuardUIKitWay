@@ -1,12 +1,13 @@
 import Foundation
 import SleepDomain
+import SleepStore
 
-/// The module's public surface: factories returning ports. Records, mappers
-/// and the store types stay internal.
+/// The module's public surface: factories returning ports. The store types
+/// stay internal; the records are the shared SleepStore's.
 public enum SleepPersistence {
   /// The nights database. `url == nil` keeps it in memory (tests, previews).
   public static func makeSessionRepository(storeURL url: URL?) throws -> any SessionRepository {
-    try SwiftDataSessionStore(modelContainer: PersistenceSchema.container(at: url))
+    try SwiftDataSessionStore(modelContainer: SleepStoreSchema.container(at: url))
   }
 
   /// Clip files in `directory`.

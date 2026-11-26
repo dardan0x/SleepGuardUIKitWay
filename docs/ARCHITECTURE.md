@@ -2,7 +2,7 @@
 
 SleepGuardUIKitWay is SleepGuard (a SwiftUI sleep and snoring app) rebuilt the way a large UIKit team would build it. UIKit owns the app and its navigation, SwiftUI draws the screens, the business rules sit in a domain core behind ports, and four brands ship from one codebase. The rules, strings, design kit and screen layouts are shared with SleepGuard through a separate repo, so both apps compute and draw the same things from the same inputs.
 
-Everything below was checked against the code on 2026-11-26 (shared release 0.35.0). Counts and names come from the source, not from the plans.
+Everything below was checked against the code on 2026-11-26 (shared release 0.36.0). Counts and names come from the source, not from the plans.
 
 ## Module graph
 
@@ -46,7 +46,7 @@ graph TD
   DesignKit --> SleepStrings
   DesignKit --> SleepCore
 
-  subgraph Shared["SleepGuardShared, pinned 0.35.0"]
+  subgraph Shared["SleepGuardShared, pinned 0.36.0"]
     SleepCore
     SleepStrings
     SleepMelodies
