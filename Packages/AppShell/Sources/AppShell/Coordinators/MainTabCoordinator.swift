@@ -8,6 +8,13 @@ protocol TabFlow: AnyObject {
   func start()
 }
 
+/// A tab that opens a night's detail (History, Statistics): where a link to
+/// a night goes.
+protocol NightDetailHosting: TabFlow {
+  var navigator: any Navigator { get }
+  var nightDetail: NightDetailNavigation { get }
+}
+
 /// The tab bar. Builds one flow per tab in the brand's `tabs`, in that order.
 final class MainTabCoordinator {
   let tabBarController = UITabBarController()
@@ -30,6 +37,14 @@ final class MainTabCoordinator {
 
     tabBarController.viewControllers = navigationControllers
     Appearance.apply(theme, to: tabBarController.tabBar)
+  }
+
+  /// Brings `tab` to the front; its flow, or `nil` when the brand hasn't it.
+  @discardableResult
+  func select(_ tab: AppTab) -> (any TabFlow)? {
+    guard let index = flows.firstIndex(where: { $0.tab == tab }) else { return nil }
+    tabBarController.selectedIndex = index
+    return flows[index]
   }
 }
 

@@ -118,6 +118,10 @@ public final class AppComposition {
     container.deviceServices()
   }
 
+  var nights: any SessionRepository {
+    container.sessionRepository()
+  }
+
   var preferences: any PreferencesStore {
     container.preferencesStore()
   }
