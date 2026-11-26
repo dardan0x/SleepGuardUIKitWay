@@ -197,7 +197,6 @@ public actor RecordingSession {
       melodyPlaying: melodyPlaying))
   }
 
-
   /// Resumes once the engine has handled everything sent so far and this
   /// session has performed its outputs.
   func waitUntilProcessed() async {
@@ -252,6 +251,11 @@ public actor RecordingSession {
         draft.recordingGaps = draft.recordingGaps.adding(start: start, duration: duration, nightStart: draft.start)
         melodyPlaying = false
         publish(time: batch.time, db: AudioLevels.floorDB, snoreState: .none, isSpeech: false)
+      case let .interruptionGap(start, duration):
+        // Capture was interrupted (shared 0.30.0). This app doesn't send the
+        // capture messages yet, so it only records what the engine reports.
+        draft.recordingGaps = draft.recordingGaps.adding(
+          start: start, duration: duration, nightStart: draft.start, kind: .interruption)
       }
     }
     if batch.outputs.contains(where: \.savesAnEvent) {

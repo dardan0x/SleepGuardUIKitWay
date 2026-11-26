@@ -79,6 +79,7 @@ struct RecordingFactory {
       settings: RecordingSession.Settings(
         sensitivity: preferences.sensitivity, detectSleepTalking: preferences.detectSleepTalking,
         preserveRawAudio: preserveRawAudio),
+      saveRules: container.saveRules(),
       checkpoints: container.checkpointStore(),
       rawLog: preserveRawAudio ? container.makeRawLogWriter()() : nil,
       interrupter: melodyStore.map { store in
@@ -100,7 +101,8 @@ struct RecordingFactory {
 
   func makeSummary(night: Night, routes: SessionSummaryRoutes) -> UIViewController {
     SessionSummaryViewController(
-      viewModel: SessionSummaryViewModel(night: night, routes: routes), theme: theme, chrome: chrome)
+      viewModel: SessionSummaryViewModel(night: night, saveRules: container.saveRules(), routes: routes),
+      theme: theme, chrome: chrome)
   }
 
   /// "Couldn't save", with OK.

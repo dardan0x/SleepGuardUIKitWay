@@ -121,7 +121,7 @@ final class NightDetailController: UICollectionViewController {
         }
       }
     case .timeline: NightTimeline(night: night)
-    case .gapsBanner: RecordingGapsBanner(totalGap: night.gapsDuration)
+    case .gapsBanner: RecordingGapsBanner(totalGap: night.melodyGapsDuration)
     case .batteryBanner: LowBatteryBanner()
     case let .event(id):
       if let row = items.row(id) {

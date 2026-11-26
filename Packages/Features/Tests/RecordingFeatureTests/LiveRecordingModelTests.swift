@@ -42,8 +42,8 @@ struct LiveRecordingModelTests {
 
   @Test func stoppingBeforeTheMinimumIsTooShort() {
     let model = LiveRecordingModel(capture: FakeAudioCapture(), start: start)
-    #expect(model.isTooShort(at: start.addingTimeInterval(Night.minimumSaveDuration - 1)))
-    #expect(!model.isTooShort(at: start.addingTimeInterval(Night.minimumSaveDuration)))
+    #expect(model.isTooShort(at: start.addingTimeInterval(SaveRules.standard.minimumDuration - 1)))
+    #expect(!model.isTooShort(at: start.addingTimeInterval(SaveRules.standard.minimumDuration)))
   }
 
   @Test func stopReturnsTheNightWithItsEvents() async throws {

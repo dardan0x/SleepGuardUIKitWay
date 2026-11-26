@@ -28,7 +28,7 @@ public final class SessionSummaryViewController: ScreenController {
   func alert(for _: SessionSummaryViewModel.Alert) -> UIAlertController {
     let alert = UIAlertController(
       title: Strings.sessionSummaryTooShortTitle,
-      message: String(format: Strings.sessionSummaryTooShortInfoFormat, Int(Night.minimumSaveDuration / 60)),
+      message: String(format: Strings.sessionSummaryTooShortInfoFormat, Int(viewModel.saveRules.minimumDuration / 60)),
       preferredStyle: .alert)
     alert.addAction(UIAlertAction(title: Strings.actionOk, style: .cancel) { [viewModel] _ in viewModel.dismissAlert() })
     return alert

@@ -4,7 +4,7 @@ import SleepCore
 import SleepDomain
 
 /// The bedside clock's decisions over the live night (`LiveRecordingModel`):
-/// Stop before `Night.minimumSaveDuration` asks first; a microphone that
+/// Stop before the `SaveRules` minimum asks first; a microphone that
 /// never started is reported once; a stopped night goes to the summary or is
 /// discarded.
 @MainActor

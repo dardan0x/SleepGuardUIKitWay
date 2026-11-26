@@ -9,11 +9,18 @@ public struct ShouldAskForProfile: Sendable {
   private let nights: any SessionRepository
   private let profiles: any ProfileStore
   private let preferences: any PreferencesStore
+  private let saveRules: SaveRules
 
-  public init(nights: any SessionRepository, profiles: any ProfileStore, preferences: any PreferencesStore) {
+  public init(
+    nights: any SessionRepository,
+    profiles: any ProfileStore,
+    preferences: any PreferencesStore,
+    saveRules: SaveRules = .standard)
+  {
     self.nights = nights
     self.profiles = profiles
     self.preferences = preferences
+    self.saveRules = saveRules
   }
 
   /// `roll` in 0..<1 and `coin` are drawn by the caller, once per appearance.
@@ -23,7 +30,7 @@ public struct ShouldAskForProfile: Sendable {
       summaries = current
       break
     }
-    let fullNights = summaries.filter { $0.duration >= Night.minimumSaveDuration }.count
+    let fullNights = summaries.filter { saveRules.isLongEnough($0.duration) }.count
     return await ProfilePrompt.shouldShow(
       fullNights: fullNights, completion: profiles.load().completion,
       dismissCount: preferences.load().profilePromptDismissCount, roll: roll, coin: coin)

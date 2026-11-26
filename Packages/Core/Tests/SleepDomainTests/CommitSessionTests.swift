@@ -19,7 +19,7 @@ struct CommitSessionTests {
   }
 
   @Test func refusesANightUnderTheMinimum() async {
-    let night = Sample.night(hours: (Night.minimumSaveDuration - 1) / 3600)
+    let night = Sample.night(hours: (SaveRules.standard.minimumDuration - 1) / 3600)
     let repository = FakeSessionRepository()
     let checkpoints = FakeRecordingCheckpointStore(night)
     await #expect(throws: CommitSession.Failure.tooShort) {

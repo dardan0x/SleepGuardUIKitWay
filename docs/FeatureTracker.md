@@ -2,7 +2,7 @@
 
 > Updated by the AI after every task. This is the source of truth for project state.
 
-Last updated: 2026-11-18
+Last updated: 2026-11-26
 
 ---
 
@@ -41,9 +41,11 @@ Last updated: 2026-11-18
 | F9 | Showcase polish | P2 | In Progress (T4: screenshots after the UI polish) | 3/4 | ████████░░ 75% | [tracker](trackers/f9-showcase-polish.md) |
 | F11 | UIKit screen containers | P2 | Done | 1/1 | ██████████ 100% | [tracker](trackers/f11-uikit-screen-containers.md) |
 | F12 | View models and factories | P2 | Done | 1/1 | ██████████ 100% | [tracker](trackers/f12-view-models.md) |
+| F13 | Architecture review fixes | P0/P1 | In Progress | 1/15 | █░░░░░░░░░ 7% | [tracker](trackers/f13-architecture-review.md) |
 
 ## Currently Active
 
+- **F13-T2** — Stored scores carry their version; refresh at launch.
 - **F9-T4** — README written; the brands' screenshots wait for the UI polish.
 - **F8 device checks** — Apple Health permission and writing, real sleep stages from an Apple Watch night, the start delay's notification and warm-up with the screen locked, raw audio on a real night, a Snore Interrupter melody with the microphone resuming after it, the onboarding's permission prompts on a fresh install, a morning briefing and a PDF report.
 - **F7 device check** — one short night on a phone (Debug saves after 2 min): microphone, locked screen, clips, recovery after a kill.
@@ -63,6 +65,8 @@ Last updated: 2026-11-18
 
 | Date | Task | Event | Notes |
 |------|------|-------|-------|
+| 2026-11-26 | F13-T1 | Completed | Shared 0.30.0 pinned with the compatibility changes (interruption gaps recorded, gap banner melody-only); `SaveRules` from the composition replaces `Night.minimumSaveDuration`. All brands build and all lanes pass on the release. Branch `feature/f13/t1-shared-0-30-save-rules` |
+| 2026-11-26 | F13 | Planned | Architecture review fixes planned with the owner: 15 tasks, every concern checked against the code first. Feature branch `feature/f13-architecture-review`, a PR per task |
 | 2026-11-18 | F12-T1 | Completed | A view model for every screen, 19 for 21 (ADR 0008; no UI imports and one per screen, both checked; no `@ObservationIgnored`), tested with fakes; controllers only draw, forward and present; composers renamed factories and build dependencies, view model, controller. `FakeMelodyRecorder` fixed to keep its take at the limit. Planned with the owner as one task. Branch `feature/f12/t1-view-models` |
 | 2026-11-18 | F11-T1 | Completed | Shared 0.28.0 tagged by the owner and pinned (`bump-shared.sh`); all lanes pass and all four brands build on the release (`TUIST_SHARED_RELEASE=1`). F11 done. Branch `feature/f11/t1-uikit-screen-containers` |
 | 2026-11-18 | F11-T1 | In progress | Every screen a UIKit `ScreenController` hosting the shared content (ADR 0007; scope widened by the owner from three screens to all): History collection view, Onboarding page view controller, Session Detail compositional layout with a segmented filter, the rest in hosted children or `ContentListController`; `HostingScreen` removed; shared pieces made public on a local branch (0.28.0). All brands build, all lanes pass against the local shared repo. Waits for the release. Branch `feature/f11/t1-uikit-screen-containers` |

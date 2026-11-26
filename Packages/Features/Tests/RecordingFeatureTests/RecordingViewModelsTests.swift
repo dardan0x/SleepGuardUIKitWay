@@ -14,7 +14,7 @@ struct RecordingViewModelsTests {
 
   @Test func aShortNightIsNotSaved() {
     var saved: [Night] = []
-    let night = Night(start: start, end: start.addingTimeInterval(Night.minimumSaveDuration - 1))
+    let night = Night(start: start, end: start.addingTimeInterval(SaveRules.standard.minimumDuration - 1))
     let viewModel = SessionSummaryViewModel(night: night, routes: SessionSummaryRoutes(save: { saved.append($0) }, discard: { _ in }))
     viewModel.save()
     #expect(saved.isEmpty)
@@ -23,7 +23,7 @@ struct RecordingViewModelsTests {
 
   @Test func aLongEnoughNightIsSaved() {
     var saved: [Night] = []
-    let night = Night(start: start, end: start.addingTimeInterval(Night.minimumSaveDuration))
+    let night = Night(start: start, end: start.addingTimeInterval(SaveRules.standard.minimumDuration))
     let viewModel = SessionSummaryViewModel(night: night, routes: SessionSummaryRoutes(save: { saved.append($0) }, discard: { _ in }))
     viewModel.save()
     #expect(saved == [night])
