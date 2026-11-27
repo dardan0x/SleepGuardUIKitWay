@@ -5,12 +5,13 @@ import ProjectDescriptionHelpers
 /// Adding a brand: an entry in `Brand.all` and a folder in `Apps/`.
 ///
 /// Shared code: packages require a released `SleepGuardShared` (`exact:`).
-/// By default the project uses the sibling checkout `../SleepGuardShared` as a
-/// local package, which overrides the release, so local edits show up on the
-/// next build. CI generates with `TUIST_SHARED_RELEASE=1` to build the pinned
-/// release instead. The brand targets import the design kit directly, so the
-/// project declares the shared package either way.
-let useReleasedShared = Environment.sharedRelease.getBoolean(default: false)
+/// By default the project resolves that pinned release as a remote package
+/// (what CI builds). Generate with `TUIST_SHARED_LOCAL=1` to use the sibling
+/// checkout `../SleepGuardShared` as a local package instead, which overrides
+/// the release, so local edits show up on the next build. The brand targets
+/// import the design kit directly, so the project declares the shared package
+/// either way.
+let useLocalShared = Environment.sharedLocal.getBoolean(default: false)
 
 /// Must match the `exact:` version in the package manifests.
 let sharedVersion: Version = "0.37.0"
@@ -26,8 +27,8 @@ let project = Project(
     .local(path: "Packages/Presentation"),
     .local(path: "Packages/Features"),
     .local(path: "Packages/AppShell"),
-    useReleasedShared
-      ? .remote(url: "https://github.com/dardan0x/SleepGuardShared.git", requirement: .exact(sharedVersion))
-      : .local(path: "../SleepGuardShared"),
+    useLocalShared
+      ? .local(path: "../SleepGuardShared")
+      : .remote(url: "https://github.com/dardan0x/SleepGuardShared.git", requirement: .exact(sharedVersion)),
   ],
   targets: Brand.all.map(Target.app) + Brand.all.map(Target.hostedTests(in:)))

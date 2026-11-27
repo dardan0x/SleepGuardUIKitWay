@@ -118,7 +118,7 @@ Identity (bundle id, display name, app group, URL scheme) lives in the Tuist bra
 | `SleepGuardDesignKit` | Theme tokens and components that draw values |
 | `SleepGuardContentKit` | Screen layouts: values and closures in (ADR 0005) |
 
-`tuist generate` builds against the local checkout for day-to-day work; `TUIST_SHARED_RELEASE=1` builds the pinned release. A shared change is a release: tag it, run `scripts/bump-shared.sh`, run the tests in both apps.
+`tuist generate` builds the pinned release; `TUIST_SHARED_LOCAL=1` builds against the local checkout `../SleepGuardShared`, for work on the shared repo. A shared change is a release: tag it, run `scripts/bump-shared.sh`, run the tests in both apps.
 
 ## Recording a night
 

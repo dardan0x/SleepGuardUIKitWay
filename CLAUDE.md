@@ -168,8 +168,8 @@ SESSION END     write a fragment in docs/sessions/ (see its README)
 ## Build and report
 
 ```bash
-tuist generate --no-open                          # uses ../SleepGuardShared (local edits)
-TUIST_SHARED_RELEASE=1 tuist generate --no-open   # uses the pinned release (what CI builds)
+tuist generate --no-open                          # uses the pinned shared release (what CI builds)
+TUIST_SHARED_LOCAL=1 tuist generate --no-open     # uses ../SleepGuardShared (local edits)
 xcodebuild build -workspace SleepGuardUIKitWay.xcworkspace -scheme <SleepGuard|SleepGuardLite|Nocturne> \
   -destination 'platform=iOS Simulator,id=BD630AD5-5A05-4663-8F1B-A17283EBCBF5'
 sh scripts/run-tests.sh [macos|packages|hosted]   # all lanes by default; per-test time limits

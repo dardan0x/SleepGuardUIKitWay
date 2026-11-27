@@ -16,7 +16,7 @@
 #
 # Usage: sh scripts/run-tests.sh [lane ...]    lanes: macos packages hosted (default: all)
 # Env:   DESTINATION  (default: the pinned iPhone 16e, iOS 26.2 simulator)
-#        TUIST_SHARED_RELEASE=1 to build the pinned shared release instead of ../SleepGuardShared
+#        TUIST_SHARED_LOCAL=1 to build ../SleepGuardShared instead of the pinned shared release
 #        REFERENCE_BRAND=<Brand> to run only that brand's whole in-app suite; the other
 #          brands run their BrandBootstrapTests (CI on most pull requests)
 set -u

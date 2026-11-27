@@ -1,8 +1,8 @@
 name: ci
 
 # Pull requests (task branches into feature/*, features into main), manual
-# runs, and a nightly run. CI builds the pinned SleepGuardShared release,
-# never a sibling checkout: TUIST_SHARED_RELEASE=1.
+# runs, and a nightly run. CI builds the pinned SleepGuardShared release (the
+# default), never a sibling checkout: TUIST_SHARED_LOCAL stays unset.
 #
 # Cost: a pull request builds and fully tests one reference brand, and runs
 # every other brand's bootstrap test (each brand still builds for it). All
@@ -16,7 +16,6 @@ on:
     - cron: "0 3 * * *"
 
 env:
-  TUIST_SHARED_RELEASE: "1"
   # The pinned local simulator UDID doesn't exist on runners.
   DESTINATION: platform=iOS Simulator,name=iPhone 17 Pro,OS=latest
   REFERENCE_BRAND: SleepGuard

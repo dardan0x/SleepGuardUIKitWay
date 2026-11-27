@@ -229,8 +229,8 @@ The shared package contains no ports, dependency injection, navigation or lifecy
 
 | Mode | Command | Resolves to |
 |---|---|---|
-| Local (default) | `tuist generate` | `../SleepGuardShared`, so changes there build immediately |
-| Release (CI) | `TUIST_SHARED_RELEASE=1 tuist generate` | The exact pinned version (`0.37.0`) |
+| Release (default, CI) | `tuist generate` | The exact pinned version (`0.37.0`) |
+| Local | `TUIST_SHARED_LOCAL=1 tuist generate` | `../SleepGuardShared`, so changes there build immediately |
 
 Both modes use the same package identity, so manifests don't change between them. Adopting a new release means running `sh scripts/bump-shared.sh <version>` and then the full suite.
 
