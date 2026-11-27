@@ -1,17 +1,26 @@
 import FactoryKit
 import SleepAudio
+import SleepCore
 import SleepDomain
+import SleepFiles
 import SleepGuardDesignKit
+import SleepLogging
 import SleepPersistence
 import UIKit
 
 /// The shell's registrations. Everything derives from `brand`, the one value
-/// supplied from outside (`AppShell.bootstrap(brand:)`). Only `AppShell`
-/// imports Factory; packages below it take plain initializer arguments.
+/// supplied from outside. Only `AppShell` imports Factory; packages below it
+/// take plain initializer arguments, and so do the flows (`AppComposition`
+/// builds them).
+///
+/// The app never uses `Container.shared`: `AppComposition` makes its own
+/// container and registers the brand before returning it, so nothing can
+/// resolve without a brand. The default below is unreachable from the app;
+/// it only catches a test container made without one.
 extension Container {
   var brand: Factory<any BrandComposition> {
-    self { preconditionFailure("AppShell.bootstrap(brand:) registers the brand before anything resolves") }
-      .singleton
+    self { fatalError("A container needs its brand: make it through AppComposition(brand:)") }
+      .cached
   }
 
   var theme: Factory<Theme> {
@@ -19,28 +28,45 @@ extension Container {
   }
 
   var storageLocation: Factory<StorageLocation> {
-    self { StorageLocation.resolve() }.singleton
+    self {
+      // The shared layout (SleepGuard's too), under this app's folder.
+      StorageLocation.resolve(
+        appGroup: Bundle.main.object(forInfoDictionaryKey: "SGAppGroup") as? String, folder: "SleepGuardUIKitWay")
+    }.cached
   }
 
-  /// The nights database. If it can't be opened, this launch runs on an
-  /// in-memory store and logs a fault: the file is left alone, never deleted,
-  /// so nothing is lost and the next launch tries again.
-  var sessionRepository: Factory<any SessionRepository> {
+  /// The nights database, opened once. If the file can't be opened, this
+  /// launch gets an in-memory store and `isAvailable` is false: the app then
+  /// shows only "We couldn't open your sleep data" (`AppCoordinator`), so
+  /// nothing is recorded into a store that would be lost. The file is left
+  /// alone, never deleted, and the next launch (or an update) tries again.
+  var storeOpening: Factory<StoreOpening> {
     self {
       let url = self.storageLocation().storeURL
       do {
-        return try SleepPersistence.makeSessionRepository(storeURL: url)
+        return try StoreOpening(repository: SleepPersistence.makeSessionRepository(storeURL: url), isAvailable: true)
       } catch {
         Log.storage.fault("Couldn't open the nights store: \(error.localizedDescription, privacy: .public)")
-        // In memory can only fail if SwiftData itself can't start.
-        return try! SleepPersistence.makeSessionRepository(storeURL: nil)
+        do {
+          return try StoreOpening(repository: SleepPersistence.makeSessionRepository(storeURL: nil), isAvailable: false)
+        } catch {
+          // Not even an in-memory store: SwiftData itself can't start, and
+          // there is no app to show.
+          fatalError("SwiftData can't create an in-memory store: \(error)")
+        }
       }
     }
-    .singleton
+    // Once per container (`.singleton` would be one for every container in
+    // the process, so a test's container could get another test's store).
+    .cached
+  }
+
+  var sessionRepository: Factory<any SessionRepository> {
+    self { self.storeOpening().repository }.cached
   }
 
   var sessionFileStore: Factory<any SessionFileStore> {
-    self { SleepPersistence.makeSessionFileStore(directory: self.storageLocation().clipsDirectory) }.singleton
+    self { SleepPersistence.makeSessionFileStore(directory: self.storageLocation().clipsDirectory) }.cached
   }
 
   /// The brand's Apple Health reads the stages; a brand without it has none.
@@ -48,39 +74,65 @@ extension Container {
     self {
       guard let health = self.healthAccess() else { return NoSleepStages() as any SleepStageSource }
       return health
-    }.singleton
+    }.cached
   }
 
   var deleteSession: Factory<DeleteSession> {
     self { DeleteSession(sessions: self.sessionRepository(), files: self.sessionFileStore()) }
   }
 
+  var deleteSessions: Factory<DeleteSessions> {
+    self { DeleteSessions(sessions: self.sessionRepository(), files: self.sessionFileStore()) }
+  }
+
+  var refreshStaleSummaries: Factory<RefreshStaleSummaries> {
+    self { RefreshStaleSummaries(sessions: self.sessionRepository()) }
+  }
+
   var loadSessionDetail: Factory<LoadSessionDetail> {
-    self { LoadSessionDetail(sessions: self.sessionRepository(), sleepStages: self.sleepStageSource()) }
+    self { LoadSessionDetail(sessions: self.sessionRepository()) }
+  }
+
+  var enrichNightWithStages: Factory<EnrichNightWithStages> {
+    self { EnrichNightWithStages(sessions: self.sessionRepository(), sleepStages: self.sleepStageSource()) }
   }
 
   var checkpointStore: Factory<any RecordingCheckpointStore> {
-    self { SleepPersistence.makeCheckpointStore(url: self.storageLocation().checkpointURL) }.singleton
+    self { SleepPersistence.makeCheckpointStore(url: self.storageLocation().checkpointURL) }.cached
+  }
+
+  /// When a stopped night is long enough to save. The shipped rule is 30
+  /// minutes; Debug builds take 2 so a night can be tried at a desk. The
+  /// choice is this app's (SleepCore's `SaveRules`), not the shared
+  /// package's build configuration.
+  var saveRules: Factory<SaveRules> {
+    self {
+      #if DEBUG
+      SaveRules(minimumDuration: 120)
+      #else
+      .standard
+      #endif
+    }
   }
 
   var commitSession: Factory<CommitSession> {
     self {
       CommitSession(
         sessions: self.sessionRepository(), checkpoints: self.checkpointStore(), health: self.healthAccess(),
-        preferences: self.preferencesStore())
+        preferences: self.preferencesStore(), saveRules: self.saveRules())
     }
   }
 
   var preferencesStore: Factory<any PreferencesStore> {
-    self { SleepPersistence.makePreferencesStore() }.singleton
+    self { SleepPersistence.makePreferencesStore() }.cached
   }
 
   var profileStore: Factory<any ProfileStore> {
-    self { SleepPersistence.makeProfileStore(url: self.storageLocation().profileURL) }.singleton
+    self { SleepPersistence.makeProfileStore(url: self.storageLocation().profileURL) }.cached
   }
 
   var lifestyleLogStore: Factory<any LifestyleLogStore> {
-    self { SleepPersistence.makeLifestyleLogStore(url: self.storageLocation().lifestyleLogURL) }.singleton
+    self { SleepPersistence.makeLifestyleLogStore(url: self.storageLocation().lifestyleLogURL) }.cached
   }
 
   var loadMorningBriefing: Factory<LoadMorningBriefing> {
@@ -92,7 +144,11 @@ extension Container {
   }
 
   var shouldAskForProfile: Factory<ShouldAskForProfile> {
-    self { ShouldAskForProfile(nights: self.sessionRepository(), profiles: self.profileStore(), preferences: self.preferencesStore()) }
+    self {
+      ShouldAskForProfile(
+        nights: self.sessionRepository(), profiles: self.profileStore(), preferences: self.preferencesStore(),
+        saveRules: self.saveRules())
+    }
   }
 
   /// The brand's Apple Health, or `nil` (Lite doesn't link HealthKit).
@@ -168,7 +224,7 @@ extension Container {
   }
 
   var clipWaveformSource: Factory<any ClipWaveformSource> {
-    self { SleepAudio.makeClipWaveformSource() }.singleton
+    self { SleepAudio.makeClipWaveformSource() }.cached
   }
 
   /// Makes a player per player sheet (the sheet's state owner releases it).
@@ -176,4 +232,11 @@ extension Container {
   var makeClipPlayer: Factory<@MainActor @Sendable () -> any ClipPlayer> {
     self { { SleepAudio.makeClipPlayer() } }
   }
+}
+
+/// The nights database and whether it opened from its file.
+struct StoreOpening: Sendable {
+  let repository: any SessionRepository
+  /// False when the file couldn't be opened and `repository` is in memory.
+  let isAvailable: Bool
 }

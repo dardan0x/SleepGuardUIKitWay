@@ -1,5 +1,6 @@
 import ScreenKit
 import SleepGuardContentKit
+import SleepGuardDesignKit
 import UIKit
 
 /// The Learn tab, drawn from `LearnViewModel` by the shared `LearnContent`.

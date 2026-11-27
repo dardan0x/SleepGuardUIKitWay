@@ -1,6 +1,7 @@
 import Foundation
 import SleepCore
 import SleepDomain
+import SleepFiles
 import Testing
 @testable import SleepPersistence
 
@@ -88,6 +89,13 @@ struct SettingsStoresTests {
     #expect(log.samples.count == 3)
   }
 
+  /// Storage limits and cleanup find the log by the domain's name; the
+  /// shared writer must use the same one.
+  @Test func theRawLogNameIsTheSharedOne() {
+    let id = UUID()
+    #expect(RawRecording.logFileName(for: id) == RawLogFile.fileName(for: id))
+  }
+
   @Test func theFileStoreKnowsItsFilesAndTheirSizes() async throws {
     try Data(count: 1_234).write(to: directory.appendingPathComponent("a.m4a"))
     let store = SleepPersistence.makeSessionFileStore(directory: directory)
@@ -103,7 +111,7 @@ struct SettingsStoresTests {
     let night = Night(
       start: start, end: start.addingTimeInterval(8 * 3600),
       events: [NightEvent(start: start, duration: 60, intensity: .light, clipFileName: "a.m4a")])
-    try await repository.save(night, summary: night.summary())
+    try await repository.save(night, summary: night.summary(), scoreVersion: "")
 
     #expect(try await repository.nightFiles() == [NightFiles(id: night.id, start: start, clipFileNames: ["a.m4a"])])
     try await repository.removeClips(of: night.id)

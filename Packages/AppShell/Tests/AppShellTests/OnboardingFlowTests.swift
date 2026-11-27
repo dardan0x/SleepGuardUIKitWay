@@ -30,7 +30,7 @@ struct OnboardingFlowTests {
     container.preferencesStore.register { preferences }
     let spy = NavigatorSpy()
     var finished: [Bool] = []
-    let flow = OnboardingFlow(navigator: spy, container: container) { finished.append($0) }
+    let flow = AppComposition(container: container).onboardingFlow(navigator: spy) { finished.append($0) }
     flow.start()
     return Harness(flow: flow, spy: spy, preferences: preferences, finished: { finished })
   }
@@ -86,7 +86,7 @@ struct FirstLaunchTests {
     preferences.hasCompletedOnboarding = onboarded
     let store = FakePreferencesStore(preferences)
     container.preferencesStore.register { store }
-    return (AppCoordinator(container: container), store)
+    return (AppCoordinator(composition: AppComposition(container: container)), store)
   }
 
   @Test func firstLaunchShowsTheOnboardingAndNothingElse() async {
@@ -96,6 +96,19 @@ struct FirstLaunchTests {
     #expect(app.onboarding != nil)
     #expect(app.mainTabs == nil)
     #expect(app.recovery == nil)
+  }
+
+  /// The nights database didn't open: that screen only, nothing behind it.
+  @Test func anUnavailableStoreShowsOnlyItsScreen() async {
+    let container = Container.test()
+    container.storeOpening.register { StoreOpening(repository: FakeSessionRepository(), isAvailable: false) }
+    let app = AppCoordinator(composition: AppComposition(container: container))
+    let window = UIWindow()
+    app.start(in: window)
+    await app.launch?.value
+    #expect(window.rootViewController is StoreUnavailableViewController)
+    #expect(app.storeUnavailable)
+    #expect(app.launch == nil && app.mainTabs == nil && app.onboarding == nil && app.recovery == nil)
   }
 
   @Test func laterLaunchesShowTheTabs() async {

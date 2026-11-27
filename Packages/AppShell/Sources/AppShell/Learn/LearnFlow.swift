@@ -1,4 +1,3 @@
-import FactoryKit
 import LearnFeature
 import ScreenKit
 import SleepGuardDesignKit
@@ -10,14 +9,14 @@ import UIKit
 final class LearnFlow: TabFlow {
   let tab = AppTab.learn
   let navigator: any Navigator
-  private let container: Container
+  private let factory: LearnFactory
 
-  init(navigator: any Navigator, container: Container) {
+  init(navigator: any Navigator, factory: LearnFactory) {
     self.navigator = navigator
-    self.container = container
+    self.factory = factory
   }
 
   func start() {
-    navigator.setRoot(LearnFactory(container: container).make())
+    navigator.setRoot(factory.make())
   }
 }

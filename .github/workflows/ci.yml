@@ -1,14 +1,25 @@
 name: ci
 
-# Every pull request (task branches into feature/*, features into main) and
-# manual runs. CI builds the pinned SleepGuardShared release, never a sibling
-# checkout: TUIST_SHARED_RELEASE=1.
-on: [pull_request, workflow_dispatch]
+# Pull requests (task branches into feature/*, features into main), manual
+# runs, and a nightly run. CI builds the pinned SleepGuardShared release,
+# never a sibling checkout: TUIST_SHARED_RELEASE=1.
+#
+# Cost: a pull request builds and fully tests one reference brand, and runs
+# every other brand's bootstrap test (each brand still builds for it). All
+# brands get the Release build and their whole in-app suite nightly, on manual
+# runs, and on pull requests that touch what differs between brands (Apps/,
+# Tuist/, Project.swift, the AppShell package).
+on:
+  pull_request:
+  workflow_dispatch:
+  schedule:
+    - cron: "0 3 * * *"
 
 env:
   TUIST_SHARED_RELEASE: "1"
   # The pinned local simulator UDID doesn't exist on runners.
   DESTINATION: platform=iOS Simulator,name=iPhone 17 Pro,OS=latest
+  REFERENCE_BRAND: SleepGuard
 
 jobs:
   checks:
@@ -32,8 +43,30 @@ jobs:
           brew install swiftformat
           swiftformat Packages Apps Project.swift Tuist --lint
 
+  scope:
+    # Which brands get the full treatment on this run.
+    runs-on: ubuntu-latest
+    outputs:
+      all-brands: ${{ steps.scope.outputs.all-brands }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - id: scope
+        run: |
+          if [ "${{ github.event_name }}" != "pull_request" ]; then
+            echo "all-brands=true" >> "$GITHUB_OUTPUT"
+          elif git diff --name-only "origin/${{ github.base_ref }}...HEAD" \
+              | grep -qE '^(Apps/|Tuist/|Project\.swift|Packages/AppShell/)'; then
+            echo "all-brands=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "all-brands=false" >> "$GITHUB_OUTPUT"
+          fi
+
   build:
-    # Every brand (each has Apps/<Brand>/Sources/Brand.swift), Release, unsigned.
+    # Release, unsigned: the reference brand, or every brand (each has
+    # Apps/<Brand>/Sources/Brand.swift).
+    needs: scope
     runs-on: macos-26
     timeout-minutes: 60
     steps:
@@ -41,12 +74,24 @@ jobs:
       - uses: jdx/mise-action@v2
       - name: Select newest Xcode 26
         run: sudo xcode-select -s "$(ls -d /Applications/Xcode_26*.app | sort -V | tail -1)"
+      - name: Cache Swift packages
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/Library/Caches/org.swift.swiftpm
+            ~/Library/org.swift.swiftpm
+          key: spm-${{ runner.os }}-${{ hashFiles('Packages/*/Package.resolved') }}
       - name: Generate
         run: tuist generate --no-open
       - name: Build brands
         run: |
           set -o pipefail
-          for brand in $(for f in Apps/*/Sources/Brand.swift; do basename "$(dirname "$(dirname "$f")")"; done); do
+          if [ "${{ needs.scope.outputs.all-brands }}" = "true" ]; then
+            brands=$(for f in Apps/*/Sources/Brand.swift; do basename "$(dirname "$(dirname "$f")")"; done)
+          else
+            brands="$REFERENCE_BRAND"
+          fi
+          for brand in $brands; do
             echo "::group::$brand"
             xcodebuild build -workspace SleepGuardUIKitWay.xcworkspace -scheme "$brand" \
               -configuration Release -destination 'generic/platform=iOS Simulator' \
@@ -58,8 +103,10 @@ jobs:
 
   tests:
     # macOS domain tests, every package built standalone (catches imports no
-    # target in the package declares), package tests, and each brand's in-app
-    # tests. Undeclared imports in general: the layering check.
+    # target in the package declares) with its tests, and the in-app tests:
+    # every brand's bootstrap, the reference brand's whole suite (every
+    # brand's whole suite on full runs).
+    needs: scope
     runs-on: macos-26
     timeout-minutes: 90
     steps:
@@ -67,8 +114,19 @@ jobs:
       - uses: jdx/mise-action@v2
       - name: Select newest Xcode 26
         run: sudo xcode-select -s "$(ls -d /Applications/Xcode_26*.app | sort -V | tail -1)"
+      - name: Cache Swift packages
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/Library/Caches/org.swift.swiftpm
+            ~/Library/org.swift.swiftpm
+          key: spm-${{ runner.os }}-${{ hashFiles('Packages/*/Package.resolved') }}
       - name: Run tests
-        run: sh scripts/run-tests.sh
+        run: |
+          if [ "${{ needs.scope.outputs.all-brands }}" = "true" ]; then
+            unset REFERENCE_BRAND
+          fi
+          sh scripts/run-tests.sh
       - name: Upload logs
         if: failure()
         uses: actions/upload-artifact@v4

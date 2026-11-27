@@ -15,11 +15,12 @@ struct CommitSessionTests {
     #expect(await repository.savedIDs == [night.id])
     #expect(await repository.sessions[night.id] == night)
     #expect(await repository.summaries[night.id] == night.summary())
+    #expect(await repository.scoreVersions[night.id] == SleepScore.cacheVersion(for: .default))
     #expect(await checkpoints.night == nil)
   }
 
   @Test func refusesANightUnderTheMinimum() async {
-    let night = Sample.night(hours: (Night.minimumSaveDuration - 1) / 3600)
+    let night = Sample.night(hours: (SaveRules.standard.minimumDuration - 1) / 3600)
     let repository = FakeSessionRepository()
     let checkpoints = FakeRecordingCheckpointStore(night)
     await #expect(throws: CommitSession.Failure.tooShort) {

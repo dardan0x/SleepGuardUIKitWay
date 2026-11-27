@@ -13,15 +13,37 @@ public struct SessionDetail: Sendable, Equatable {
     self.summary = summary
     self.episodes = episodes
   }
+
+  init(_ session: Night, scoreConfig: SleepScoreConfig) {
+    self.init(session: session, summary: session.summary(using: scoreConfig), episodes: session.displayableEpisodes)
+  }
 }
 
-/// Opens a night for the detail screen.
-///
-/// If the night has no sleep stages yet and the stage source has some, they
-/// are added and the night is saved again with its new score (stages change
-/// the score). A use case because it coordinates two ports and applies the
-/// score policy.
+/// Opens a night for the detail screen. A query: it never writes. Sleep
+/// stages are added afterwards by `EnrichNightWithStages`.
 public struct LoadSessionDetail: Sendable {
+  private let sessions: any SessionRepository
+  private let scoreConfig: SleepScoreConfig
+
+  public init(sessions: any SessionRepository, scoreConfig: SleepScoreConfig = .default) {
+    self.sessions = sessions
+    self.scoreConfig = scoreConfig
+  }
+
+  public func callAsFunction(_ id: Night.ID) async throws -> SessionDetail {
+    try await SessionDetail(sessions.session(id: id), scoreConfig: scoreConfig)
+  }
+}
+
+/// Adds sleep stages to a night that has none, when the stage source has
+/// some, and stores them with the new score (stages change it). A command,
+/// apart from the load, so opening a night never depends on a write.
+///
+/// Stages are optional extra data. If the source fails or has none, the night
+/// is unchanged. If storing them fails, the stages are still returned for the
+/// screen and the store keeps the night without them, so the next open tries
+/// again.
+public struct EnrichNightWithStages: Sendable {
   private let sessions: any SessionRepository
   private let sleepStages: any SleepStageSource
   private let scoreConfig: SleepScoreConfig
@@ -32,22 +54,16 @@ public struct LoadSessionDetail: Sendable {
     self.scoreConfig = scoreConfig
   }
 
-  public func callAsFunction(_ id: Night.ID) async throws -> SessionDetail {
-    var session = try await sessions.session(id: id)
-
-    // Stages are optional extra data: if the source fails, the night still
-    // opens without them, and the next open tries again.
-    if session.sleepStages.isEmpty,
-       let stages = try? await sleepStages.stages(from: session.start, to: session.end),
-       !stages.isEmpty
-    {
-      session.sleepStages = stages
-      try await sessions.save(session, summary: session.summary(using: scoreConfig))
-    }
-
-    return SessionDetail(
-      session: session,
-      summary: session.summary(using: scoreConfig),
-      episodes: session.displayableEpisodes)
+  /// The night with its stages, or `nil` when there was nothing to add.
+  public func callAsFunction(_ night: Night) async -> SessionDetail? {
+    guard night.sleepStages.isEmpty,
+          let stages = try? await sleepStages.stages(from: night.start, to: night.end),
+          !stages.isEmpty else { return nil }
+    var night = night
+    night.sleepStages = stages
+    let detail = SessionDetail(night, scoreConfig: scoreConfig)
+    try? await sessions.updateStages(
+      of: night.id, stages: stages, summary: detail.summary, scoreVersion: SleepScore.cacheVersion(for: scoreConfig))
+    return detail
   }
 }

@@ -1,6 +1,7 @@
 import ScreenKit
 import SleepCore
 import SleepGuardContentKit
+import SleepGuardDesignKit
 import UIKit
 
 /// Every event under the detail's current filter, drawn from

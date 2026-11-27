@@ -6,8 +6,22 @@ import SleepCore
 /// Every method takes and returns domain values; no storage type crosses it.
 public protocol SessionRepository: Sendable {
   /// Inserts or replaces the night and its summary. The summary is stored with
-  /// it so lists never load events.
-  func save(_ session: Night, summary: NightSummary) async throws
+  /// it so lists never load events; `scoreVersion` (SleepCore's
+  /// `SleepScore.cacheVersion(for:)`) says which formula and config made it.
+  func save(_ session: Night, summary: NightSummary, scoreVersion: String) async throws
+
+  /// The nights whose stored summary was made by another score version, or
+  /// before versions were stored. Reads no events.
+  func staleNightIDs(currentVersion: String) async throws -> [Night.ID]
+
+  /// Sets the night's sleep stages and its summary (stages change the score);
+  /// events are untouched. Throws `SessionError.notFound`.
+  func updateStages(
+    of id: Night.ID, stages: [SleepStageSegment], summary: NightSummary, scoreVersion: String) async throws
+
+  /// Replaces stored summaries only (events and stages untouched), in one
+  /// write. A night that no longer exists is skipped.
+  func updateSummaries(_ summaries: [NightSummary], scoreVersion: String) async throws
 
   /// The whole night, events included and in time order. Throws
   /// `SessionError.notFound`.
@@ -15,6 +29,11 @@ public protocol SessionRepository: Sendable {
 
   /// Removes the night and its events. Throws `SessionError.notFound`.
   func delete(id: Night.ID) async throws
+
+  /// Removes these nights and their events in one write: all of them, or
+  /// none (a failure, or an id that isn't there, which throws
+  /// `SessionError.notFound`).
+  func delete(ids: [Night.ID]) async throws
 
   /// Every summary, newest first: the current list, then the new list after
   /// each change. Ends when the caller stops iterating.
@@ -32,23 +51,7 @@ public protocol SessionRepository: Sendable {
   func deleteAll() async throws
 }
 
-/// A night's files, for the storage limits.
-public struct NightFiles: Equatable, Sendable {
-  public let id: Night.ID
-  public let start: Date
-  public let clipFileNames: [String]
-
-  public init(id: Night.ID, start: Date, clipFileNames: [String]) {
-    self.id = id
-    self.start = start
-    self.clipFileNames = clipFileNames
-  }
-
-  /// Its clips and raw recording (which may not exist).
-  public var allFileNames: [String] {
-    clipFileNames + RawRecording.fileNames(for: id)
-  }
-}
+// `NightFiles` (a night's clips and raw recording) is SleepCore's.
 
 public enum SessionError: Error, Equatable {
   case notFound(Night.ID)

@@ -2,6 +2,7 @@ import ScreenKit
 import SleepCore
 import SleepDomain
 import SleepGuardContentKit
+import SleepGuardDesignKit
 import UIKit
 
 /// Recording a sound of one's own, drawn from `RecordMelodyViewModel` in the

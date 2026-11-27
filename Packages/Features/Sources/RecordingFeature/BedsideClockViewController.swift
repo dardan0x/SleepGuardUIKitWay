@@ -1,6 +1,8 @@
 import ScreenKit
 import SleepCore
 import SleepGuardContentKit
+import SleepGuardDesignKit
+import SleepStrings
 import SwiftUI
 import UIKit
 
@@ -72,7 +74,7 @@ public final class BedsideClockViewController: ScreenController {
     case .earlyStop:
       let alert = UIAlertController(
         title: Strings.sessionSummaryTooShortTitle,
-        message: String(format: Strings.sessionSummaryTooShortMessageFormat, Int(Night.minimumSaveDuration / 60)),
+        message: String(format: Strings.sessionSummaryTooShortMessageFormat, Int(viewModel.live.saveRules.minimumDuration / 60)),
         preferredStyle: .alert)
       alert.addAction(UIAlertAction(title: Strings.actionKeepRecording, style: .cancel) { _ in viewModel.keepRecording() })
       alert.addAction(UIAlertAction(title: Strings.actionStopAnyway, style: .default) { [weak self] _ in

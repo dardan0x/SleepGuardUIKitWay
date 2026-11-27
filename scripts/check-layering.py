@@ -11,8 +11,8 @@ So this script checks imports against the module table in AGENTS.md, plus:
   2. Concurrency escape hatches (`@unchecked Sendable`, `nonisolated(unsafe)`,
      `@preconcurrency`) anywhere in Packages/ or Apps/, tests included.
   3. No `print(`: use os.Logger.
-  4. No `.shared` singletons in packages (Factory's `Container.shared` in
-     AppShell's bootstrap is the one exception).
+  4. No `.shared` singletons in packages, `Container.shared` included: the
+     app's container is `AppComposition`'s own (ADR 0009).
   5. Feature modules (Packages/Features/) don't use SwiftUI navigation or
      persistence APIs, DI property wrappers, UIKit globals, or UIKit
      navigation: coordinators own navigation (a screen presents only a
@@ -24,10 +24,21 @@ So this script checks imports against the module table in AGENTS.md, plus:
   7. Every screen has a view model: a feature class that subclasses
      `ScreenController` declares `let viewModel` (ADR 0008).
   8. Declared imports: every target (tests included) imports a package module
-     only if its Package.swift declares it, directly or through a module that
-     `@_exported import`s it. The workspace build doesn't check this, and a
+     only if its Package.swift declares it (nothing is re-exported, rule 10). The workspace build doesn't check this, and a
      standalone build only does when no sibling target built the module
      first. Manifests are read with `swift package dump-package`.
+  9. Themed hosting: only ScreenKit creates `UIHostingController` or
+     `UIHostingConfiguration`. Everyone else hosts through its helpers
+     (`host`, `render`, `hosted`, `Theme.hosting`), which put the brand's
+     theme in the environment; the environment's default is SleepGuard's, so
+     a hand-made host would draw another brand in SleepGuard's colours.
+ 10. No `@_exported import`: it hides where a type comes from and what a
+     target depends on. A file imports every module it uses (shared 0.37.0
+     removed the kits' re-exports too).
+
+A screen presenting anything but an alert is a compile error
+(`ScreenController.present` is unavailable), so rule 5's `present(` pattern
+only backs it up for the few feature controllers that aren't screens.
 
 Lines starting with `//` are ignored. Exits 1 with a file:line listing.
 """
@@ -47,14 +58,15 @@ BASE = {"Foundation", "Swift", "os", "OSLog", "Observation"}
 ALLOWED_IMPORTS = {
     "SleepDomain": {"SleepCore"},
     "SleepDomainTestSupport": {"SleepDomain", "SleepCore"},
-    "SleepPersistence": {"SleepDomain", "SleepCore", "SwiftData"},
-    "SleepAudio": {"SleepDomain", "SleepCore", "SleepMelodies", "AVFoundation", "AVFAudio", "SoundAnalysis", "Accelerate"},
-    "SleepHealth": {"SleepDomain", "SleepCore", "HealthKit"},
+    "SleepPersistence": {"SleepDomain", "SleepCore", "SleepFiles", "SleepSettings", "SleepLogging", "SleepStore", "SwiftData"},
+    "SleepAudio": {"SleepDomain", "SleepCore", "SleepAudioKit"},
+    "SleepHealth": {"SleepDomain", "SleepCore", "SleepHealthKit", "SleepLogging"},
     "ScreenKit": {"UIKit", "SwiftUI", "SleepGuardDesignKit"},
     "AppShell": {
         "UIKit", "SwiftUI", "FactoryKit", "SleepDomain", "SleepCore", "SleepPersistence", "SleepAudio",
         "ScreenKit", "SleepGuardDesignKit", "SleepStrings", "HistoryFeature", "SessionDetailFeature", "StatisticsFeature", "RecordingFeature",
         "SettingsFeature", "OnboardingFeature", "LearnFeature", "BriefingFeature",
+        "SleepFiles", "SleepLogging", "SleepNotifications",
         # DeviceServices: the microphone permission and the start delay's notification.
         "AVFAudio", "UserNotifications",
     },
@@ -78,14 +90,12 @@ ESCAPE_HATCH = re.compile(
     r"@unchecked\s+Sendable|nonisolated\(unsafe\)|@preconcurrency|uncheckedState|withLockUnchecked")
 # Paths allowed an escape hatch, with the reason. Keep it as short as you can.
 ESCAPE_HATCH_ALLOWLIST: dict[str, str] = {
-    "Packages/Adapters/Sources/SleepAudio/Capture/CaptureProcessor.swift":
-        "the audio tap's thread can't await; a lock guards the non-Sendable AVFoundation objects it uses",
 }
 
 PRINT_CALL = re.compile(r"(?<![\w.])print\(")
+REEXPORT = re.compile(r"^\s*@_exported\s+import\b")
 SHARED = re.compile(r"\b([A-Z]\w*)\.shared\b")
 SHARED_ALLOWLIST = {
-    ("Packages/AppShell/Sources/AppShell/AppShell.swift", "Container"),
     # The device switches (screen on, Settings link, permissions), in one place.
     ("Packages/AppShell/Sources/AppShell/Recording/DeviceServices.swift", "UIApplication"),
     ("Packages/AppShell/Sources/AppShell/Recording/DeviceServices.swift", "AVAudioApplication"),
@@ -101,6 +111,9 @@ FEATURE_BANNED = re.compile(
     # Only alerts: `present(alert, …)`, `present(someAlert(), …)`, `present(confirmation(…), …)`.
     r"|\bpresent\((?!\w*[aA]lert\b|\w*Alert\(|\w*[cC]onfirmation\()"
 )
+
+HOSTING = re.compile(r"\bUIHosting(Controller|Configuration)\s*[({]")
+HOSTING_OWNER = "Packages/Presentation/Sources/ScreenKit/"
 
 IMPORT = re.compile(r"^\s*(?:@testable\s+|@_exported\s+)?import\s+(?:(?:struct|class|enum|protocol|func|var|let)\s+)?([\w]+)")
 
@@ -223,10 +236,14 @@ def main() -> int:
                 violations.append(f"{rel}:{number}: concurrency escape hatch: {line.strip()}")
             if PRINT_CALL.search(line):
                 violations.append(f"{rel}:{number}: print( — log through os.Logger")
+            if REEXPORT.search(line):
+                violations.append(f"{rel}:{number}: @_exported import — import the module where it is used and declare it")
             if module:
                 for match in SHARED.finditer(line):
                     if (rel, match.group(1)) not in SHARED_ALLOWLIST:
                         violations.append(f"{rel}:{number}: {match.group(0)} — inject it instead")
+            if module and not rel.startswith(HOSTING_OWNER) and HOSTING.search(line):
+                violations.append(f"{rel}:{number}: host SwiftUI through ScreenKit (host, render, hosted, Theme.hosting)")
             if is_feature:
                 match = FEATURE_BANNED.search(line)
                 if match:

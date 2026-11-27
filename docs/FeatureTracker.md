@@ -2,7 +2,7 @@
 
 > Updated by the AI after every task. This is the source of truth for project state.
 
-Last updated: 2026-11-18
+Last updated: 2026-11-26
 
 ---
 
@@ -10,19 +10,19 @@ Last updated: 2026-11-18
 
 | Metric | Count |
 |--------|-------|
-| Features | 13 |
-| Done | 11 |
+| Features | 14 |
+| Done | 12 |
 | In Progress | 2 |
 | Backlog | 0 |
 | Blocked | 0 |
 | — | — |
-| Total Tasks | 64 |
-| Tasks Done | 63 |
+| Total Tasks | 87 |
+| Tasks Done | 86 |
 | Tasks In Progress | 1 |
 | Tasks Blocked | 0 |
 | Tasks Backlog | 0 |
 | — | — |
-| **Progress** | **98%** |
+| **Progress** | **99%** |
 
 ## Features
 
@@ -41,9 +41,11 @@ Last updated: 2026-11-18
 | F9 | Showcase polish | P2 | In Progress (T4: screenshots after the UI polish) | 3/4 | ████████░░ 75% | [tracker](trackers/f9-showcase-polish.md) |
 | F11 | UIKit screen containers | P2 | Done | 1/1 | ██████████ 100% | [tracker](trackers/f11-uikit-screen-containers.md) |
 | F12 | View models and factories | P2 | Done | 1/1 | ██████████ 100% | [tracker](trackers/f12-view-models.md) |
+| F13 | Architecture review fixes | P0/P1 | Done | 23/23 | ██████████ 100% | [tracker](trackers/f13-architecture-review.md) |
 
 ## Currently Active
 
+- **F13 device check** — one real night: 20 Hz cadence, a call as a gap, resume after a call, thermal logs.
 - **F9-T4** — README written; the brands' screenshots wait for the UI polish.
 - **F8 device checks** — Apple Health permission and writing, real sleep stages from an Apple Watch night, the start delay's notification and warm-up with the screen locked, raw audio on a real night, a Snore Interrupter melody with the microphone resuming after it, the onboarding's permission prompts on a fresh install, a morning briefing and a PDF report.
 - **F7 device check** — one short night on a phone (Debug saves after 2 min): microphone, locked screen, clips, recovery after a kill.
@@ -63,6 +65,31 @@ Last updated: 2026-11-18
 
 | Date | Task | Event | Notes |
 |------|------|-------|-------|
+| 2026-11-27 | F13-T23 | Completed | README for the current architecture. Branch `feature/f13/t23-readme` |
+| 2026-11-26 | F13-T22 | Completed | Shared 0.37.0: explicit imports, no re-exports; rule 10. Branch `feature/f13/t22-explicit-imports` |
+| 2026-11-26 | F13-T21 | Completed | Close-out: ADR 0013 and the docs. Branch `feature/f13/t21-close-out` |
+| 2026-11-26 | F13-T20 | Completed | Shared 0.36.0: SleepStore's records and schema behind the repository. Branch `feature/f13/t20-shared-store` |
+| 2026-11-26 | F13-T19 | Completed | Shared 0.35.0: SleepAudioKit behind the audio ports. Branch `feature/f13/t19-shared-audio` |
+| 2026-11-26 | F13-T18 | Completed | Shared 0.34.0: logging, classifier, sample nights, storage layout, file stores, storage sweep and start notification are the shared ones. Branch `feature/f13/t18-shared-small-pieces` |
+| 2026-11-26 | F13-T17 | Completed | Shared 0.33.0: `AppPreferences` is SleepCore's `SleepPreferences`; the UserDefaults store wraps `PreferencesDefaults`, the same code as SleepGuard. Branch `feature/f13/t17-shared-preferences` |
+| 2026-11-26 | F13-T16 | Completed | Shared 0.32.0: HealthKit and the raw log are shared behaviour (`HealthKitSleep`, `RawLogFile`) wrapped by this app's adapters, as in SleepGuard. Branch `feature/f13/t16-shared-healthkit-rawlog` |
+| 2026-11-26 | F13-T15 | Completed | ADRs 0010–0012, architecture doc, README, AGENTS/CLAUDE, workflow, feature doc. F13 done; the owner merges `feature/f13-architecture-review` into main. Branch `feature/f13/t15-docs` |
+| 2026-11-26 | F13-T12 | Completed | Deep links: `AppRoute` (start, session, last 7 nights) from the scene delegate to `AppCoordinator`, held while busy, dropped when meaningless. Branch `feature/f13/t12-deep-links` |
+| 2026-11-26 | F13-T11 | Completed | A day's nights deleted in one write (`delete(ids:)`, `DeleteSessions`), all or none; bar items with an activity (report button busy state); a failed report shows an alert. Branch `feature/f13/t11-day-delete-chrome` |
+| 2026-11-26 | F13-T10 | Completed | `RecordingFlow` split into `InterrupterSettingsNavigation` and `NightLifecycle` (248 → 154 lines); the interrupter's task no longer leaks. Branch `feature/f13/t10-recording-flow-split` |
+| 2026-11-26 | F13-T8 | Completed | `AppComposition` per brand (own container, no `Container.shared`); flows take what they use; per-container scope; bootstrap test resolves all 32 registrations and checks the list against the source; ADR 0009. Branch `feature/f13/t8-typed-composition` |
+| 2026-11-26 | F13-T5 | Completed | Shared 0.31.0 tagged by the owner and pinned; a store that doesn't open shows only "We couldn't open your sleep data" and keeps the file. All brands build and all lanes pass on the release. Branch `feature/f13/t5-store-unavailable` |
+| 2026-11-26 | F13-T14 | Completed | Screens can't present (compile error) except alerts; only ScreenKit hosts SwiftUI (layering rule 9, `Theme.hosting`); hosted leak check; CI tests one reference brand per PR, all brands nightly or when brand code changes, SwiftPM cache. Branch `feature/f13/t14-structural-checks` |
+| 2026-11-26 | F13-T13 | Completed | Port contracts in `SleepDomainTestSupport`, run against every fake and adapter; `FakeSessionRepository` now returns events in time order (the one drift found). Branch `feature/f13/t13-port-contracts` |
+| 2026-11-26 | F13-T9 | Completed | Navigator runs operations serially and picks presenters only when idle; targeted `dismiss(_:)` (an alert goes with its sheet); `presentAlert` waits for transitions; hosted race tests with a time limit. Branch `feature/f13/t9-navigator-races` |
+| 2026-11-26 | F13-T7 | Completed | Checkpoints through a latest-wins writer task, raw log through a serial one; the sample path never waits for the disk; `stop` drains both. Branch `feature/f13/t7-off-path-writes` |
+| 2026-11-26 | F13-T6 | Completed | 20 Hz decimation in `RecordingSession` (same samples as SleepGuard); interruptions reported by the adapter and sent to the engine as pause/resume (gaps left out of the score); resume without `.shouldResume` and after media-services reset; FFT only with the raw log; thermal state logged. Branch `feature/f13/t6-capture-parity` |
+| 2026-11-26 | F13-T5 | In progress | Store-unavailable screen built and checked on the simulator; shared 0.31.0 pushed on a branch for the owner to merge and tag. Branch `feature/f13/t5-store-unavailable` |
+| 2026-11-26 | F13-T4 | Completed | Publishing after a committed write no longer throws; every write publishes; single-writer assumption documented (cross-context observation dropped: no second writer exists). Branch `feature/f13/t4-store-observation` |
+| 2026-11-26 | F13-T3 | Completed | `LoadSessionDetail` is a query; `EnrichNightWithStages` stores stages through a narrow `updateStages` (no event rewrite); a failed stage save no longer stops a night from opening. Branch `feature/f13/t3-read-only-detail` |
+| 2026-11-26 | F13-T2 | Completed | Stored summaries carry their score version; `RefreshStaleSummaries` recomputes stale ones at launch in batches (summary columns only), before the briefing. A pre-change store with 14 nights opened and was refreshed on the simulator. Branch `feature/f13/t2-score-version` |
+| 2026-11-26 | F13-T1 | Completed | Shared 0.30.0 pinned with the compatibility changes (interruption gaps recorded, gap banner melody-only); `SaveRules` from the composition replaces `Night.minimumSaveDuration`. All brands build and all lanes pass on the release. Branch `feature/f13/t1-shared-0-30-save-rules` |
+| 2026-11-26 | F13 | Planned | Architecture review fixes planned with the owner: 15 tasks, every concern checked against the code first. Feature branch `feature/f13-architecture-review`, a PR per task |
 | 2026-11-18 | F12-T1 | Completed | A view model for every screen, 19 for 21 (ADR 0008; no UI imports and one per screen, both checked; no `@ObservationIgnored`), tested with fakes; controllers only draw, forward and present; composers renamed factories and build dependencies, view model, controller. `FakeMelodyRecorder` fixed to keep its take at the limit. Planned with the owner as one task. Branch `feature/f12/t1-view-models` |
 | 2026-11-18 | F11-T1 | Completed | Shared 0.28.0 tagged by the owner and pinned (`bump-shared.sh`); all lanes pass and all four brands build on the release (`TUIST_SHARED_RELEASE=1`). F11 done. Branch `feature/f11/t1-uikit-screen-containers` |
 | 2026-11-18 | F11-T1 | In progress | Every screen a UIKit `ScreenController` hosting the shared content (ADR 0007; scope widened by the owner from three screens to all): History collection view, Onboarding page view controller, Session Detail compositional layout with a segmented filter, the rest in hosted children or `ContentListController`; `HostingScreen` removed; shared pieces made public on a local branch (0.28.0). All brands build, all lanes pass against the local shared repo. Waits for the release. Branch `feature/f11/t1-uikit-screen-containers` |

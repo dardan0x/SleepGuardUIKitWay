@@ -29,15 +29,23 @@ public final class SessionDetailViewModel {
     if case .loading = state { true } else { false }
   }
 
-  /// Loads the night. Cancelled (the screen went away), it stays loading, so
-  /// the next appearance loads again; it never shows an error for that.
+  /// Loads the night, then adds its sleep stages when there are new ones.
+  /// Cancelled (the screen went away), it stays loading, so the next
+  /// appearance loads again; it never shows an error for that. Only the load
+  /// can fail: the stages are extra.
   public func load() async {
     guard needsLoading else { return }
+    let detail: SessionDetail
     do {
-      let detail = try await dependencies.loadDetail(dependencies.nightID)
-      if !Task.isCancelled { state = .loaded(detail) }
+      detail = try await dependencies.loadDetail(dependencies.nightID)
     } catch {
       if !Task.isCancelled { state = .error }
+      return
+    }
+    guard !Task.isCancelled else { return }
+    state = .loaded(detail)
+    if let enriched = await dependencies.enrichDetail(detail.session), !Task.isCancelled {
+      state = .loaded(enriched)
     }
   }
 

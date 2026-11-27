@@ -5,6 +5,7 @@ import SleepCore
 import SleepDomain
 import SleepDomainTestSupport
 import SleepGuardDesignKit
+import SleepStrings
 import Testing
 import UIKit
 @testable import AppShell
@@ -21,7 +22,7 @@ struct HistoryFlowTests {
     let repository = FakeSessionRepository(nights)
     let container = Container.test(repository: repository)
     let spy = NavigatorSpy()
-    return (HistoryFlow(navigator: spy, container: container), spy, repository)
+    return (AppComposition(container: container).historyFlow(navigator: spy), spy, repository)
   }
 
   @Test func startShowsTheListTitledSessions() throws {
@@ -111,7 +112,7 @@ struct HistoryFlowTests {
     #expect(close.accessibilityLabel == Strings.actionClose)
 
     close.primaryAction?.performWithSender(nil, target: nil)
-    #expect(spy.calls.last == .dismiss)
+    #expect(spy.calls.last == .dismiss(presented))
   }
 
   /// Play presents the player over the detail; close dismisses it.
@@ -140,7 +141,7 @@ struct HistoryFlowTests {
     #expect(player.navigationItem.title == Strings.eventPlayerNavigationTitle)
     #expect(player.viewModel.events == [snore])
     player.navigationItem.rightBarButtonItems?.first?.primaryAction?.performWithSender(nil, target: nil)
-    #expect(spy.calls.last == .dismiss)
+    #expect(spy.calls.last == .dismiss(presented))
   }
 
   /// The stages' info button presents the stages sheet; its close dismisses it.
@@ -167,7 +168,7 @@ struct HistoryFlowTests {
     let sheet = try #require(presented as? SleepStagesInfoViewController)
     #expect(sheet.viewModel.breakdown == stages)
     sheet.viewModel.close()
-    #expect(spy.calls.last == .dismiss)
+    #expect(spy.calls.last == .dismiss(presented))
   }
 
   /// Health brands read stages through their `HealthAccess`; Lite has none.
@@ -222,6 +223,7 @@ extension Container {
   static func test(brand: TestBrand = TestBrand(), repository: FakeSessionRepository = FakeSessionRepository()) -> Container {
     let container = Container()
     container.brand.register { brand }
+    container.storeOpening.register { StoreOpening(repository: repository, isAvailable: true) }
     container.sessionRepository.register { repository }
     container.sessionFileStore.register { FakeSessionFileStore() }
     container.sleepStageSource.register { FakeSleepStageSource() }

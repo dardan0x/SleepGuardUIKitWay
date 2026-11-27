@@ -1,6 +1,7 @@
 import ScreenKit
 import SleepCore
 import SleepGuardContentKit
+import SleepGuardDesignKit
 import UIKit
 
 /// The sleep-stages sheet, drawn from `SleepStagesInfoViewModel` by the

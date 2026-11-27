@@ -2,6 +2,8 @@ import ScreenKit
 import SleepCore
 import SleepDomain
 import SleepGuardContentKit
+import SleepGuardDesignKit
+import SleepStrings
 import SwiftUI
 import UIKit
 
@@ -85,7 +87,7 @@ final class NightDetailController: UICollectionViewController {
   private func makeDataSource() -> UICollectionViewDiffableDataSource<Section, Item> {
     let hosted = UICollectionView.CellRegistration<UICollectionViewCell, Item> { [weak self] cell, _, item in
       guard let self else { return }
-      cell.contentConfiguration = UIHostingConfiguration { self.content(for: item).environment(\.theme, self.theme) }
+      cell.contentConfiguration = theme.hosting { self.content(for: item) }
         .margins(.all, 0)
     }
     let text = UICollectionView.CellRegistration<UICollectionViewListCell, Item> { [weak self] cell, _, item in
@@ -121,7 +123,7 @@ final class NightDetailController: UICollectionViewController {
         }
       }
     case .timeline: NightTimeline(night: night)
-    case .gapsBanner: RecordingGapsBanner(totalGap: night.gapsDuration)
+    case .gapsBanner: RecordingGapsBanner(totalGap: night.melodyGapsDuration)
     case .batteryBanner: LowBatteryBanner()
     case let .event(id):
       if let row = items.row(id) {

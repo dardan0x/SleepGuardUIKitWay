@@ -5,6 +5,7 @@ import SleepCore
 import SleepDomain
 import SleepDomainTestSupport
 import SleepGuardDesignKit
+import SleepStrings
 import Testing
 import UIKit
 @testable import AppShell
@@ -20,7 +21,7 @@ struct StatisticsFlowTests {
 
   private func makeFlow(onStartRecording: @escaping @MainActor () -> Void = {}) -> (StatisticsFlow, NavigatorSpy) {
     let spy = NavigatorSpy()
-    return (StatisticsFlow(navigator: spy, container: .test(), onStartRecording: onStartRecording), spy)
+    return (AppComposition(container: .test()).statisticsFlow(navigator: spy, onStartRecording: onStartRecording), spy)
   }
 
   private func dashboard(_ spy: NavigatorSpy) throws -> StatisticsViewController {

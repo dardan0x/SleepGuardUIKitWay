@@ -1,42 +1,15 @@
 import Foundation
+import SleepCore
 
-/// One analysed microphone buffer: the inputs the detection rules take.
-public struct CaptureSample: Sendable, Equatable {
-  /// When the buffer was taken.
-  public let time: Date
-  /// RMS level of the buffer, dBFS (SleepCore's `AudioLevels`).
-  public let db: Float
-  /// Peak level of the buffer, dBFS: tracks impulsive snoring better than RMS.
-  public let peakDB: Float
-  /// SleepCore's spectral snore score of the buffer, 0...1.
-  public let spectralScore: Float
-  /// The sound classifier's latest snore and speech confidences, 0...1
-  /// (SleepCore's `SoundClassLabels`). The classifier answers about twice a
-  /// second, so consecutive samples repeat them.
-  public let snoreConfidence: Float
-  public let speechConfidence: Float
-
-  public init(time: Date, db: Float, peakDB: Float, spectralScore: Float, snoreConfidence: Float, speechConfidence: Float) {
-    self.time = time
-    self.db = db
-    self.peakDB = peakDB
-    self.spectralScore = spectralScore
-    self.snoreConfidence = snoreConfidence
-    self.speechConfidence = speechConfidence
-  }
-}
-
-public enum AudioCaptureError: Error, Equatable {
-  /// The device has no microphone input right now.
-  case noMicrophone
-  /// The input reports no channels or no sample rate.
-  case invalidFormat
-  /// A clip was asked for while not listening.
-  case notListening
-}
+/// One analysed microphone buffer, what the capture stream carries, and its
+/// errors: SleepCore's values (SleepAudioKit's engine produces them, and
+/// SleepGuard's recorder uses the same).
+public typealias CaptureSample = SleepCore.CaptureSample
+public typealias CaptureEvent = SleepCore.CaptureEvent
+public typealias AudioCaptureError = SleepCore.AudioCaptureError
 
 /// Listens to the microphone through the night and writes the clip of each
-/// event. Implemented by `SleepAudio` over AVAudioEngine; the recording actor
+/// event. Implemented by `SleepAudio` (SleepAudioKit's `CaptureEngine`); the recording actor
 /// (F7-T4) turns its samples into detection messages.
 ///
 /// Main-actor: it owns the audio session and engine. The samples come out as
@@ -51,12 +24,14 @@ public protocol AudioCapture: AnyObject, Sendable {
   func warmUp() throws
   /// Ends a warm-up that didn't become a night.
   func coolDown()
-  /// Starts listening. One sample per buffer, in order, until `stop` ends
-  /// the stream. An interruption (a call) or a route change pauses the
-  /// samples; listening resumes on its own when the system allows. With
-  /// `rawAudioFileName`, every buffer is also written to that file in the
-  /// clips folder (`RawRecording`).
-  func start(rawAudioFileName: String?) throws -> AsyncStream<CaptureSample>
+  /// Starts listening. One sample per buffer, in order, at whatever rate the
+  /// hardware delivers (the session decimates to 20 Hz), until `stop` ends
+  /// the stream. An interruption (a call) sends `interrupted`, then
+  /// `resumed` when listening comes back on its own; a route change only
+  /// pauses the samples briefly. With `rawAudioFileName`, every buffer is also
+  /// written to that file in the clips folder (`RawRecording`), and the
+  /// spectral score is computed (it is only logged; otherwise it is 0).
+  func start(rawAudioFileName: String?) throws -> AsyncStream<CaptureEvent>
   /// Writes the microphone into the clip for event `id` until `closeClip`
   /// or `discardClip`. A clip still open is discarded first.
   func startClip(id: UUID) throws
@@ -84,7 +59,7 @@ public protocol AudioCapture: AnyObject, Sendable {
 
 public extension AudioCapture {
   /// Starts listening without keeping the raw audio.
-  func start() throws -> AsyncStream<CaptureSample> {
+  func start() throws -> AsyncStream<CaptureEvent> {
     try start(rawAudioFileName: nil)
   }
 }

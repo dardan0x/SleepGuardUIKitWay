@@ -17,6 +17,8 @@
 # Usage: sh scripts/run-tests.sh [lane ...]    lanes: macos packages hosted (default: all)
 # Env:   DESTINATION  (default: the pinned iPhone 16e, iOS 26.2 simulator)
 #        TUIST_SHARED_RELEASE=1 to build the pinned shared release instead of ../SleepGuardShared
+#        REFERENCE_BRAND=<Brand> to run only that brand's whole in-app suite; the other
+#          brands run their BrandBootstrapTests (CI on most pull requests)
 set -u
 cd "$(dirname "$0")/.."
 ROOT=$(pwd)
@@ -64,9 +66,13 @@ for lane in $LANES; do
   hosted)
     run "tuist generate" "$LOG_DIR/generate.log" tuist generate --no-open
     for brand in $BRANDS; do
+      only=""
+      if [ -n "${REFERENCE_BRAND:-}" ] && [ "$brand" != "$REFERENCE_BRAND" ]; then
+        only="-only-testing:${brand}HostedTests/BrandBootstrapTests"
+      fi
       # shellcheck disable=SC2086
-      run "${brand}HostedTests" "$LOG_DIR/$brand-hosted.log" xcodebuild test -workspace SleepGuardUIKitWay.xcworkspace \
-        -scheme "${brand}HostedTests" -destination "$DESTINATION" -derivedDataPath "$DERIVED_DATA" $TIMEOUTS
+      run "${brand}HostedTests${only:+ (bootstrap)}" "$LOG_DIR/$brand-hosted.log" xcodebuild test -workspace SleepGuardUIKitWay.xcworkspace \
+        -scheme "${brand}HostedTests" -destination "$DESTINATION" -derivedDataPath "$DERIVED_DATA" $TIMEOUTS $only
     done
     ;;
   *)

@@ -1,9 +1,10 @@
-import FactoryKit
 import ScreenKit
 import SessionDetailFeature
 import SleepCore
 import SleepDomain
 import SleepGuardDesignKit
+import SleepLogging
+import SleepStrings
 import UIKit
 
 /// Opening a night, from any tab: push its detail, present its events and
@@ -18,12 +19,18 @@ final class NightDetailNavigation {
   /// Writing a report to share; awaited by tests.
   private(set) var sharing: Task<Void, Never>?
 
-  init(navigator: any Navigator, container: Container) {
+  init(
+    navigator: any Navigator,
+    detail: SessionDetailFactory,
+    deleteSession: DeleteSession,
+    nights: any SessionRepository,
+    clipsDirectory: URL)
+  {
     self.navigator = navigator
-    detail = SessionDetailFactory(container: container)
-    deleteSession = container.deleteSession()
-    nights = container.sessionRepository()
-    clipsDirectory = container.storageLocation().clipsDirectory
+    self.detail = detail
+    self.deleteSession = deleteSession
+    self.nights = nights
+    self.clipsDirectory = clipsDirectory
   }
 
   deinit {
@@ -31,9 +38,11 @@ final class NightDetailNavigation {
   }
 
   func show(_ night: NightSummary) {
+    let report = BarItemActivity(label: Strings.a11yGeneratingReport)
     navigator.push(detail.make(
       night: night,
-      onReport: { [weak self] in self?.shareReport(night.id) },
+      report: report,
+      onReport: { [weak self] in self?.shareReport(night.id, activity: report) },
       onDelete: { [weak self] in self?.confirmDeleting(night.id) },
       routes: SessionDetailRoutes(
         showAllEvents: { [weak self] rows, events in self?.showEvents(rows, events) },
@@ -44,17 +53,23 @@ final class NightDetailNavigation {
 
   // MARK: - Sharing
 
-  /// The night's PDF report, in the share sheet.
-  func shareReport(_ id: Night.ID) {
+  /// The night's PDF report, in the share sheet. While it is made the
+  /// report button shows so (`activity`); a failure says so.
+  func shareReport(_ id: Night.ID, activity: BarItemActivity? = nil) {
     guard sharing == nil else { return }
-    sharing = Task { [weak self, nights] in
-      defer { self?.sharing = nil }
+    activity?.isRunning = true
+    sharing = Task { [weak self, nights, detail] in
+      defer {
+        activity?.isRunning = false
+        self?.sharing = nil
+      }
       do {
         let night = try await nights.session(id: id)
         let url = try NightReportExport.write(night, appName: Self.appName, to: FileManager.default.temporaryDirectory)
         self?.share(url)
       } catch {
         Log.storage.error("Report not made: \(error.localizedDescription, privacy: .public)")
+        self?.navigator.present(detail.makeReportFailedAlert(), style: .alert)
       }
     }
   }
@@ -80,27 +95,27 @@ final class NightDetailNavigation {
   /// The sleep-stages sheet, from the detail or the dashboard; its own close
   /// button dismisses it.
   func showStagesInfo(_ stages: SleepStageBreakdown) {
-    navigator.present(
-      detail.makeStagesInfo(stages, onClose: { [weak self] in self?.navigator.dismiss() }),
-      style: .sheet(detents: [.large]))
+    navigator.present(style: .sheet(detents: [.large])) { [detail] close in
+      detail.makeStagesInfo(stages, onClose: close)
+    }
   }
 
   /// Medium and large detents; the close button dismisses it.
   private func showEvents(_ rows: [EventListRow], _ events: [NightEvent]) {
-    navigator.present(
+    navigator.present(style: .sheet(detents: [.medium, .large])) { [detail] close in
       detail.makeEventsSheet(
         rows: rows, events: events,
         playEvents: { [weak self] events, start in self?.play(events, from: start) },
-        onClose: { [weak self] in self?.navigator.dismiss() }),
-      style: .sheet(detents: [.medium, .large]))
+        onClose: close)
+    }
   }
 
   /// The player sheet, over whatever is showing (the events sheet stays
   /// under it). SleepGuard's height, and large; closing releases the audio.
   private func play(_ events: [NightEvent], from start: NightEvent.ID) {
-    navigator.present(
-      detail.makePlayer(events: events, start: start, onClose: { [weak self] in self?.navigator.dismiss() }),
-      style: .sheet(detents: [.height(580), .large]))
+    navigator.present(style: .sheet(detents: [.height(580), .large])) { [detail] close in
+      detail.makePlayer(events: events, start: start, onClose: close)
+    }
   }
 
   private func confirmDeleting(_ id: Night.ID) {

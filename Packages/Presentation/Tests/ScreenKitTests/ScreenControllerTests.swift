@@ -134,6 +134,30 @@ struct RenderTrackingTests {
     await Task.yield()
     #expect(seen.values == [0, 1])
   }
+
+  /// A bar item with an activity: disabled with a spinner while it runs,
+  /// its icon and label back after (F13-T11).
+  @Test func aBarItemFollowsItsActivity() async throws {
+    let activity = BarItemActivity(label: "Working")
+    let screen = ScreenController(theme: .sleepGuard, chrome: ScreenChrome(trailingItems: [
+      BarItem(systemImage: "doc.text", accessibilityLabel: "Export", activity: activity) {},
+    ]))
+    let button = try #require(screen.navigationItem.rightBarButtonItems?.first)
+    #expect(button.isEnabled && button.customView == nil)
+
+    activity.isRunning = true
+    await Task.yield()
+    await Task.yield()
+    #expect(!button.isEnabled)
+    #expect(button.customView is UIActivityIndicatorView)
+    #expect(button.accessibilityLabel == "Working")
+
+    activity.isRunning = false
+    await Task.yield()
+    await Task.yield()
+    #expect(button.isEnabled && button.customView == nil)
+    #expect(button.accessibilityLabel == "Export")
+  }
 }
 
 @MainActor

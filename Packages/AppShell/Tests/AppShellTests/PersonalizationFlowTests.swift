@@ -4,6 +4,8 @@ import Foundation
 import SleepCore
 import SleepDomain
 import SleepDomainTestSupport
+import SleepGuardDesignKit
+import SleepStrings
 import SwiftUI
 import Testing
 import UIKit
@@ -38,7 +40,7 @@ struct PersonalizationFlowTests {
     container.preferencesStore.register { store }
     let logs = FakeLifestyleLogStore()
     container.lifestyleLogStore.register { logs }
-    let app = AppCoordinator(container: container)
+    let app = AppCoordinator(composition: AppComposition(container: container))
     app.start(in: UIWindow())
     await app.launch?.value
     await app.briefing?.value
@@ -60,7 +62,7 @@ struct PersonalizationFlowTests {
     let preferences = FakePreferencesStore()
     container.preferencesStore.register { preferences }
     let spy = NavigatorSpy()
-    let flow = StatisticsFlow(navigator: spy, container: container, onStartRecording: {})
+    let flow = AppComposition(container: container).statisticsFlow(navigator: spy, onStartRecording: {})
     flow.start()
     guard case let .setRoot(root) = spy.calls.first, let dashboard = root as? StatisticsViewController else {
       throw Unexpected()
@@ -79,12 +81,25 @@ struct PersonalizationFlowTests {
     let saved = night()
     let container = Container.test(repository: FakeSessionRepository([saved]))
     let spy = NavigatorSpy()
-    let navigation = NightDetailNavigation(navigator: spy, container: container)
+    let navigation = AppComposition(container: container).nightDetail(navigator: spy)
     navigation.shareReport(saved.id)
     await navigation.sharing?.value
     guard case let .present(sheet, _) = spy.calls.last else { throw Unexpected() }
     let activity = try #require(sheet as? UIActivityViewController)
     #expect(activity.isKind(of: UIActivityViewController.self))
+  }
+
+  /// A report that can't be made says so, and the button comes back.
+  @Test func aFailedReportShowsAnAlertAndFreesTheButton() async throws {
+    let spy = NavigatorSpy()
+    let navigation = AppComposition(container: Container.test()).nightDetail(navigator: spy)
+    let activity = BarItemActivity(label: "")
+    navigation.shareReport(UUID(), activity: activity) // no such night
+    #expect(activity.isRunning)
+    await navigation.sharing?.value
+    #expect(!activity.isRunning)
+    guard case let .present(alert, .alert) = spy.calls.last else { throw Unexpected() }
+    #expect((alert as? UIAlertController)?.title == Strings.reportExportFailedTitle)
   }
 
   @Test func aClipOnlyGoesWhenItsFileIsThere() throws {
@@ -93,7 +108,7 @@ struct PersonalizationFlowTests {
     try FileManager.default.createDirectory(at: clips, withIntermediateDirectories: true)
     let name = "\(UUID().uuidString).m4a"
     let spy = NavigatorSpy()
-    let navigation = NightDetailNavigation(navigator: spy, container: container)
+    let navigation = AppComposition(container: container).nightDetail(navigator: spy)
     navigation.shareClip(of: night(clip: name).events[0])
     #expect(spy.calls.isEmpty)
     try Data([1]).write(to: clips.appendingPathComponent(name))

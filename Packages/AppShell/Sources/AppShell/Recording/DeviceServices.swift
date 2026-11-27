@@ -1,6 +1,7 @@
 import AVFAudio
 import SettingsFeature
 import SleepGuardDesignKit
+import SleepNotifications
 import UIKit
 import UserNotifications
 
@@ -26,8 +27,6 @@ nonisolated struct DeviceServices: Sendable {
   var openURL: @MainActor @Sendable (URL) -> Void = { _ in }
   /// "1.4.0".
   var appVersion: @MainActor @Sendable () -> String = { "" }
-
-  private static let startNotificationID = "delayed-recording"
 
   static let live = DeviceServices(
     keepScreenOn: { UIApplication.shared.isIdleTimerDisabled = $0 },
@@ -66,16 +65,8 @@ nonisolated struct DeviceServices: Sendable {
     requestNotifications: {
       await (try? UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .sound, .badge])) ?? false
     },
-    scheduleStartNotification: { date in
-      let content = UNMutableNotificationContent()
-      content.body = Strings.sessionCountdownNotificationBody
-      content.sound = .default
-      let trigger = UNTimeIntervalNotificationTrigger(timeInterval: max(1, date.timeIntervalSinceNow), repeats: false)
-      UNUserNotificationCenter.current().add(UNNotificationRequest(identifier: startNotificationID, content: content, trigger: trigger))
-    },
-    cancelStartNotification: {
-      UNUserNotificationCenter.current().removePendingNotificationRequests(withIdentifiers: [startNotificationID])
-    },
+    scheduleStartNotification: { StartNotification.schedule(startingAt: $0) },
+    cancelStartNotification: { StartNotification.cancel() },
     openURL: { UIApplication.shared.open($0) },
     appVersion: { Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "" })
 }

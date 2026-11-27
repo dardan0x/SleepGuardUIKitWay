@@ -14,18 +14,3 @@ public protocol RawLogWriter: Sendable {
   /// Flushes and closes the log.
   func finish() async
 }
-
-/// The raw files' names, so storage limits can find a night's files.
-public enum RawRecording {
-  public static func audioFileName(for night: UUID) -> String {
-    "rawaudio_\(night.uuidString).caf"
-  }
-
-  public static func logFileName(for night: UUID) -> String {
-    "rawlog_\(night.uuidString).jsonl"
-  }
-
-  public static func fileNames(for night: UUID) -> [String] {
-    [audioFileName(for: night), logFileName(for: night)]
-  }
-}

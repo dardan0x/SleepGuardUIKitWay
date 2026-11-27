@@ -4,6 +4,7 @@ import ScreenKit
 import SessionDetailFeature
 import SleepCore
 import SleepGuardDesignKit
+import SleepStrings
 import UIKit
 
 /// Builds the History list: dependencies, then its view model, then the
@@ -12,7 +13,7 @@ struct HistoryScreenFactory {
   let container: Container
 
   func make(routes: HistoryRoutes) -> UIViewController {
-    let dependencies = HistoryDependencies(nights: container.sessionRepository(), deleteNight: container.deleteSession())
+    let dependencies = HistoryDependencies(nights: container.sessionRepository(), deleteNights: container.deleteSessions())
     return HistoryViewController(
       viewModel: HistoryViewModel(dependencies: dependencies, routes: routes),
       theme: container.theme(),
@@ -25,17 +26,19 @@ struct SessionDetailFactory {
   let container: Container
 
   func make(
-    night: NightSummary, onReport: @escaping @MainActor () -> Void, onDelete: @escaping @MainActor () -> Void,
+    night: NightSummary, report: BarItemActivity, onReport: @escaping @MainActor () -> Void,
+    onDelete: @escaping @MainActor () -> Void,
     routes: SessionDetailRoutes) -> UIViewController
   {
-    let dependencies = SessionDetailDependencies(nightID: night.id, loadDetail: container.loadSessionDetail())
+    let dependencies = SessionDetailDependencies(
+      nightID: night.id, loadDetail: container.loadSessionDetail(), enrichDetail: container.enrichNightWithStages())
     return SessionDetailViewController(
       viewModel: SessionDetailViewModel(dependencies: dependencies, routes: routes),
       theme: container.theme(),
       chrome: ScreenChrome(
         title: night.start.formatted(.dateTime.weekday(.wide).month(.abbreviated).day()),
         trailingItems: [
-          BarItem(systemImage: "doc.text", accessibilityLabel: Strings.a11yExportReport, action: onReport),
+          BarItem(systemImage: "doc.text", accessibilityLabel: Strings.a11yExportReport, activity: report, action: onReport),
           BarItem(systemImage: "trash", accessibilityLabel: Strings.actionDelete, action: onDelete),
         ]))
   }
@@ -73,6 +76,14 @@ struct SessionDetailFactory {
     let navigation = UINavigationController(rootViewController: screen)
     Appearance.apply(theme, to: navigation.navigationBar)
     return navigation
+  }
+
+  /// "Couldn't create the report", with OK.
+  func makeReportFailedAlert() -> UIViewController {
+    let alert = UIAlertController(
+      title: Strings.reportExportFailedTitle, message: Strings.reportExportFailedMessage, preferredStyle: .alert)
+    alert.addAction(UIAlertAction(title: Strings.actionOk, style: .cancel))
+    return alert
   }
 
   func makeStagesInfo(_ stages: SleepStageBreakdown, onClose: @escaping @MainActor () -> Void) -> UIViewController {

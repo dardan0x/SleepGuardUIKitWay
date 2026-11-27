@@ -1,6 +1,8 @@
+import FactoryKit
 import Foundation
 import Testing
 import UIKit
+@testable import AppShell
 @testable import BriefingFeature
 @testable import OnboardingFeature
 @testable import ScreenKit
@@ -11,6 +13,11 @@ import UIKit
 /// would (it shows once).
 @MainActor
 enum HostedApp {
+  /// The running app's container: the composition the scene delegate made.
+  static func container() throws -> Container {
+    try #require(AppShell.launched).composition.container
+  }
+
   static func tabBar() async throws -> UITabBarController {
     let scene = try #require(UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }.first)
     for _ in 0..<100 {

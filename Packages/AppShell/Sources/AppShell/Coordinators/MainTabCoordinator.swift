@@ -1,6 +1,6 @@
-import FactoryKit
 import ScreenKit
 import SleepGuardDesignKit
+import SleepStrings
 import UIKit
 
 /// One tab's flow: it owns that tab's navigation.
@@ -9,28 +9,28 @@ protocol TabFlow: AnyObject {
   func start()
 }
 
+/// A tab that opens a night's detail (History, Statistics): where a link to
+/// a night goes.
+protocol NightDetailHosting: TabFlow {
+  var navigator: any Navigator { get }
+  var nightDetail: NightDetailNavigation { get }
+}
+
 /// The tab bar. Builds one flow per tab in the brand's `tabs`, in that order.
 final class MainTabCoordinator {
   let tabBarController = UITabBarController()
   private(set) var flows: [any TabFlow] = []
 
-  /// `onStartRecording`: the recording flow is the app coordinator's, not a tab's.
-  init(container: Container, onStartRecording: @escaping @MainActor () -> Void = {}) {
-    let theme = container.theme()
-
-    let navigationControllers = container.brand().configuration.tabs.map { tab in
+  /// `makeFlow` builds a tab's flow over its navigator (`AppComposition`).
+  init(theme: Theme, tabs: [AppTab], makeFlow: (AppTab, any Navigator) -> any TabFlow) {
+    let navigationControllers = tabs.map { tab in
       let navigator = NavigationControllerNavigator()
       let navigation = navigator.navigationController
       navigation.tabBarItem = UITabBarItem(title: tab.title, image: UIImage(systemName: tab.iconName), selectedImage: nil)
       navigation.navigationBar.prefersLargeTitles = true
       Appearance.apply(theme, to: navigation.navigationBar)
 
-      let flow: any TabFlow = switch tab {
-      case .history: HistoryFlow(navigator: navigator, container: container)
-      case .statistics: StatisticsFlow(navigator: navigator, container: container, onStartRecording: onStartRecording)
-      case .settings: SettingsFlow(navigator: navigator, container: container)
-      case .learn: LearnFlow(navigator: navigator, container: container)
-      }
+      let flow = makeFlow(tab, navigator)
       flow.start()
       flows.append(flow)
       return navigation
@@ -38,6 +38,14 @@ final class MainTabCoordinator {
 
     tabBarController.viewControllers = navigationControllers
     Appearance.apply(theme, to: tabBarController.tabBar)
+  }
+
+  /// Brings `tab` to the front; its flow, or `nil` when the brand hasn't it.
+  @discardableResult
+  func select(_ tab: AppTab) -> (any TabFlow)? {
+    guard let index = flows.firstIndex(where: { $0.tab == tab }) else { return nil }
+    tabBarController.selectedIndex = index
+    return flows[index]
   }
 }
 

@@ -14,7 +14,7 @@ let package = Package(
   ],
   dependencies: [
     .package(path: "../Core"),
-    .package(url: "https://github.com/dardan0x/SleepGuardShared.git", exact: "0.29.0"),
+    .package(url: "https://github.com/dardan0x/SleepGuardShared.git", exact: "0.37.0"),
   ],
   targets: [
     // SwiftData, files, UserDefaults.
@@ -23,15 +23,21 @@ let package = Package(
       dependencies: [
         .product(name: "SleepDomain", package: "Core"),
         .product(name: "SleepCore", package: "SleepGuardShared"),
+        .product(name: "SleepLogging", package: "SleepGuardShared"),
+        .product(name: "SleepFiles", package: "SleepGuardShared"),
+        .product(name: "SleepSettings", package: "SleepGuardShared"),
+        .product(name: "SleepStore", package: "SleepGuardShared"),
       ],
       swiftSettings: [.swiftLanguageMode(.v6)]),
-    // AVFoundation, SoundAnalysis, Accelerate; the Snore Interrupter's sounds.
+    // The shared SleepAudioKit behind the audio ports; the Snore Interrupter's sounds.
     .target(
       name: "SleepAudio",
       dependencies: [
         .product(name: "SleepDomain", package: "Core"),
         .product(name: "SleepCore", package: "SleepGuardShared"),
+        .product(name: "SleepLogging", package: "SleepGuardShared"),
         .product(name: "SleepMelodies", package: "SleepGuardShared"),
+        .product(name: "SleepAudioKit", package: "SleepGuardShared"),
       ],
       swiftSettings: [.swiftLanguageMode(.v6)]),
     .testTarget(
@@ -39,7 +45,10 @@ let package = Package(
       dependencies: [
         "SleepPersistence",
         .product(name: "SleepDomain", package: "Core"),
+        .product(name: "SleepDomainTestSupport", package: "Core"),
         .product(name: "SleepCore", package: "SleepGuardShared"),
+        .product(name: "SleepFiles", package: "SleepGuardShared"),
+        .product(name: "SleepStore", package: "SleepGuardShared"),
       ],
       swiftSettings: [.swiftLanguageMode(.v6)]),
     .testTarget(
@@ -47,6 +56,7 @@ let package = Package(
       dependencies: [
         "SleepAudio",
         .product(name: "SleepDomain", package: "Core"),
+        .product(name: "SleepDomainTestSupport", package: "Core"),
         .product(name: "SleepCore", package: "SleepGuardShared"),
       ],
       swiftSettings: [.swiftLanguageMode(.v6)]),
@@ -56,6 +66,8 @@ let package = Package(
       dependencies: [
         .product(name: "SleepDomain", package: "Core"),
         .product(name: "SleepCore", package: "SleepGuardShared"),
+        .product(name: "SleepLogging", package: "SleepGuardShared"),
+        .product(name: "SleepHealthKit", package: "SleepGuardShared"),
       ],
       swiftSettings: [.swiftLanguageMode(.v6)]),
 
@@ -64,6 +76,7 @@ let package = Package(
       dependencies: [
         "SleepHealth",
         .product(name: "SleepCore", package: "SleepGuardShared"),
+        .product(name: "SleepHealthKit", package: "SleepGuardShared"),
       ],
       swiftSettings: [.swiftLanguageMode(.v6)]),
   ])

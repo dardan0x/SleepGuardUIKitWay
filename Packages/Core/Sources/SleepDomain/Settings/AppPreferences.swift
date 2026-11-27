@@ -1,42 +1,13 @@
 import Foundation
 import SleepCore
 
-/// What the person chose in Settings, with SleepGuard's defaults. One value,
-/// read whole and written whole through `PreferencesStore`.
-public struct AppPreferences: Equatable, Sendable {
-  public var sensitivity: DetectionSensitivity = .medium
-  public var detectSleepTalking = false
-  /// Debug builds: keep the night's full audio and its sample log.
-  public var preserveRawAudio = false
-  /// One of `RecordingDelay.options`.
-  public var recordingDelayMinutes = 0
-  public var limitStorage = true
-  public var storageLimitMB = StorageLimits.defaultMegabytes
-  public var limitDays = true
-  public var maxDays = StorageLimits.defaultDays
-  /// Write each saved night to Apple Health (brands with HealthKit).
-  public var syncToHealth = false
-  public var briefingEnabled = true
-  public var hasCompletedProfile = false
-  /// The first-launch onboarding was finished: the app opens on its tabs.
-  public var hasCompletedOnboarding = false
-  /// When the morning briefing was last closed (it shows once per new night).
-  public var lastBriefingShown: Date?
-  /// Each dismissal of the profile prompt halves its chance of coming back.
-  public var profilePromptDismissCount = 0
-  /// The Snore Interrupter (brands that have it): how long it plays, and which sound.
-  public var interrupterMode: SnoreInterrupterMode = .never
-  public var melodyID = Melody.defaultID
-
-  public init() {}
-
-  /// The limits as `StoragePlan` takes them: `nil` when off.
-  public var maxDaysLimit: Int? { limitDays ? maxDays : nil }
-  public var maxMegabytesLimit: Int? { limitStorage ? storageLimitMB : nil }
-}
+/// What the person chose in Settings: SleepCore's `SleepPreferences`, the
+/// value SleepGuard uses too (same fields, same defaults). One value, read
+/// whole and written whole through `PreferencesStore`.
+public typealias AppPreferences = SleepPreferences
 
 /// Where `AppPreferences` live. Implemented by `SleepPersistence` over
-/// `UserDefaults`.
+/// the shared `PreferencesDefaults`.
 public protocol PreferencesStore: Sendable {
   func load() async -> AppPreferences
   func save(_ preferences: AppPreferences) async

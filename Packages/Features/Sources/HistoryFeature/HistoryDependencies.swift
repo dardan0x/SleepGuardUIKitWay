@@ -4,11 +4,12 @@ import SleepDomain
 public struct HistoryDependencies: Sendable {
   /// The nights. A plain read, so the screen holds the port itself.
   public var nights: any SessionRepository
-  public var deleteNight: DeleteSession
+  /// A day's nights, all at once.
+  public var deleteNights: DeleteSessions
 
-  public init(nights: any SessionRepository, deleteNight: DeleteSession) {
+  public init(nights: any SessionRepository, deleteNights: DeleteSessions) {
     self.nights = nights
-    self.deleteNight = deleteNight
+    self.deleteNights = deleteNights
   }
 }
 

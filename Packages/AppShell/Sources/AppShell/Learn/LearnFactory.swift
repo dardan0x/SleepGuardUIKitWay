@@ -2,6 +2,7 @@ import FactoryKit
 import LearnFeature
 import ScreenKit
 import SleepGuardDesignKit
+import SleepStrings
 import UIKit
 
 /// Builds the Learn screen: its view model with the brand's page, then the
