@@ -15,7 +15,7 @@ final class NightLifecycle {
   private let device: DeviceServices
   private var batteryWatch: Task<Void, Never>?
   /// The capture kept warm during the start delay.
-  private var warmCapture: (any AudioCapture)?
+  private var warmCapture: (any AudioCapturePort)?
   private var keepsScreenOn = false
 
   init(device: DeviceServices) {
@@ -29,7 +29,7 @@ final class NightLifecycle {
   /// The start delay: the microphone stays warm (so the app keeps running
   /// with the screen locked), a notification says when the night starts, and
   /// the screen stays on as on the bedside clock.
-  func beginDelay(capture: any AudioCapture, until target: Date) {
+  func beginDelay(capture: any AudioCapturePort, until target: Date) {
     do {
       try capture.warmUp()
     } catch {
@@ -49,7 +49,7 @@ final class NightLifecycle {
   }
 
   /// The delay is over: the warm capture, for the night (`nil` if none).
-  func endDelay() -> (any AudioCapture)? {
+  func endDelay() -> (any AudioCapturePort)? {
     defer { warmCapture = nil }
     device.cancelStartNotification()
     return warmCapture

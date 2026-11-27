@@ -20,7 +20,7 @@ struct HistoryViewModelTests {
   {
     HistoryViewModel(
       dependencies: HistoryDependencies(
-        nights: repository, deleteNights: DeleteSessions(sessions: repository, files: FakeSessionFileStore())),
+        nights: repository, deleteNights: DeleteSessionsUseCase(sessions: repository, files: FakeSessionFileStore())),
       routes: HistoryRoutes(openNight: opened))
   }
 

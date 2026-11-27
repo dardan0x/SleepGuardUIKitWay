@@ -19,8 +19,8 @@ struct SessionDetailViewModelTests {
   {
     SessionDetailViewModel(
       dependencies: SessionDetailDependencies(
-        nightID: id, loadDetail: LoadSessionDetail(sessions: repository),
-        enrichDetail: EnrichNightWithStages(sessions: repository, sleepStages: stages)),
+        nightID: id, loadDetail: LoadSessionDetailUseCase(sessions: repository),
+        enrichDetail: EnrichNightWithStagesUseCase(sessions: repository, sleepStages: stages)),
       routes: SessionDetailRoutes(
         showAllEvents: { _, _ in }, playEvents: { _, _ in }, showStagesInfo: { _ in }, shareEvent: shared))
   }

@@ -6,7 +6,7 @@ A brand is a separate app on the same product: its own name, icon, colours, bund
 
 | Piece | Where | Decides |
 |---|---|---|
-| An entry in `Brand.all` | `Tuist/ProjectDescriptionHelpers/Brand.swift` | Build time: target name, display name, bundle id, URL scheme, whether `SleepHealth` (HealthKit) is linked |
+| An entry in `Brand.all` | `Tuist/ProjectDescriptionHelpers/Brand.swift` | Build time: target name, display name, bundle id, URL scheme, whether `SleepHealthAdapter` (HealthKit) is linked |
 | `Brand.swift` | `Apps/<Name>/Sources/` | Run time: theme, tabs, Apple Health port, Snore Interrupter, Learn page, App Store id (`BrandConfiguration`) |
 | Asset catalog | `Apps/<Name>/Resources/Assets.xcassets` | App icon, `BrandAccent` (tint), `LaunchBackground` |
 | Entitlements | `Apps/<Name>/<Name>.entitlements` | App group; HealthKit when the brand uses it |
@@ -33,7 +33,7 @@ From the entry, Tuist generates the app target and its `<Name>HostedTests` targe
  }
 ```
 
-`usesHealthKit: true` links `SleepHealth` and adds the Health usage texts to Info.plist. Keep it in step with the HealthKit entitlement.
+`usesHealthKit: true` links `SleepHealthAdapter` and adds the Health usage texts to Info.plist. Keep it in step with the HealthKit entitlement.
 
 ## 2. The brand's configuration
 
@@ -44,7 +44,7 @@ nonisolated struct DawnBrand: BrandComposition {
   let configuration = BrandConfiguration(
     theme: .dawn,
     tabs: [.statistics, .history, .settings],
-    health: SleepHealth.makeHealthAccess(),
+    health: SleepHealthAdapter.makeHealthAccess(),
     appStoreID: nil,
     snoreInterrupter: false,
     learnURL: nil)

@@ -13,7 +13,7 @@ final class StatisticsFlow: NightDetailHosting {
   let nightDetail: NightDetailNavigation
   private let screens: StatisticsFactory
   private let settings: SettingsFactory
-  private let preferences: any PreferencesStore
+  private let preferences: any PreferencesStorePort
   private let onStartRecording: @MainActor () -> Void
   /// Counting a dismissed profile prompt; awaited by tests.
   private(set) var dismissing: Task<Void, Never>?
@@ -22,7 +22,7 @@ final class StatisticsFlow: NightDetailHosting {
     navigator: any Navigator,
     screens: StatisticsFactory,
     settings: SettingsFactory,
-    preferences: any PreferencesStore,
+    preferences: any PreferencesStorePort,
     nightDetail: NightDetailNavigation,
     onStartRecording: @escaping @MainActor () -> Void)
   {

@@ -21,7 +21,7 @@ Brand app targets (SleepGuard | SleepGuardLite | Nocturne)
      AppShell           UIKit lifecycle, coordinators, factories, Factory container
         │
   ┌─────┼─────────────┬──────────────┐
-Features (UIKit)    ScreenKit      Adapters (SleepPersistence, SleepAudio, SleepHealth)
+Features (UIKit)    ScreenKit      Adapters (SleepPersistenceAdapter, SleepAudioAdapter, SleepHealthAdapter)
   │   └─ SleepGuardContentKit, SleepGuardDesignKit, SleepStrings (shared repo)   │
   └──────────► SleepDomain ◄──────────────────────────────────┘
                    └─ SleepCore (shared repo: Night entities, night rules, score, detection)
@@ -36,26 +36,26 @@ Features (UIKit)    ScreenKit      Adapters (SleepPersistence, SleepAudio, Sleep
 | Features | `SleepDomain`, `SleepCore`, `SleepGuardContentKit`, `SleepGuardDesignKit`, `SleepStrings`, `ScreenKit`, UIKit, SwiftUI (to host the shared content) | Factory, adapters, other features |
 | A feature's `…ViewModel.swift` | Foundation, Observation, `SleepDomain`, `SleepCore` | UIKit, SwiftUI, `ScreenKit`, the kits (so no `Strings`) |
 | `ScreenKit` | UIKit, SwiftUI, `SleepGuardDesignKit` | domain, features, Factory |
-| `AppShell` | everything except `SleepHealth` | — |
+| `AppShell` | everything except `SleepHealthAdapter` | — |
 | Brand targets | `AppShell`, the adapters that brand links | — |
 
 Enforced by package manifests, **but only when a package builds on its own**: inside the app workspace Xcode lets any module it has already built be imported, declared or not (verified in F1-T3). So `scripts/check-layering.py` checks every module's imports against this table (`ALLOWED_IMPORTS`; a new module must be added there) and against what its `Package.swift` declares, and `scripts/run-tests.sh` builds every package standalone. A standalone build alone isn't enough: a module a sibling target in the same package declares leaks too (verified: `SessionDetailFeature` built without declaring `ScreenKit`). Full notes: `docs/architecture/modules.md`.
 
 ## Domain
 
-- **Entities and values** are `Sendable` structs. **Policies** are pure functions or structs (no ports, no clock unless passed in). **Ports** are `Sendable` protocols with `async` methods, named for their role (`SessionRepository`, `SleepStageSource`).
-- **A use case exists only when it applies a policy or coordinates two or more ports** (`CommitSession`, `DeleteSession`, `LoadSessionDetail`). For a plain read, the screen's `Dependencies` holds the port. Never write a use case whose body is one forwarded call.
-- A use case is a `Sendable` struct with one `callAsFunction`. Collaborators come through `init`. A use case never calls another use case.
+- **Entities and values** are `Sendable` structs. **Policies** are pure functions or structs (no ports, no clock unless passed in). **Ports** are `Sendable` protocols with `async` methods, named for their role plus `Port` (`SessionRepositoryPort`, `SleepStageSourcePort`; ADR 0014).
+- **A use case exists only when it applies a policy or coordinates two or more ports** (`CommitSessionUseCase`, `DeleteSessionUseCase`, `LoadSessionDetailUseCase`). For a plain read, the screen's `Dependencies` holds the port. Never write a use case whose body is one forwarded call.
+- A use case is a `Sendable` struct named for what it does plus `UseCase` (`CommitSessionUseCase`), with one `callAsFunction`. Collaborators come through `init`. A use case never calls another use case.
 - **The night itself is shared.** Entities (`Night`, `NightEvent`, `NightEpisode`, `NightSummary`) and the rules over them (episodes, snoring duration, stage stats, score inputs, score, summary), plus the score formula and detection, live in `SleepCore` in the shared repo, used by SleepGuard too. `SleepDomain` holds what is specific to this app's architecture: ports, use cases (and their output types such as `SessionDetail`), and fakes. A change to how a night is computed goes into `SleepCore`, never here.
 - **No brand, no feature flag, no localized text in the domain.** If a rule differs per brand, the brand supplies a value or a policy; the domain never asks which brand it is.
 
 ## Adapters
 
-- One adapter module per framework: `SleepPersistence` (SwiftData, files, UserDefaults), `SleepAudio` (AVFoundation, SoundAnalysis, Accelerate; the shared `SleepMelodies` sound files), `SleepHealth` (HealthKit).
-- Adapter types and mappers are `internal`. A module exposes a small public factory surface and nothing else.
+- One adapter module per framework: `SleepPersistenceAdapter` (SwiftData, files, UserDefaults), `SleepAudioAdapter` (AVFoundation, SoundAnalysis, Accelerate; the shared `SleepMelodies` sound files), `SleepHealthAdapter` (HealthKit).
+- An adapter type is named for the framework and the port plus `Adapter` (`SwiftDataSessionStoreAdapter`, `HealthKitAccessAdapter`), in a file of the same name. Adapter types and mappers are `internal`. A module exposes a small public factory surface and nothing else.
 - Framework types never cross the port. Map to domain values inside the adapter.
 - **SwiftData lives behind a `@ModelActor`.** `@Model` records never leave that actor. They are persistence records, not domain objects: no business logic on them.
-- A brand that lacks a capability passes `nil` for its port in `BrandConfiguration` (ADR 0006): `health` is `SleepHealth.makeHealthAccess()` or `nil`. `SleepHealth` is linked only by brands that use it.
+- A brand that lacks a capability passes `nil` for its port in `BrandConfiguration` (ADR 0006): `health` is `SleepHealthAdapter.makeHealthAccess()` or `nil`. `SleepHealthAdapter` is linked only by brands that use it.
 
 ## Screens (UIKit, hosting shared SwiftUI content)
 
@@ -125,7 +125,7 @@ Notes: `docs/architecture/brands.md`.
 - `async/await` only. No Combine, no GCD, no completion handlers, no NotificationCenter as an event bus.
 - No fire-and-forget `Task` in a load path. Tests `await`; they never poll or sleep.
 - Check `Task.isCancelled` before setting an error state.
-- Live detection is one ordered stream into `DetectionEngine` (from `SleepCore`). Never change detection state from a side path. `RecordingSession` (SleepDomain, an actor) is the one sender: it classifies each capture sample, sends it, and performs the engine's outputs in order (clips through `AudioCapture`, events into the `RecordingDraft` value). Clip compression runs beside the engine, never inside a batch.
+- Live detection is one ordered stream into `DetectionEngine` (from `SleepCore`). Never change detection state from a side path. `RecordingSession` (SleepDomain, an actor) is the one sender: it classifies each capture sample, sends it, and performs the engine's outputs in order (clips through `AudioCapturePort`, events into the `RecordingDraft` value). Clip compression runs beside the engine, never inside a batch.
 
 Notes: `docs/architecture/concurrency.md`.
 

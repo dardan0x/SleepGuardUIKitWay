@@ -9,12 +9,12 @@ import SleepDomain
 final class InterrupterSettingsNavigation {
   private let navigator: any Navigator
   private let factory: RecordingFactory
-  private let preferences: any PreferencesStore
+  private let preferences: any PreferencesStorePort
   /// Loading the stored choice, then saving a new one; awaited by tests. A
   /// new one cancels the one before.
   private(set) var task: Task<Void, Never>?
 
-  init(navigator: any Navigator, factory: RecordingFactory, preferences: any PreferencesStore) {
+  init(navigator: any Navigator, factory: RecordingFactory, preferences: any PreferencesStorePort) {
     self.navigator = navigator
     self.factory = factory
     self.preferences = preferences
@@ -54,7 +54,7 @@ final class InterrupterSettingsNavigation {
     }
   }
 
-  private func chooseSound(current: Int, store: any MelodyStore, picked: @escaping @MainActor (Int) -> Void) {
+  private func chooseSound(current: Int, store: any MelodyStorePort, picked: @escaping @MainActor (Int) -> Void) {
     navigator.present(style: .sheet(detents: [.large])) { [factory] close in
       factory.makeMelodyPicker(selectedID: current, store: store, routes: MelodyPickerRoutes(
         record: { [weak self] saved in self?.recordMelody(store: store, saved: saved) },
@@ -65,7 +65,7 @@ final class InterrupterSettingsNavigation {
     }
   }
 
-  private func recordMelody(store: any MelodyStore, saved: @escaping @MainActor (Melody) -> Void) {
+  private func recordMelody(store: any MelodyStorePort, saved: @escaping @MainActor (Melody) -> Void) {
     navigator.present(style: .sheet(detents: [.large])) { [factory] close in
       factory.makeRecordMelody(store: store) { melody in
         close()

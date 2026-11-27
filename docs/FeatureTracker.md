@@ -41,7 +41,7 @@ Last updated: 2026-11-26
 | F9 | Showcase polish | P2 | In Progress (T4: screenshots after the UI polish) | 3/4 | ████████░░ 75% | [tracker](trackers/f9-showcase-polish.md) |
 | F11 | UIKit screen containers | P2 | Done | 1/1 | ██████████ 100% | [tracker](trackers/f11-uikit-screen-containers.md) |
 | F12 | View models and factories | P2 | Done | 1/1 | ██████████ 100% | [tracker](trackers/f12-view-models.md) |
-| F13 | Architecture review fixes | P0/P1 | Done | 23/23 | ██████████ 100% | [tracker](trackers/f13-architecture-review.md) |
+| F13 | Architecture review fixes | P0/P1 | Done | 24/24 | ██████████ 100% | [tracker](trackers/f13-architecture-review.md) |
 
 ## Currently Active
 
@@ -65,6 +65,7 @@ Last updated: 2026-11-26
 
 | Date | Task | Event | Notes |
 |------|------|-------|-------|
+| 2026-11-27 | F13-T24 | Completed | Role suffixes `…Port`, `…UseCase`, `…Adapter` (ADR 0014). Branch `feature/f13/t24-role-suffixes` |
 | 2026-11-27 | F13-T23 | Completed | README for the current architecture. Branch `feature/f13/t23-readme` |
 | 2026-11-26 | F13-T22 | Completed | Shared 0.37.0: explicit imports, no re-exports; rule 10. Branch `feature/f13/t22-explicit-imports` |
 | 2026-11-26 | F13-T21 | Completed | Close-out: ADR 0013 and the docs. Branch `feature/f13/t21-close-out` |

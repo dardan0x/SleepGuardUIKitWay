@@ -12,8 +12,8 @@ import UIKit
 final class NightDetailNavigation {
   private let navigator: any Navigator
   private let detail: SessionDetailFactory
-  private let deleteSession: DeleteSession
-  private let nights: any SessionRepository
+  private let deleteSession: DeleteSessionUseCase
+  private let nights: any SessionRepositoryPort
   private let clipsDirectory: URL
   private var deleting: Task<Void, Never>?
   /// Writing a report to share; awaited by tests.
@@ -22,8 +22,8 @@ final class NightDetailNavigation {
   init(
     navigator: any Navigator,
     detail: SessionDetailFactory,
-    deleteSession: DeleteSession,
-    nights: any SessionRepository,
+    deleteSession: DeleteSessionUseCase,
+    nights: any SessionRepositoryPort,
     clipsDirectory: URL)
   {
     self.navigator = navigator

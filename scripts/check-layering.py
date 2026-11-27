@@ -58,12 +58,12 @@ BASE = {"Foundation", "Swift", "os", "OSLog", "Observation"}
 ALLOWED_IMPORTS = {
     "SleepDomain": {"SleepCore"},
     "SleepDomainTestSupport": {"SleepDomain", "SleepCore"},
-    "SleepPersistence": {"SleepDomain", "SleepCore", "SleepFiles", "SleepSettings", "SleepLogging", "SleepStore", "SwiftData"},
-    "SleepAudio": {"SleepDomain", "SleepCore", "SleepAudioKit"},
-    "SleepHealth": {"SleepDomain", "SleepCore", "SleepHealthKit", "SleepLogging"},
+    "SleepPersistenceAdapter": {"SleepDomain", "SleepCore", "SleepFiles", "SleepSettings", "SleepLogging", "SleepStore", "SwiftData"},
+    "SleepAudioAdapter": {"SleepDomain", "SleepCore", "SleepAudioKit"},
+    "SleepHealthAdapter": {"SleepDomain", "SleepCore", "SleepHealthKit", "SleepLogging"},
     "ScreenKit": {"UIKit", "SwiftUI", "SleepGuardDesignKit"},
     "AppShell": {
-        "UIKit", "SwiftUI", "FactoryKit", "SleepDomain", "SleepCore", "SleepPersistence", "SleepAudio",
+        "UIKit", "SwiftUI", "FactoryKit", "SleepDomain", "SleepCore", "SleepPersistenceAdapter", "SleepAudioAdapter",
         "ScreenKit", "SleepGuardDesignKit", "SleepStrings", "HistoryFeature", "SessionDetailFeature", "StatisticsFeature", "RecordingFeature",
         "SettingsFeature", "OnboardingFeature", "LearnFeature", "BriefingFeature",
         "SleepFiles", "SleepLogging", "SleepNotifications",

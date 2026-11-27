@@ -20,9 +20,9 @@ public nonisolated struct BrandConfiguration: Sendable {
   public var theme: Theme
   /// The tab bar, in order.
   public var tabs: [AppTab]
-  /// Apple Health, from `SleepHealth` in brands that link it. `nil`: no
+  /// Apple Health, from `SleepHealthAdapter` in brands that link it. `nil`: no
   /// Health rows in Settings, and nights aren't written there.
-  public var health: (any HealthAccess)?
+  public var health: (any HealthAccessPort)?
   /// The App Store id, once the brand is published: Settings shows
   /// "Rate on App Store" only then.
   public var appStoreID: String?
@@ -36,7 +36,7 @@ public nonisolated struct BrandConfiguration: Sendable {
 
   /// Every value is stated by each brand: a capability can't be forgotten.
   public init(
-    theme: Theme, tabs: [AppTab], health: (any HealthAccess)?, appStoreID: String?, snoreInterrupter: Bool,
+    theme: Theme, tabs: [AppTab], health: (any HealthAccessPort)?, appStoreID: String?, snoreInterrupter: Bool,
     learnURL: URL?)
   {
     precondition(!tabs.isEmpty, "A brand needs at least one tab")

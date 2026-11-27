@@ -5,7 +5,7 @@ import SleepDomain
 
 /// Plays a night's event clips one after another. Owns the audio player, so
 /// it is a state owner rather than view state: SleepCore's `ClipPlaylist`
-/// decides what plays, the `ClipPlayer` makes it heard, and this keeps them in
+/// decides what plays, the `ClipPlayerPort` makes it heard, and this keeps them in
 /// step (position, auto-advance, seeking, interruptions).
 @MainActor
 @Observable
@@ -23,9 +23,9 @@ public final class PlayerViewModel {
     didSet { player.isEnhanced = isEnhanced }
   }
 
-  private let player: any ClipPlayer
-  private let files: any SessionFileStore
-  private let waveforms: any ClipWaveformSource
+  private let player: any ClipPlayerPort
+  private let files: any SessionFileStorePort
+  private let waveforms: any ClipWaveformSourcePort
   /// Reading the current clip's waveform; internal so tests can await it.
   private(set) var waveformLoading: Task<Void, Never>?
   private let firstIndex: Int
@@ -36,9 +36,9 @@ public final class PlayerViewModel {
   public init(
     events: [NightEvent],
     startEvent: NightEvent.ID?,
-    player: any ClipPlayer,
-    files: any SessionFileStore,
-    waveforms: any ClipWaveformSource,
+    player: any ClipPlayerPort,
+    files: any SessionFileStorePort,
+    waveforms: any ClipWaveformSourcePort,
     isEnhanced: Bool = true)
   {
     self.events = events

@@ -3,7 +3,7 @@ import SleepGuardDesignKit
 import SwiftUI
 
 /// SleepGuard Lite: teal, three tabs (no Learn), no HealthKit (it doesn't link
-/// `SleepHealth`; see `Brand.usesHealthKit` in the Tuist brand list), no
+/// `SleepHealthAdapter`; see `Brand.usesHealthKit` in the Tuist brand list), no
 /// Snore Interrupter.
 nonisolated struct SleepGuardLiteBrand: BrandComposition {
   let configuration = BrandConfiguration(

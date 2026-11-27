@@ -13,9 +13,9 @@ import UIKit
 final class RecordingFlow {
   private let navigator: any Navigator
   private let factory: RecordingFactory
-  private let commit: CommitSession
-  private let discardRecording: DiscardRecording
-  private let enforceStorageLimits: EnforceStorageLimits
+  private let commit: CommitSessionUseCase
+  private let discardRecording: DiscardRecordingUseCase
+  private let enforceStorageLimits: EnforceStorageLimitsUseCase
   private let device: DeviceServices
   private let onClose: @MainActor () -> Void
   /// The screen, the battery and the start delay's warm microphone.
@@ -32,11 +32,11 @@ final class RecordingFlow {
   init(
     navigator: any Navigator,
     factory: RecordingFactory,
-    commit: CommitSession,
-    discardRecording: DiscardRecording,
-    enforceStorageLimits: EnforceStorageLimits,
+    commit: CommitSessionUseCase,
+    discardRecording: DiscardRecordingUseCase,
+    enforceStorageLimits: EnforceStorageLimitsUseCase,
     device: DeviceServices,
-    preferences: any PreferencesStore,
+    preferences: any PreferencesStorePort,
     onClose: @escaping @MainActor () -> Void)
   {
     self.navigator = navigator
@@ -94,7 +94,7 @@ final class RecordingFlow {
       })))
   }
 
-  private func startNight(capture: any AudioCapture, preferences: AppPreferences) {
+  private func startNight(capture: any AudioCapturePort, preferences: AppPreferences) {
     let model = factory.makeModel(capture: capture, preferences: preferences)
     self.model = model
     lifecycle.nightStarted { [weak self] in self?.checkBattery() }

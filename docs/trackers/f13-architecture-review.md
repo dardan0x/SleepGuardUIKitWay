@@ -49,6 +49,7 @@ Fixes this app's verdicts from the principal-level architecture review of the th
 | F13-T21 | Uniform the apps, close-out (ADR 0013, docs) | Docs | Done | T20 | docs |
 | F13-T22 | Explicit imports, no re-exports (shared 0.37.0) | Refactor | Done | T21 | Features, AppShell, scripts |
 | F13-T23 | README for the current architecture | Docs | Done | T22 | README |
+| F13-T24 | Role suffixes: `…Port`, `…UseCase`, `…Adapter` (types and adapter modules) | Refactor | Done | T23 | SleepDomain, Adapters, features, AppShell, Apps, Tuist, scripts, docs |
 
 ## Task Details
 
@@ -416,3 +417,12 @@ The owner's call: re-exports hide dependencies. Shared 0.37.0 dropped the kits' 
 ### F13-T23 — README for the current architecture
 
 The README described the adapters before the uniform-apps releases. Updated: the shared code behind the adapters (hexagon diagram, module table recounted: `SleepAudio` 78 lines, `SleepPersistence` 368), the read-only `LoadSessionDetail` + `EnrichNightWithStages` sample, the per-module table of shared products (from the imports), storage access, the comparison table, no escape hatch here, declared imports, test counts (81 / 33 / 19 / 57 / 83, 13 per brand; 335 shared), F0–F13. Branch `feature/f13/t23-readme`
+
+### F13-T24 — Role suffixes: `…Port`, `…UseCase`, `…Adapter`
+
+The owner's call: a type's role belongs in its name (ADR 0014).
+- 15 ports are `…Port`, 12 use cases are `…UseCase`, 8 adapters are `…Adapter`, each in a file of the same name. The melody ports are split one per file; `PreferencesStorePort` is out of `AppPreferences.swift` and `HealthKitAccessAdapter` out of `SleepHealth.swift`. Six test files and suites follow their types.
+- The three adapter modules follow too: `SleepPersistenceAdapter`, `SleepAudioAdapter`, `SleepHealthAdapter` (folders, products, factory namespaces, test targets, Tuist linking, `ALLOWED_IMPORTS`, brand imports).
+- Unchanged: fakes, factory methods (`makeHealthAccess()`), properties, the shared `SleepAudioKit` types behind the audio ports, historical docs.
+- AGENTS/CLAUDE state the rule; README (diagram realigned), ARCHITECTURE, COMPARISON, `docs/architecture/*` use the new names.
+- Verified: four brands build, all lanes (81 / 33 / 19 / 57 / 83, 13 per brand), layering, view size, strings. `swiftformat --lint` flags `SnoreInterrupter.swift:11` (`modifierOrder`), which was already there before this change. Branch `feature/f13/t24-role-suffixes`

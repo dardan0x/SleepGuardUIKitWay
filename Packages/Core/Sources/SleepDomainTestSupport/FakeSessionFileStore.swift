@@ -3,7 +3,7 @@ import SleepDomain
 
 /// Files as names and sizes in memory. Records which were removed; serves the
 /// URLs it was given.
-public actor FakeSessionFileStore: SessionFileStore {
+public actor FakeSessionFileStore: SessionFileStorePort {
   public private(set) var removed: [String] = []
   public private(set) var files: [String: Int64]
   private let urls: [String: URL]

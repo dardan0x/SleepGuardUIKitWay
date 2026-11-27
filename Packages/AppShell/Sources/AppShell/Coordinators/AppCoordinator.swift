@@ -33,12 +33,12 @@ public final class AppCoordinator {
   /// The nights database didn't open; only the store-unavailable screen shows.
   private(set) var storeUnavailable = false
   /// Resolved at launch, used once the tabs are up.
-  private let recoverInterruptedSession: RecoverInterruptedSession
-  private let enforceStorageLimits: EnforceStorageLimits
-  private let refreshStaleSummaries: RefreshStaleSummaries
-  private let loadMorningBriefing: LoadMorningBriefing
-  private let preferences: any PreferencesStore
-  private let lifestyleLogs: any LifestyleLogStore
+  private let recoverInterruptedSession: RecoverInterruptedSessionUseCase
+  private let enforceStorageLimits: EnforceStorageLimitsUseCase
+  private let refreshStaleSummaries: RefreshStaleSummariesUseCase
+  private let loadMorningBriefing: LoadMorningBriefingUseCase
+  private let preferences: any PreferencesStorePort
+  private let lifestyleLogs: any LifestyleLogStorePort
 
   init(composition: AppComposition) {
     self.composition = composition

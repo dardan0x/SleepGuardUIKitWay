@@ -12,7 +12,7 @@ public struct Brand: Sendable {
   public let bundleId: String
   /// Deep-link scheme (`<urlScheme>://…`).
   public let urlScheme: String
-  /// Links the `SleepHealth` adapter. Keep in step with the HealthKit
+  /// Links `SleepHealthAdapter`. Keep in step with the HealthKit
   /// entitlement in `Apps/<name>/<name>.entitlements`.
   public let usesHealthKit: Bool
 

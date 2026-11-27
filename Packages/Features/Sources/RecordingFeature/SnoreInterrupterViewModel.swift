@@ -8,10 +8,10 @@ import SleepDomain
 @Observable
 public final class SnoreInterrupterViewModel {
   public private(set) var draft: SnoreInterrupterChoice
-  private let store: any MelodyStore
+  private let store: any MelodyStorePort
   let routes: SnoreInterrupterRoutes
 
-  public init(choice: SnoreInterrupterChoice, store: any MelodyStore, routes: SnoreInterrupterRoutes) {
+  public init(choice: SnoreInterrupterChoice, store: any MelodyStorePort, routes: SnoreInterrupterRoutes) {
     draft = choice
     self.store = store
     self.routes = routes

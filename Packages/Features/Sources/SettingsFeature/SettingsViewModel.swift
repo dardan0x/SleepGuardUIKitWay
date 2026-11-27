@@ -13,7 +13,7 @@ public final class SettingsViewModel {
   public enum Alert: Equatable {
     case confirmDeleteAll
     case confirmLowerLimit(megabytes: Int)
-    case cleanup(EnforceStorageLimits.Report)
+    case cleanup(EnforceStorageLimitsUseCase.Report)
     case failed
   }
 

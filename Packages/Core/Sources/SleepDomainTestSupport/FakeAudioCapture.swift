@@ -1,10 +1,10 @@
 import Foundation
 import SleepDomain
 
-/// An `AudioCapture` a test drives: it sends samples, and checks which
+/// An `AudioCapturePort` a test drives: it sends samples, and checks which
 /// clips were started, closed, compressed and discarded.
 @MainActor
-public final class FakeAudioCapture: AudioCapture {
+public final class FakeAudioCapture: AudioCapturePort {
   public enum Call: Equatable {
     case warmUp
     case coolDown

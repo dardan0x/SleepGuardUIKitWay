@@ -2,15 +2,15 @@
 import PackageDescription
 
 /// Adapters implement domain ports with one Apple framework each, so a brand
-/// can leave one out (SleepGuard Lite doesn't link `SleepHealth`). They depend
+/// can leave one out (SleepGuard Lite doesn't link `SleepHealthAdapter`). They depend
 /// on the domain and never on each other, the UI, or DI.
 let package = Package(
   name: "Adapters",
   platforms: [.iOS(.v17)],
   products: [
-    .library(name: "SleepPersistence", targets: ["SleepPersistence"]),
-    .library(name: "SleepAudio", targets: ["SleepAudio"]),
-    .library(name: "SleepHealth", targets: ["SleepHealth"]),
+    .library(name: "SleepPersistenceAdapter", targets: ["SleepPersistenceAdapter"]),
+    .library(name: "SleepAudioAdapter", targets: ["SleepAudioAdapter"]),
+    .library(name: "SleepHealthAdapter", targets: ["SleepHealthAdapter"]),
   ],
   dependencies: [
     .package(path: "../Core"),
@@ -19,7 +19,7 @@ let package = Package(
   targets: [
     // SwiftData, files, UserDefaults.
     .target(
-      name: "SleepPersistence",
+      name: "SleepPersistenceAdapter",
       dependencies: [
         .product(name: "SleepDomain", package: "Core"),
         .product(name: "SleepCore", package: "SleepGuardShared"),
@@ -31,7 +31,7 @@ let package = Package(
       swiftSettings: [.swiftLanguageMode(.v6)]),
     // The shared SleepAudioKit behind the audio ports; the Snore Interrupter's sounds.
     .target(
-      name: "SleepAudio",
+      name: "SleepAudioAdapter",
       dependencies: [
         .product(name: "SleepDomain", package: "Core"),
         .product(name: "SleepCore", package: "SleepGuardShared"),
@@ -41,9 +41,9 @@ let package = Package(
       ],
       swiftSettings: [.swiftLanguageMode(.v6)]),
     .testTarget(
-      name: "SleepPersistenceTests",
+      name: "SleepPersistenceAdapterTests",
       dependencies: [
-        "SleepPersistence",
+        "SleepPersistenceAdapter",
         .product(name: "SleepDomain", package: "Core"),
         .product(name: "SleepDomainTestSupport", package: "Core"),
         .product(name: "SleepCore", package: "SleepGuardShared"),
@@ -52,9 +52,9 @@ let package = Package(
       ],
       swiftSettings: [.swiftLanguageMode(.v6)]),
     .testTarget(
-      name: "SleepAudioTests",
+      name: "SleepAudioAdapterTests",
       dependencies: [
-        "SleepAudio",
+        "SleepAudioAdapter",
         .product(name: "SleepDomain", package: "Core"),
         .product(name: "SleepDomainTestSupport", package: "Core"),
         .product(name: "SleepCore", package: "SleepGuardShared"),
@@ -62,7 +62,7 @@ let package = Package(
       swiftSettings: [.swiftLanguageMode(.v6)]),
     // HealthKit.
     .target(
-      name: "SleepHealth",
+      name: "SleepHealthAdapter",
       dependencies: [
         .product(name: "SleepDomain", package: "Core"),
         .product(name: "SleepCore", package: "SleepGuardShared"),
@@ -72,9 +72,9 @@ let package = Package(
       swiftSettings: [.swiftLanguageMode(.v6)]),
 
     .testTarget(
-      name: "SleepHealthTests",
+      name: "SleepHealthAdapterTests",
       dependencies: [
-        "SleepHealth",
+        "SleepHealthAdapter",
         .product(name: "SleepCore", package: "SleepGuardShared"),
         .product(name: "SleepHealthKit", package: "SleepGuardShared"),
       ],

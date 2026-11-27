@@ -10,7 +10,7 @@ import Testing
 @MainActor
 struct SettingsViewModelTests {
   private func viewModel(
-    _ store: FakePreferencesStore, health: (any HealthAccess)? = nil) -> SettingsViewModel
+    _ store: FakePreferencesStore, health: (any HealthAccessPort)? = nil) -> SettingsViewModel
   {
     let sessions = FakeSessionRepository()
     let files = FakeSessionFileStore()
@@ -18,9 +18,9 @@ struct SettingsViewModelTests {
     return SettingsViewModel(
       dependencies: SettingsDependencies(
         preferences: store, health: health,
-        enforceStorageLimits: EnforceStorageLimits(
+        enforceStorageLimits: EnforceStorageLimitsUseCase(
           sessions: sessions, files: files, checkpoints: checkpoints, preferences: store),
-        deleteAllData: DeleteAllData(sessions: sessions, files: files, checkpoints: checkpoints),
+        deleteAllData: DeleteAllDataUseCase(sessions: sessions, files: files, checkpoints: checkpoints),
         version: "1.0", microphone: { .granted }, requestMicrophone: { true },
         notifications: { .granted }, requestNotifications: { true }, showsDebugRows: false),
       routes: SettingsRoutes(openProfile: {}, openSystemSettings: {}, rateApp: nil, addSampleNights: nil))

@@ -2,12 +2,12 @@ import SleepCore
 import SleepDomain
 
 public struct StatisticsDependencies: Sendable {
-  public var nights: any SessionRepository
+  public var nights: any SessionRepositoryPort
   /// Whether the dashboard asks for the profile now (SleepCore's
   /// `ProfilePrompt`, decided once per appearance).
   public var asksForProfile: @MainActor @Sendable () async -> Bool
 
-  public init(nights: any SessionRepository, asksForProfile: @escaping @MainActor @Sendable () async -> Bool = { false }) {
+  public init(nights: any SessionRepositoryPort, asksForProfile: @escaping @MainActor @Sendable () async -> Bool = { false }) {
     self.nights = nights
     self.asksForProfile = asksForProfile
   }

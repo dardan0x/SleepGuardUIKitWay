@@ -24,7 +24,7 @@ struct OnboardingFlowTests {
     let finished: () -> [Bool]
   }
 
-  private func makeFlow(health: (any HealthAccess)? = nil) -> Harness {
+  private func makeFlow(health: (any HealthAccessPort)? = nil) -> Harness {
     let container = Container.test(brand: TestBrand(health: health))
     let preferences = FakePreferencesStore()
     container.preferencesStore.register { preferences }

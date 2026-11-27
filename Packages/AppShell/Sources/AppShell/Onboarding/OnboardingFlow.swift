@@ -11,7 +11,7 @@ import UIKit
 final class OnboardingFlow {
   private let navigator: any Navigator
   private let factory: OnboardingFactory
-  private let preferences: any PreferencesStore
+  private let preferences: any PreferencesStorePort
   private let onFinish: @MainActor (_ startRecording: Bool) -> Void
   /// Saving the choices, awaited by tests.
   private(set) var finishing: Task<Void, Never>?
@@ -19,7 +19,7 @@ final class OnboardingFlow {
   init(
     navigator: any Navigator,
     factory: OnboardingFactory,
-    preferences: any PreferencesStore,
+    preferences: any PreferencesStorePort,
     onFinish: @escaping @MainActor (_ startRecording: Bool) -> Void)
   {
     self.navigator = navigator

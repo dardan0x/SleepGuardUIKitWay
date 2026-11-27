@@ -1,7 +1,7 @@
 import FactoryKit
 import Foundation
 import ScreenKit
-import SleepAudio
+import SleepAudioAdapter
 import SleepCore
 import SleepDomain
 import SleepGuardDesignKit
@@ -119,31 +119,31 @@ public final class AppComposition {
     container.deviceServices()
   }
 
-  var nights: any SessionRepository {
+  var nights: any SessionRepositoryPort {
     container.sessionRepository()
   }
 
-  var preferences: any PreferencesStore {
+  var preferences: any PreferencesStorePort {
     container.preferencesStore()
   }
 
-  var lifestyleLogs: any LifestyleLogStore {
+  var lifestyleLogs: any LifestyleLogStorePort {
     container.lifestyleLogStore()
   }
 
-  var recoverInterruptedSession: RecoverInterruptedSession {
+  var recoverInterruptedSession: RecoverInterruptedSessionUseCase {
     container.recoverInterruptedSession()
   }
 
-  var enforceStorageLimits: EnforceStorageLimits {
+  var enforceStorageLimits: EnforceStorageLimitsUseCase {
     container.enforceStorageLimits()
   }
 
-  var refreshStaleSummaries: RefreshStaleSummaries {
+  var refreshStaleSummaries: RefreshStaleSummariesUseCase {
     container.refreshStaleSummaries()
   }
 
-  var loadMorningBriefing: LoadMorningBriefing {
+  var loadMorningBriefing: LoadMorningBriefingUseCase {
     container.loadMorningBriefing()
   }
 
@@ -165,7 +165,7 @@ public final class AppComposition {
         let samples = SampleNights.clips(of: nights)
         try await Task.detached(priority: .utility) {
           for clip in samples {
-            try SleepAudio.writeSampleClip(
+            try SleepAudioAdapter.writeSampleClip(
               to: clips.appendingPathComponent(clip.name), seconds: clip.seconds, intensity: clip.intensity)
           }
         }.value

@@ -2,9 +2,9 @@ import Foundation
 import SleepCore
 import SleepDomain
 
-/// In-memory `SessionRepository` for tests and previews. Records what was
+/// In-memory `SessionRepositoryPort` for tests and previews. Records what was
 /// saved and deleted; `failNextCall` makes the next call throw.
-public actor FakeSessionRepository: SessionRepository {
+public actor FakeSessionRepository: SessionRepositoryPort {
   public private(set) var sessions: [Night.ID: Night] = [:]
   public private(set) var summaries: [Night.ID: NightSummary] = [:]
   /// The score version each summary was stored with; "" for nights given to `init`.

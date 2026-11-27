@@ -1,6 +1,6 @@
 import AppShell
 import SleepGuardDesignKit
-import SleepHealth
+import SleepHealthAdapter
 import SwiftUI
 
 /// Dawn: the worked example in `docs/ADDING_A_BRAND.md`. A warm sunrise
@@ -10,7 +10,7 @@ nonisolated struct DawnBrand: BrandComposition {
   let configuration = BrandConfiguration(
     theme: .dawn,
     tabs: [.statistics, .history, .settings],
-    health: SleepHealth.makeHealthAccess(),
+    health: SleepHealthAdapter.makeHealthAccess(),
     appStoreID: nil,
     snoreInterrupter: false,
     learnURL: nil)

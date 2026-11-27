@@ -3,7 +3,7 @@ import SleepCore
 import SleepDomain
 
 /// Keeps the checkpoint in memory and every night it was given, in order.
-public actor FakeRecordingCheckpointStore: RecordingCheckpointStore {
+public actor FakeRecordingCheckpointStore: RecordingCheckpointStorePort {
   public private(set) var night: Night?
   public private(set) var saved: [Night] = []
   public private(set) var clears = 0

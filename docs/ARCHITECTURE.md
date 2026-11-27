@@ -9,9 +9,9 @@ Everything below was checked against the code on 2026-11-26 (shared release 0.37
 Tuist sees the apps and what they link directly (`tuist graph --skip-test-targets`):
 
 ```
-SleepGuard      → AppShell, SleepGuardDesignKit, SleepHealth
-Nocturne        → AppShell, SleepGuardDesignKit, SleepHealth
-Dawn            → AppShell, SleepGuardDesignKit, SleepHealth
+SleepGuard      → AppShell, SleepGuardDesignKit, SleepHealthAdapter
+Nocturne        → AppShell, SleepGuardDesignKit, SleepHealthAdapter
+Dawn            → AppShell, SleepGuardDesignKit, SleepHealthAdapter
 SleepGuardLite  → AppShell, SleepGuardDesignKit            (no HealthKit)
 ```
 
@@ -23,25 +23,25 @@ graph TD
   NO[Nocturne app] --> AppShell
   LI[SleepGuardLite app] --> AppShell
   DA[Dawn app] --> AppShell
-  SG --> SleepHealth
-  NO --> SleepHealth
-  DA --> SleepHealth
+  SG --> SleepHealthAdapter
+  NO --> SleepHealthAdapter
+  DA --> SleepHealthAdapter
 
   AppShell --> Features[8 feature modules]
   AppShell --> ScreenKit
-  AppShell --> SleepPersistence
-  AppShell --> SleepAudio
+  AppShell --> SleepPersistenceAdapter
+  AppShell --> SleepAudioAdapter
   AppShell --> SleepDomain
   AppShell --> FactoryKit
 
   Features --> SleepDomain
   Features --> ContentKit[SleepGuardContentKit]
-  SleepPersistence --> SleepDomain
-  SleepPersistence --> SleepStore
-  SleepPersistence --> SleepFiles
-  SleepAudio --> SleepDomain
-  SleepAudio --> SleepAudioKit
-  SleepHealth --> SleepDomain
+  SleepPersistenceAdapter --> SleepDomain
+  SleepPersistenceAdapter --> SleepStore
+  SleepPersistenceAdapter --> SleepFiles
+  SleepAudioAdapter --> SleepDomain
+  SleepAudioAdapter --> SleepAudioKit
+  SleepHealthAdapter --> SleepDomain
   ScreenKit --> DesignKit[SleepGuardDesignKit]
   SleepDomain --> SleepCore
   ContentKit --> DesignKit
@@ -67,9 +67,9 @@ The eight features are History, SessionDetail, Statistics, Recording, Settings, 
 |---|---|---|---|
 | `SleepCore` (shared) | — | Night values and every rule: score, detection state machine, statistics, playback, interrupter, onboarding pages, briefing, report | Import anything but Foundation |
 | `SleepDomain` (Core) | 26 / 1,400 | 14 ports, 12 use cases, the recording actor and its draft, preferences | Know about SwiftData, AVFoundation, HealthKit, UIKit or SwiftUI |
-| `SleepPersistence` | 8 / 368 | The shared `SleepStore` records behind `SessionRepository` (its actor); the shared files (`SleepFiles`) for clips, checkpoint, profile, raw log, survey answers; UserDefaults preferences (`SleepSettings`) | Leak a `@Model` past its ports |
-| `SleepAudio` | 2 / 78 | The shared `SleepAudioKit` (capture, compression, playback, waveforms, the interrupter's player, store and recorder; SleepGuard uses the same) conformed to the ports | |
-| `SleepHealth` | 1 / 45 | Apple Health through the shared `HealthKitSleep` (the same code as SleepGuard): write a night, read its sleep stages | Be linked by Lite |
+| `SleepPersistenceAdapter` | 8 / 368 | The shared `SleepStore` records behind `SessionRepositoryPort` (its actor); the shared files (`SleepFiles`) for clips, checkpoint, profile, raw log, survey answers; UserDefaults preferences (`SleepSettings`) | Leak a `@Model` past its ports |
+| `SleepAudioAdapter` | 2 / 78 | The shared `SleepAudioKit` (capture, compression, playback, waveforms, the interrupter's player, store and recorder; SleepGuard uses the same) conformed to the ports | |
+| `SleepHealthAdapter` | 1 / 45 | Apple Health through the shared `HealthKitSleep` (the same code as SleepGuard): write a night, read its sleep stages | Be linked by Lite |
 | `ScreenKit` (Presentation) | 6 / 615 | `ScreenController` (every screen's base: chrome, background, theme, one state child), `ContentListController` (a self-sizing UIKit list), `ScreenChrome`, `Navigator`, theme fonts for UIKit | |
 | Features | 60 / 3,737 | 22 UIKit screens (ADR 0007): collection views, a page view controller, a segmented control and alerts around the shared SwiftUI content. Each has a view model (ADR 0008, checked) that holds its state, calls the use cases and routes and says which alert is due, with no UI imports. Each screen has a `Dependencies` and a `Routes` value | Navigate, present anything but an alert, persist, inject, or touch `UIApplication`; import UI in a view model (checked) |
 | `AppShell` | 31 / 2,350 | Launch and links, the composition root (`AppComposition`, ADR 0009), 6 flows with their navigation helpers, coordinators, factories, the Factory container (33 registrations) | Be imported by anything but the apps and its test support |
@@ -79,8 +79,8 @@ The eight features are History, SessionDetail, Statistics, Recording, Settings, 
 
 1. A row in History calls `HistoryRoutes.openNight(summary)`. The screen only reports the intent.
 2. `HistoryFlow` hands it to `NightDetailNavigation.show(_:)`, which asks `SessionDetailFactory.make(...)` for a controller and pushes it through its `Navigator`.
-3. The factory resolves `LoadSessionDetail` and `EnrichNightWithStages` from the container and builds `SessionDetailViewModel(dependencies:routes:)`, then `SessionDetailViewController(viewModel:theme:chrome:)`. The chrome carries the title and the bar items (report, delete); the screen never sets them. The report button has a `BarItemActivity`, so it shows a spinner while the PDF is made.
-4. When the screen appears, the controller runs `viewModel.load()` in a task it owns. `LoadSessionDetail` only reads the night from `SessionRepository`; then `EnrichNightWithStages` asks `SleepStageSource` for stages when the night has none (the brand's Apple Health, or nothing in Lite) and stores them with the new score through `updateStages`, without touching events. A failed save still shows the stages (ADR 0010).
+3. The factory resolves `LoadSessionDetailUseCase` and `EnrichNightWithStagesUseCase` from the container and builds `SessionDetailViewModel(dependencies:routes:)`, then `SessionDetailViewController(viewModel:theme:chrome:)`. The chrome carries the title and the bar items (report, delete); the screen never sets them. The report button has a `BarItemActivity`, so it shows a spinner while the PDF is made.
+4. When the screen appears, the controller runs `viewModel.load()` in a task it owns. `LoadSessionDetailUseCase` only reads the night from `SessionRepositoryPort`; then `EnrichNightWithStagesUseCase` asks `SleepStageSourcePort` for stages when the night has none (the brand's Apple Health, or nothing in Lite) and stores them with the new score through `updateStages`, without touching events. A failed save still shows the stages (ADR 0010).
 5. The screen lays the night out in a UIKit compositional collection view (`NightDetailController`, items from the tested `NightDetailItems`): the shared header, stages card, timeline, banners and event rows are hosted cells; the filter is a `UISegmentedControl`. Tapping Play, Show all, Share or the stages' info calls a route; the navigation object presents the sheet.
 
 Every screen follows this shape: intent out through `Routes`, data in through `Dependencies`, presentation decided by a flow. A flow is built by `AppComposition` with exactly what it uses (ADR 0009); only the factories read the container.
@@ -97,7 +97,7 @@ Every screen follows this shape: intent out through `Routes`, data in through `D
 |---|---|---|---|---|
 | `theme` | SleepGuard's | violet, amber for recording, rounded type, softer corners | teal | warm sunrise |
 | `tabs` | Statistics, History, Settings, Learn | History, Statistics, Settings, Learn | Statistics, History, Settings | Statistics, History, Settings |
-| `health` (a port, or `nil`) | `SleepHealth` | `SleepHealth` | `nil`: no HealthKit linked, no stages, no Health rows or onboarding page | `SleepHealth` |
+| `health` (a port, or `nil`) | `SleepHealthAdapter` | `SleepHealthAdapter` | `nil`: no HealthKit linked, no stages, no Health rows or onboarding page | `SleepHealthAdapter` |
 | `snoreInterrupter` | on | on | off | off |
 | `learnURL` | `nil` for now | `nil` for now | no tab | no tab |
 | `appStoreID` | `nil` | `nil` | `nil` | `nil` |
@@ -124,10 +124,10 @@ Identity (bundle id, display name, app group, URL scheme) lives in the Tuist bra
 
 `RecordingSession` (an actor in `SleepDomain`) turns microphone samples into a `RecordingDraft`:
 
-1. `AudioCapture` (SleepAudioKit's `CaptureEngine`, through `SleepAudio`) yields a `CaptureEvent`: a sample per buffer (about 43–47 Hz), or the microphone taken away (a call) and given back.
+1. `AudioCapturePort` (SleepAudioKit's `CaptureEngine`, through `SleepAudioAdapter`) yields a `CaptureEvent`: a sample per buffer (about 43–47 Hz), or the microphone taken away (a call) and given back.
 2. SleepCore's `SampleDecimator` turns the buffers into 20 Hz samples on a time grid, as SleepGuard does. Each is classified with SleepCore's snore and speech rules and sent, timestamped, into SleepCore's `DetectionEngine`: one ordered stream, on its own actor. A call goes in as `captureDidPause` / `captureDidResume` and becomes an interruption gap the score leaves out (ADR 0011).
 3. The engine's outputs come back in order: clips start, close or are discarded through the capture port; events and gaps go into the draft; the Snore Interrupter plays with the microphone paused.
-4. The draft is checkpointed by a writer task off the sample path (the newest night wins), so a killed app offers the night at the next launch; Save commits it through `CommitSession` (and to Apple Health when on), refusing a night shorter than the app's `SaveRules`.
+4. The draft is checkpointed by a writer task off the sample path (the newest night wins), so a killed app offers the night at the next launch; Save commits it through `CommitSessionUseCase` (and to Apple Health when on), refusing a night shorter than the app's `SaveRules`.
 
 The same rules, the same 20 Hz samples and the same test cases run in SleepGuard, so both apps detect the same events from the same sound.
 
@@ -176,6 +176,7 @@ About 290 package tests and 13 in-app tests per brand (pull requests run every b
 | [0011](adr/0011-detection-input.md) | Detection runs on 20 Hz samples, off the disk |
 | [0012](adr/0012-deep-links.md) | Links open through the app coordinator |
 | [0013](adr/0013-uniform-apps.md) | The adapters' behaviour lives in the shared repo |
+| [0014](adr/0014-role-suffixes.md) | Ports, use cases and adapters carry their role in the name |
 
 ## Where to look first
 

@@ -11,11 +11,11 @@ public enum PermissionState: Sendable, Equatable {
 }
 
 public struct SettingsDependencies {
-  public var preferences: any PreferencesStore
+  public var preferences: any PreferencesStorePort
   /// Apple Health, when the brand has it: its Settings rows depend on it.
-  public var health: (any HealthAccess)?
-  public var enforceStorageLimits: EnforceStorageLimits
-  public var deleteAllData: DeleteAllData
+  public var health: (any HealthAccessPort)?
+  public var enforceStorageLimits: EnforceStorageLimitsUseCase
+  public var deleteAllData: DeleteAllDataUseCase
   /// "1.4.0".
   public var version: String
   public var microphone: @MainActor () -> PermissionState
@@ -27,10 +27,10 @@ public struct SettingsDependencies {
   public var showsDebugRows: Bool
 
   public init(
-    preferences: any PreferencesStore,
-    health: (any HealthAccess)?,
-    enforceStorageLimits: EnforceStorageLimits,
-    deleteAllData: DeleteAllData,
+    preferences: any PreferencesStorePort,
+    health: (any HealthAccessPort)?,
+    enforceStorageLimits: EnforceStorageLimitsUseCase,
+    deleteAllData: DeleteAllDataUseCase,
     version: String,
     microphone: @escaping @MainActor () -> PermissionState,
     requestMicrophone: @escaping @MainActor () async -> Bool,
@@ -74,10 +74,10 @@ public struct SettingsRoutes {
 }
 
 public struct ProfileEditorDependencies {
-  public var profiles: any ProfileStore
-  public var preferences: any PreferencesStore
+  public var profiles: any ProfileStorePort
+  public var preferences: any PreferencesStorePort
 
-  public init(profiles: any ProfileStore, preferences: any PreferencesStore) {
+  public init(profiles: any ProfileStorePort, preferences: any PreferencesStorePort) {
     self.profiles = profiles
     self.preferences = preferences
   }

@@ -1,6 +1,6 @@
 import AppShell
 import SleepGuardDesignKit
-import SleepHealth
+import SleepHealthAdapter
 import SwiftUI
 
 /// Nocturne: a sister brand on the same product. Violet with amber for
@@ -9,7 +9,7 @@ nonisolated struct NocturneBrand: BrandComposition {
   let configuration = BrandConfiguration(
     theme: .nocturne,
     tabs: [.history, .statistics, .settings, .learn],
-    health: SleepHealth.makeHealthAccess(),
+    health: SleepHealthAdapter.makeHealthAccess(),
     appStoreID: nil,
     snoreInterrupter: true,
     // No Learn page yet: the tab shows "No content available".

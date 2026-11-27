@@ -1,11 +1,11 @@
 import FactoryKit
-import SleepAudio
+import SleepAudioAdapter
 import SleepCore
 import SleepDomain
 import SleepFiles
 import SleepGuardDesignKit
 import SleepLogging
-import SleepPersistence
+import SleepPersistenceAdapter
 import UIKit
 
 /// The shell's registrations. Everything derives from `brand`, the one value
@@ -44,11 +44,11 @@ extension Container {
     self {
       let url = self.storageLocation().storeURL
       do {
-        return try StoreOpening(repository: SleepPersistence.makeSessionRepository(storeURL: url), isAvailable: true)
+        return try StoreOpening(repository: SleepPersistenceAdapter.makeSessionRepository(storeURL: url), isAvailable: true)
       } catch {
         Log.storage.fault("Couldn't open the nights store: \(error.localizedDescription, privacy: .public)")
         do {
-          return try StoreOpening(repository: SleepPersistence.makeSessionRepository(storeURL: nil), isAvailable: false)
+          return try StoreOpening(repository: SleepPersistenceAdapter.makeSessionRepository(storeURL: nil), isAvailable: false)
         } catch {
           // Not even an in-memory store: SwiftData itself can't start, and
           // there is no app to show.
@@ -61,44 +61,44 @@ extension Container {
     .cached
   }
 
-  var sessionRepository: Factory<any SessionRepository> {
+  var sessionRepository: Factory<any SessionRepositoryPort> {
     self { self.storeOpening().repository }.cached
   }
 
-  var sessionFileStore: Factory<any SessionFileStore> {
-    self { SleepPersistence.makeSessionFileStore(directory: self.storageLocation().clipsDirectory) }.cached
+  var sessionFileStore: Factory<any SessionFileStorePort> {
+    self { SleepPersistenceAdapter.makeSessionFileStore(directory: self.storageLocation().clipsDirectory) }.cached
   }
 
   /// The brand's Apple Health reads the stages; a brand without it has none.
-  var sleepStageSource: Factory<any SleepStageSource> {
+  var sleepStageSource: Factory<any SleepStageSourcePort> {
     self {
-      guard let health = self.healthAccess() else { return NoSleepStages() as any SleepStageSource }
+      guard let health = self.healthAccess() else { return NoSleepStages() as any SleepStageSourcePort }
       return health
     }.cached
   }
 
-  var deleteSession: Factory<DeleteSession> {
-    self { DeleteSession(sessions: self.sessionRepository(), files: self.sessionFileStore()) }
+  var deleteSession: Factory<DeleteSessionUseCase> {
+    self { DeleteSessionUseCase(sessions: self.sessionRepository(), files: self.sessionFileStore()) }
   }
 
-  var deleteSessions: Factory<DeleteSessions> {
-    self { DeleteSessions(sessions: self.sessionRepository(), files: self.sessionFileStore()) }
+  var deleteSessions: Factory<DeleteSessionsUseCase> {
+    self { DeleteSessionsUseCase(sessions: self.sessionRepository(), files: self.sessionFileStore()) }
   }
 
-  var refreshStaleSummaries: Factory<RefreshStaleSummaries> {
-    self { RefreshStaleSummaries(sessions: self.sessionRepository()) }
+  var refreshStaleSummaries: Factory<RefreshStaleSummariesUseCase> {
+    self { RefreshStaleSummariesUseCase(sessions: self.sessionRepository()) }
   }
 
-  var loadSessionDetail: Factory<LoadSessionDetail> {
-    self { LoadSessionDetail(sessions: self.sessionRepository()) }
+  var loadSessionDetail: Factory<LoadSessionDetailUseCase> {
+    self { LoadSessionDetailUseCase(sessions: self.sessionRepository()) }
   }
 
-  var enrichNightWithStages: Factory<EnrichNightWithStages> {
-    self { EnrichNightWithStages(sessions: self.sessionRepository(), sleepStages: self.sleepStageSource()) }
+  var enrichNightWithStages: Factory<EnrichNightWithStagesUseCase> {
+    self { EnrichNightWithStagesUseCase(sessions: self.sessionRepository(), sleepStages: self.sleepStageSource()) }
   }
 
-  var checkpointStore: Factory<any RecordingCheckpointStore> {
-    self { SleepPersistence.makeCheckpointStore(url: self.storageLocation().checkpointURL) }.cached
+  var checkpointStore: Factory<any RecordingCheckpointStorePort> {
+    self { SleepPersistenceAdapter.makeCheckpointStore(url: self.storageLocation().checkpointURL) }.cached
   }
 
   /// When a stopped night is long enough to save. The shipped rule is 30
@@ -115,107 +115,107 @@ extension Container {
     }
   }
 
-  var commitSession: Factory<CommitSession> {
+  var commitSession: Factory<CommitSessionUseCase> {
     self {
-      CommitSession(
+      CommitSessionUseCase(
         sessions: self.sessionRepository(), checkpoints: self.checkpointStore(), health: self.healthAccess(),
         preferences: self.preferencesStore(), saveRules: self.saveRules())
     }
   }
 
-  var preferencesStore: Factory<any PreferencesStore> {
-    self { SleepPersistence.makePreferencesStore() }.cached
+  var preferencesStore: Factory<any PreferencesStorePort> {
+    self { SleepPersistenceAdapter.makePreferencesStore() }.cached
   }
 
-  var profileStore: Factory<any ProfileStore> {
-    self { SleepPersistence.makeProfileStore(url: self.storageLocation().profileURL) }.cached
+  var profileStore: Factory<any ProfileStorePort> {
+    self { SleepPersistenceAdapter.makeProfileStore(url: self.storageLocation().profileURL) }.cached
   }
 
-  var lifestyleLogStore: Factory<any LifestyleLogStore> {
-    self { SleepPersistence.makeLifestyleLogStore(url: self.storageLocation().lifestyleLogURL) }.cached
+  var lifestyleLogStore: Factory<any LifestyleLogStorePort> {
+    self { SleepPersistenceAdapter.makeLifestyleLogStore(url: self.storageLocation().lifestyleLogURL) }.cached
   }
 
-  var loadMorningBriefing: Factory<LoadMorningBriefing> {
+  var loadMorningBriefing: Factory<LoadMorningBriefingUseCase> {
     self {
-      LoadMorningBriefing(
+      LoadMorningBriefingUseCase(
         nights: self.sessionRepository(), profiles: self.profileStore(), logs: self.lifestyleLogStore(),
         preferences: self.preferencesStore())
     }
   }
 
-  var shouldAskForProfile: Factory<ShouldAskForProfile> {
+  var shouldAskForProfile: Factory<ShouldAskForProfileUseCase> {
     self {
-      ShouldAskForProfile(
+      ShouldAskForProfileUseCase(
         nights: self.sessionRepository(), profiles: self.profileStore(), preferences: self.preferencesStore(),
         saveRules: self.saveRules())
     }
   }
 
   /// The brand's Apple Health, or `nil` (Lite doesn't link HealthKit).
-  var healthAccess: Factory<(any HealthAccess)?> {
+  var healthAccess: Factory<(any HealthAccessPort)?> {
     self { self.brand().configuration.health }
   }
 
   /// Makes the Snore Interrupter's sounds, or `nil` in a brand without it.
   /// A maker, because the store is main-actor (it reads its list when made).
-  var makeMelodyStore: Factory<(@MainActor @Sendable () -> any MelodyStore)?> {
+  var makeMelodyStore: Factory<(@MainActor @Sendable () -> any MelodyStorePort)?> {
     self {
       guard self.brand().configuration.snoreInterrupter else { return nil }
       let directory = self.storageLocation().melodiesDirectory
-      return { SleepAudio.makeMelodyStore(directory: directory) }
+      return { SleepAudioAdapter.makeMelodyStore(directory: directory) }
     }
   }
 
   /// The interrupter's player (`preview: false`, a new one per night) or the
   /// picker's preview player. A maker, as for `makeClipPlayer`.
-  var makeMelodyPlayer: Factory<@MainActor @Sendable (_ preview: Bool) -> any MelodyPlayer> {
+  var makeMelodyPlayer: Factory<@MainActor @Sendable (_ preview: Bool) -> any MelodyPlayerPort> {
     self {
       { preview in
-        preview ? SleepAudio.makePreviewPlayer() : SleepAudio.makeMelodyPlayer {
+        preview ? SleepAudioAdapter.makePreviewPlayer() : SleepAudioAdapter.makeMelodyPlayer {
           UIImpactFeedbackGenerator(style: .medium).impactOccurred()
         }
       }
     }
   }
 
-  var makeMelodyRecorder: Factory<@MainActor @Sendable () -> any MelodyRecorder> {
-    self { { SleepAudio.makeMelodyRecorder() } }
+  var makeMelodyRecorder: Factory<@MainActor @Sendable () -> any MelodyRecorderPort> {
+    self { { SleepAudioAdapter.makeMelodyRecorder() } }
   }
 
   /// A new writer per night: it holds that night's open file.
-  var makeRawLogWriter: Factory<@Sendable () -> any RawLogWriter> {
+  var makeRawLogWriter: Factory<@Sendable () -> any RawLogWriterPort> {
     self {
       let clips = self.storageLocation().clipsDirectory
-      return { SleepPersistence.makeRawLogWriter(directory: clips) }
+      return { SleepPersistenceAdapter.makeRawLogWriter(directory: clips) }
     }
   }
 
-  var enforceStorageLimits: Factory<EnforceStorageLimits> {
+  var enforceStorageLimits: Factory<EnforceStorageLimitsUseCase> {
     self {
-      EnforceStorageLimits(
+      EnforceStorageLimitsUseCase(
         sessions: self.sessionRepository(), files: self.sessionFileStore(), checkpoints: self.checkpointStore(),
         preferences: self.preferencesStore())
     }
   }
 
-  var deleteAllData: Factory<DeleteAllData> {
-    self { DeleteAllData(sessions: self.sessionRepository(), files: self.sessionFileStore(), checkpoints: self.checkpointStore()) }
+  var deleteAllData: Factory<DeleteAllDataUseCase> {
+    self { DeleteAllDataUseCase(sessions: self.sessionRepository(), files: self.sessionFileStore(), checkpoints: self.checkpointStore()) }
   }
 
-  var discardRecording: Factory<DiscardRecording> {
-    self { DiscardRecording(checkpoints: self.checkpointStore(), files: self.sessionFileStore()) }
+  var discardRecording: Factory<DiscardRecordingUseCase> {
+    self { DiscardRecordingUseCase(checkpoints: self.checkpointStore(), files: self.sessionFileStore()) }
   }
 
-  var recoverInterruptedSession: Factory<RecoverInterruptedSession> {
-    self { RecoverInterruptedSession(checkpoints: self.checkpointStore(), files: self.sessionFileStore()) }
+  var recoverInterruptedSession: Factory<RecoverInterruptedSessionUseCase> {
+    self { RecoverInterruptedSessionUseCase(checkpoints: self.checkpointStore(), files: self.sessionFileStore()) }
   }
 
   /// Makes the microphone capture for one night, writing clips beside the
   /// others. A maker for the same reason as `makeClipPlayer`.
-  var makeAudioCapture: Factory<@MainActor @Sendable () -> any AudioCapture> {
+  var makeAudioCapture: Factory<@MainActor @Sendable () -> any AudioCapturePort> {
     self {
       let clips = self.storageLocation().clipsDirectory
-      return { SleepAudio.makeAudioCapture(clipsDirectory: clips) }
+      return { SleepAudioAdapter.makeAudioCapture(clipsDirectory: clips) }
     }
   }
 
@@ -223,20 +223,20 @@ extension Container {
     self { .live }
   }
 
-  var clipWaveformSource: Factory<any ClipWaveformSource> {
-    self { SleepAudio.makeClipWaveformSource() }.cached
+  var clipWaveformSource: Factory<any ClipWaveformSourcePort> {
+    self { SleepAudioAdapter.makeClipWaveformSource() }.cached
   }
 
   /// Makes a player per player sheet (the sheet's state owner releases it).
   /// A maker, because the player is main-actor and Factory's closures aren't.
-  var makeClipPlayer: Factory<@MainActor @Sendable () -> any ClipPlayer> {
-    self { { SleepAudio.makeClipPlayer() } }
+  var makeClipPlayer: Factory<@MainActor @Sendable () -> any ClipPlayerPort> {
+    self { { SleepAudioAdapter.makeClipPlayer() } }
   }
 }
 
 /// The nights database and whether it opened from its file.
 struct StoreOpening: Sendable {
-  let repository: any SessionRepository
+  let repository: any SessionRepositoryPort
   /// False when the file couldn't be opened and `repository` is in memory.
   let isAvailable: Bool
 }

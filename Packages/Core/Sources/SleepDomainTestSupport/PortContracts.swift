@@ -13,12 +13,12 @@ import SleepDomain
 /// Fakes for ports whose job is an effect (players, the capture, Health) are
 /// spies: they record calls rather than hold state, so they have no contract.
 public enum PortContracts {
-  // MARK: - SessionRepository
+  // MARK: - SessionRepositoryPort
 
-  public static func sessionRepository(_ make: () async throws -> any SessionRepository) async -> [String] {
+  public static func sessionRepository(_ make: () async throws -> any SessionRepositoryPort) async -> [String] {
     var violations: [String] = []
     func check(_ condition: Bool, _ message: String) {
-      if !condition { violations.append("SessionRepository: \(message)") }
+      if !condition { violations.append("SessionRepositoryPort: \(message)") }
     }
     do {
       let store = try await make()
@@ -92,17 +92,17 @@ public enum PortContracts {
       try await store.deleteAll()
       await check(first(store.observeSummaries()) == [], "deleteAll empties the store")
     } catch {
-      violations.append("SessionRepository: unexpected error \(error)")
+      violations.append("SessionRepositoryPort: unexpected error \(error)")
     }
     return violations
   }
 
-  // MARK: - RecordingCheckpointStore
+  // MARK: - RecordingCheckpointStorePort
 
-  public static func checkpointStore(_ make: () async throws -> any RecordingCheckpointStore) async -> [String] {
+  public static func checkpointStore(_ make: () async throws -> any RecordingCheckpointStorePort) async -> [String] {
     var violations: [String] = []
     func check(_ condition: Bool, _ message: String) {
-      if !condition { violations.append("RecordingCheckpointStore: \(message)") }
+      if !condition { violations.append("RecordingCheckpointStorePort: \(message)") }
     }
     do {
       let store = try await make()
@@ -119,17 +119,17 @@ public enum PortContracts {
       await store.clear()
       await check(store.load() == nil, "clear removes it")
     } catch {
-      violations.append("RecordingCheckpointStore: unexpected error \(error)")
+      violations.append("RecordingCheckpointStorePort: unexpected error \(error)")
     }
     return violations
   }
 
-  // MARK: - ProfileStore, LifestyleLogStore, PreferencesStore
+  // MARK: - ProfileStorePort, LifestyleLogStorePort, PreferencesStorePort
 
-  public static func profileStore(_ make: () async throws -> any ProfileStore) async -> [String] {
+  public static func profileStore(_ make: () async throws -> any ProfileStorePort) async -> [String] {
     var violations: [String] = []
     func check(_ condition: Bool, _ message: String) {
-      if !condition { violations.append("ProfileStore: \(message)") }
+      if !condition { violations.append("ProfileStorePort: \(message)") }
     }
     do {
       let store = try await make()
@@ -141,15 +141,15 @@ public enum PortContracts {
       await store.clear()
       await check(store.load() == SleepProfile(), "clear goes back to the empty profile")
     } catch {
-      violations.append("ProfileStore: unexpected error \(error)")
+      violations.append("ProfileStorePort: unexpected error \(error)")
     }
     return violations
   }
 
-  public static func lifestyleLogStore(_ make: () async throws -> any LifestyleLogStore) async -> [String] {
+  public static func lifestyleLogStore(_ make: () async throws -> any LifestyleLogStorePort) async -> [String] {
     var violations: [String] = []
     func check(_ condition: Bool, _ message: String) {
-      if !condition { violations.append("LifestyleLogStore: \(message)") }
+      if !condition { violations.append("LifestyleLogStorePort: \(message)") }
     }
     do {
       let store = try await make()
@@ -161,15 +161,15 @@ public enum PortContracts {
       try await store.save(second)
       await check(store.logs() == [first, second], "logs come back in the order they were saved")
     } catch {
-      violations.append("LifestyleLogStore: unexpected error \(error)")
+      violations.append("LifestyleLogStorePort: unexpected error \(error)")
     }
     return violations
   }
 
-  public static func preferencesStore(_ make: () async throws -> any PreferencesStore) async -> [String] {
+  public static func preferencesStore(_ make: () async throws -> any PreferencesStorePort) async -> [String] {
     var violations: [String] = []
     func check(_ condition: Bool, _ message: String) {
-      if !condition { violations.append("PreferencesStore: \(message)") }
+      if !condition { violations.append("PreferencesStorePort: \(message)") }
     }
     do {
       let store = try await make()
@@ -181,19 +181,19 @@ public enum PortContracts {
       await store.save(preferences)
       await check(store.load() == preferences, "saved preferences load back equal")
     } catch {
-      violations.append("PreferencesStore: unexpected error \(error)")
+      violations.append("PreferencesStorePort: unexpected error \(error)")
     }
     return violations
   }
 
-  // MARK: - MelodyStore
+  // MARK: - MelodyStorePort
 
   /// `take` makes a new recorded file each call (the store moves it).
   @MainActor
-  public static func melodyStore(_ make: () throws -> any MelodyStore, take: () throws -> URL) -> [String] {
+  public static func melodyStore(_ make: () throws -> any MelodyStorePort, take: () throws -> URL) -> [String] {
     var violations: [String] = []
     func check(_ condition: Bool, _ message: String) {
-      if !condition { violations.append("MelodyStore: \(message)") }
+      if !condition { violations.append("MelodyStorePort: \(message)") }
     }
     do {
       let store = try make()
@@ -201,7 +201,7 @@ public enum PortContracts {
       guard let first = try store.save(take: take(), name: "One"),
             let second = try store.save(take: take(), name: "Two")
       else {
-        violations.append("MelodyStore: save(take:name:) returned nil")
+        violations.append("MelodyStorePort: save(take:name:) returned nil")
         return violations
       }
       check(first.id != second.id, "each recording gets its own id")
@@ -211,7 +211,7 @@ public enum PortContracts {
       store.delete(first)
       check(store.recordings().map(\.id) == [second.id], "delete removes the recording")
     } catch {
-      violations.append("MelodyStore: unexpected error \(error)")
+      violations.append("MelodyStorePort: unexpected error \(error)")
     }
     return violations
   }

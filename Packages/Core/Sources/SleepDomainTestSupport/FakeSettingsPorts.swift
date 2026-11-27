@@ -3,7 +3,7 @@ import SleepCore
 import SleepDomain
 
 /// Preferences in memory.
-public actor FakePreferencesStore: PreferencesStore {
+public actor FakePreferencesStore: PreferencesStorePort {
   public private(set) var preferences: AppPreferences
 
   public init(_ preferences: AppPreferences = AppPreferences()) {
@@ -20,7 +20,7 @@ public actor FakePreferencesStore: PreferencesStore {
 }
 
 /// The profile in memory; counts saves.
-public actor FakeProfileStore: ProfileStore {
+public actor FakeProfileStore: ProfileStorePort {
   public private(set) var profile: SleepProfile
   public private(set) var saves = 0
   public private(set) var clears = 0
@@ -45,7 +45,7 @@ public actor FakeProfileStore: ProfileStore {
 }
 
 /// Apple Health that answers `granted` and records the nights written.
-public actor FakeHealthAccess: HealthAccess {
+public actor FakeHealthAccess: HealthAccessPort {
   public private(set) var saved: [Night.ID] = []
   public private(set) var requests = 0
   private let granted: Bool
@@ -71,7 +71,7 @@ public actor FakeHealthAccess: HealthAccess {
 }
 
 /// A raw log in memory.
-public actor FakeRawLogWriter: RawLogWriter {
+public actor FakeRawLogWriter: RawLogWriterPort {
   public private(set) var night: UUID?
   public private(set) var metadata: RawLogMetadata?
   public private(set) var samples: [SnoreSample] = []
@@ -94,7 +94,7 @@ public actor FakeRawLogWriter: RawLogWriter {
 }
 
 /// Survey answers in memory.
-public actor FakeLifestyleLogStore: LifestyleLogStore {
+public actor FakeLifestyleLogStore: LifestyleLogStorePort {
   public private(set) var saved: [LifestyleLog]
 
   public init(_ logs: [LifestyleLog] = []) {

@@ -4,7 +4,7 @@ import Testing
 @testable import SleepDomain
 
 /// The fakes meet the same contracts as the adapters (whose runs are in
-/// SleepPersistenceTests and SleepAudioTests).
+/// SleepPersistenceAdapterTests and SleepAudioAdapterTests).
 struct PortContractTests {
   @Test func fakeSessionRepository() async {
     let violations = await PortContracts.sessionRepository { FakeSessionRepository() }

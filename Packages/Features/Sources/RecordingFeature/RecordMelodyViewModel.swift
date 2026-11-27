@@ -19,13 +19,13 @@ public final class RecordMelodyViewModel {
   public private(set) var state = State.idle
   public private(set) var canRecord = false
   private var take: URL?
-  private let store: any MelodyStore
-  private let recorder: any MelodyRecorder
-  private let playback: any MelodyPlayer
+  private let store: any MelodyStorePort
+  private let recorder: any MelodyRecorderPort
+  private let playback: any MelodyPlayerPort
   let done: @MainActor (Melody?) -> Void
 
   public init(
-    store: any MelodyStore, recorder: any MelodyRecorder, playback: any MelodyPlayer,
+    store: any MelodyStorePort, recorder: any MelodyRecorderPort, playback: any MelodyPlayerPort,
     done: @escaping @MainActor (Melody?) -> Void)
   {
     self.store = store

@@ -171,7 +171,7 @@ struct HistoryFlowTests {
     #expect(spy.calls.last == .dismiss(presented))
   }
 
-  /// Health brands read stages through their `HealthAccess`; Lite has none.
+  /// Health brands read stages through their `HealthAccessPort`; Lite has none.
   @Test func theStageSourceIsTheBrandsHealth() async throws {
     let segment = SleepStageSegment(stage: .rem, startOffset: 0, duration: 600)
     let withHealth = Container.test(brand: TestBrand(health: FakeHealthAccess(stages: [segment])))

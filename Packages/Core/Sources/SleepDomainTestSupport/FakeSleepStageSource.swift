@@ -3,7 +3,7 @@ import SleepCore
 import SleepDomain
 
 /// Returns preset stages, or throws when `fails`, and records each request.
-public actor FakeSleepStageSource: SleepStageSource {
+public actor FakeSleepStageSource: SleepStageSourcePort {
   public struct Failure: Error {}
 
   private let stages: [SleepStageSegment]

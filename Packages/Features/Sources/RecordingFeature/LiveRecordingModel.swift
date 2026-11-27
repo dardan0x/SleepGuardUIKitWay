@@ -30,11 +30,11 @@ public final class LiveRecordingModel {
   public let saveRules: SaveRules
 
   public init(
-    capture: any AudioCapture,
+    capture: any AudioCapturePort,
     settings: RecordingSession.Settings = .init(),
     saveRules: SaveRules = .standard,
-    checkpoints: (any RecordingCheckpointStore)? = nil,
-    rawLog: (any RawLogWriter)? = nil,
+    checkpoints: (any RecordingCheckpointStorePort)? = nil,
+    rawLog: (any RawLogWriterPort)? = nil,
     interrupter: SnoreInterrupter? = nil,
     start: Date = Date())
   {

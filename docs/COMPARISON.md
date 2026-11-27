@@ -10,13 +10,13 @@ This compares one feature, **a night's detail**: open a night, load it, read its
 |---|---|---|
 | Opening the screen | `RouterPath.navigate(to: .sessionDetail(id:))`; `AppRegistry` maps it to a view | A route closure → `HistoryFlow` → `NightDetailNavigation.show(_:)` → `SessionDetailFactory.make(...)` → `Navigator.push` |
 | State and decisions | `SessionDetailModel` (`@Observable`) plus `@State` in the view | `SessionDetailViewModel` (ADR 0008): state, filter, which route a tap means; no UI imports, tested with fakes. The UIKit controller only draws it |
-| Loading the night | `SessionDetailModel.load(modelContext:)`: a SwiftData fetch in the state owner | `LoadSessionDetail` (use case) over the `SessionRepository` port; a SwiftData adapter behind it |
-| Sleep stages from Health | The same `load`: `healthKitSync.fetchSleepStages(for:)`, written to the `@Model` | The same use case asks the `SleepStageSource`; the container hands it the brand's `HealthAccess`, or `NoSleepStages` in Lite |
+| Loading the night | `SessionDetailModel.load(modelContext:)`: a SwiftData fetch in the state owner | `LoadSessionDetailUseCase` (use case) over the `SessionRepositoryPort` port; a SwiftData adapter behind it |
+| Sleep stages from Health | The same `load`: `healthKitSync.fetchSleepStages(for:)`, written to the `@Model` | The same use case asks the `SleepStageSourcePort`; the container hands it the brand's `HealthAccessPort`, or `NoSleepStages` in Lite |
 | Saving the new score | `session.refreshCachedScore(...)`, then `modelContext.save()` | The use case saves the night with its new summary through the port |
 | The layout | `NightDetailContent` (shared) | `NightDetailContent` (shared) |
 | Title and bar buttons | `.toolbar` in the view | `ScreenChrome` from the factory; the screen can't set them (checked) |
 | Sheets (events, player, stages, share) | `.sheet` in the view, or `UIActivityViewController` on the key window | Routes out of the screen; `NightDetailNavigation` presents through the `Navigator` |
-| Delete | The model deletes from the context at once; the view dismisses (no confirmation) | A route asks the navigation object, which confirms (alert), runs `DeleteSession`, then pops |
+| Delete | The model deletes from the context at once; the view dismisses (no confirmation) | A route asks the navigation object, which confirms (alert), runs `DeleteSessionUseCase`, then pops |
 | Brand differences | Remote Config flags read in the view (`appConfig.isEnabled(.pdfReport)`) | Read in the container and factories only; the screen gets plain values |
 
 ## Size
@@ -24,7 +24,7 @@ This compares one feature, **a night's detail**: open a night, load it, read its
 | | SleepGuard | This app |
 |---|---|---|
 | Screen and its state | `SessionDetailView` 127 (about 70 of them a dead mini-player kept "in case"), `SessionDetailLoadedView` 148, `SessionDetailModel` 141 | `SessionDetailViewModel` 76, `SessionDetailViewController` 86, the UIKit layout (`NightDetailController` 165, `NightDetailItems` 59, `FilterCell` 44), `SessionDetailRoutes` 37, UIKit state views 111 |
-| Loading and rules | Inside the model | `LoadSessionDetail` 53, ports 66 (`SessionRepository`, `SleepStageSource`) |
+| Loading and rules | Inside the model | `LoadSessionDetailUseCase` 53, ports 66 (`SessionRepositoryPort`, `SleepStageSourcePort`) |
 | Navigation and sharing | `SessionShareCoordinator` 90; the routes are one enum case | `NightDetailNavigation` 135, the detail's factory (most of `HistoryFactories` 89), `ShareSheet` 8 |
 | **Total** | **about 500 lines, 4 files** | **about 900 lines, 14 files** |
 

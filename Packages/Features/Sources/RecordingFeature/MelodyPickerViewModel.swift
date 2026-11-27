@@ -14,11 +14,11 @@ public final class MelodyPickerViewModel {
   public private(set) var selectedID: Int
   public private(set) var previewingID: Int?
   public private(set) var recordings: [Melody] = []
-  private let store: any MelodyStore
-  private let preview: any MelodyPlayer
+  private let store: any MelodyStorePort
+  private let preview: any MelodyPlayerPort
   let routes: MelodyPickerRoutes
 
-  public init(selectedID: Int, store: any MelodyStore, preview: any MelodyPlayer, routes: MelodyPickerRoutes) {
+  public init(selectedID: Int, store: any MelodyStorePort, preview: any MelodyPlayerPort, routes: MelodyPickerRoutes) {
     self.selectedID = selectedID
     self.store = store
     self.preview = preview

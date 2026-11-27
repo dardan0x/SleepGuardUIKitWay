@@ -30,7 +30,7 @@ public actor RecordingSession {
     public var sensitivity: DetectionSensitivity
     public var detectSleepTalking: Bool
     /// Keep the full audio and the sample log (`RawRecording`); needs a
-    /// `RawLogWriter`.
+    /// `RawLogWriterPort`.
     public var preserveRawAudio: Bool
 
     public init(sensitivity: DetectionSensitivity = .medium, detectSleepTalking: Bool = true, preserveRawAudio: Bool = false) {
@@ -49,10 +49,10 @@ public actor RecordingSession {
   static let rawLogBatch = 20
 
   public private(set) var draft: RecordingDraft
-  private let capture: any AudioCapture
-  private let checkpoints: (any RecordingCheckpointStore)?
+  private let capture: any AudioCapturePort
+  private let checkpoints: (any RecordingCheckpointStorePort)?
   private let settings: Settings
-  private let rawLog: (any RawLogWriter)?
+  private let rawLog: (any RawLogWriterPort)?
   private var rawSamples: [SnoreSample] = []
   private var decimator = SampleDecimator<CaptureSample>()
   private let classifier: LiveSampleClassifier
@@ -83,10 +83,10 @@ public actor RecordingSession {
   /// `interrupter`: the Snore Interrupter, for brands that have it (over the
   /// same `capture`).
   public init(
-    capture: any AudioCapture,
+    capture: any AudioCapturePort,
     settings: Settings = Settings(),
-    checkpoints: (any RecordingCheckpointStore)? = nil,
-    rawLog: (any RawLogWriter)? = nil,
+    checkpoints: (any RecordingCheckpointStorePort)? = nil,
+    rawLog: (any RawLogWriterPort)? = nil,
     interrupter: SnoreInterrupter? = nil,
     start: Date = Date())
   {
@@ -260,7 +260,7 @@ public actor RecordingSession {
         if let clip { compress(clip, of: event.id) }
       case .snoreEventDiscarded:
         // A clip closed for the melody is left for the launch cleanup
-        // (`EnforceStorageLimits` removes files no night refers to).
+        // (`EnforceStorageLimitsUseCase` removes files no night refers to).
         closedClip = nil
         await capture.discardClip()
       case let .speechEventFinalized(event):

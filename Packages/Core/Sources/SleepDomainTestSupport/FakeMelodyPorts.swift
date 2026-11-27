@@ -2,10 +2,10 @@ import Foundation
 import SleepCore
 import SleepDomain
 
-/// A `MelodyPlayer` a test drives: it records what played, and `finish()`
+/// A `MelodyPlayerPort` a test drives: it records what played, and `finish()`
 /// ends the melody as its length or file would.
 @MainActor
-public final class FakeMelodyPlayer: MelodyPlayer {
+public final class FakeMelodyPlayer: MelodyPlayerPort {
   public struct Play: Equatable {
     public let url: URL
     public let loops: Bool
@@ -50,7 +50,7 @@ public final class FakeMelodyPlayer: MelodyPlayer {
 
 /// Recordings in memory; every melody has a file URL named after it.
 @MainActor
-public final class FakeMelodyStore: MelodyStore {
+public final class FakeMelodyStore: MelodyStorePort {
   public private(set) var saved: [Melody]
 
   public init(recordings: [Melody] = []) {
@@ -75,10 +75,10 @@ public final class FakeMelodyStore: MelodyStore {
   }
 }
 
-/// A `MelodyRecorder` a test drives: `reachLimit()` ends the take as the
+/// A `MelodyRecorderPort` a test drives: `reachLimit()` ends the take as the
 /// maximum length would.
 @MainActor
-public final class FakeMelodyRecorder: MelodyRecorder {
+public final class FakeMelodyRecorder: MelodyRecorderPort {
   public var permission = true
   public var elapsed: TimeInterval = 0
   public private(set) var isRecording = false

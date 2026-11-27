@@ -15,7 +15,7 @@ struct DeleteSessionTests {
     let repository = FakeSessionRepository([session])
     let files = FakeSessionFileStore()
 
-    try await DeleteSession(sessions: repository, files: files)(session.id)
+    try await DeleteSessionUseCase(sessions: repository, files: files)(session.id)
 
     #expect(await repository.deletedIDs == [session.id])
     #expect(await repository.sessions.isEmpty)
@@ -26,7 +26,7 @@ struct DeleteSessionTests {
     let files = FakeSessionFileStore()
     let id = UUID()
     await #expect(throws: SessionError.notFound(id)) {
-      try await DeleteSession(sessions: FakeSessionRepository(), files: files)(id)
+      try await DeleteSessionUseCase(sessions: FakeSessionRepository(), files: files)(id)
     }
     #expect(await files.removed.isEmpty)
   }
@@ -40,12 +40,12 @@ struct DeleteSessionTests {
     let files = FakeSessionFileStore()
 
     struct DiskFull: Error {}
-    let deleting = DeleteSession(sessions: FailingDelete(wrapping: repository), files: files)
+    let deleting = DeleteSessionUseCase(sessions: FailingDelete(wrapping: repository), files: files)
     await #expect(throws: DiskFull.self) { try await deleting(session.id) }
     #expect(await files.removed.isEmpty)
 
     /// Reads succeed; delete throws.
-    struct FailingDelete: SessionRepository {
+    struct FailingDelete: SessionRepositoryPort {
       let wrapping: FakeSessionRepository
       func save(_: Night, summary _: NightSummary, scoreVersion _: String) async throws {}
       func staleNightIDs(currentVersion _: String) async throws -> [Night.ID] { [] }
@@ -70,7 +70,7 @@ struct DeleteSessionsTests {
     let repository = FakeSessionRepository([first, second])
     let files = FakeSessionFileStore()
 
-    try await DeleteSessions(sessions: repository, files: files)([first.id, second.id])
+    try await DeleteSessionsUseCase(sessions: repository, files: files)([first.id, second.id])
 
     #expect(await repository.sessions.isEmpty)
     #expect(await Set(files.removed) == ["a.m4a", "b.m4a"])
@@ -85,7 +85,7 @@ struct DeleteSessionsTests {
     let files = FakeSessionFileStore()
 
     await #expect(throws: DiskFull.self) {
-      try await DeleteSessions(sessions: repository, files: files)([first.id, second.id])
+      try await DeleteSessionsUseCase(sessions: repository, files: files)([first.id, second.id])
     }
 
     #expect(await repository.sessions.count == 2)
@@ -106,7 +106,7 @@ struct LoadSessionDetailTests {
     ])
     let repository = FakeSessionRepository([session])
 
-    let detail = try await LoadSessionDetail(sessions: repository)(session.id)
+    let detail = try await LoadSessionDetailUseCase(sessions: repository)(session.id)
 
     #expect(detail.session == session)
     #expect(detail.summary == session.summary())
@@ -117,7 +117,7 @@ struct LoadSessionDetailTests {
 
   @Test func unknownNightThrowsNotFound() async {
     let id = UUID()
-    let load = LoadSessionDetail(sessions: FakeSessionRepository())
+    let load = LoadSessionDetailUseCase(sessions: FakeSessionRepository())
     await #expect(throws: SessionError.notFound(id)) { try await load(id) }
   }
 
@@ -127,7 +127,7 @@ struct LoadSessionDetailTests {
     let repository = FakeSessionRepository([session])
     let port = FakeSleepStageSource(stages: stages)
 
-    let detail = try #require(await EnrichNightWithStages(sessions: repository, sleepStages: port)(session))
+    let detail = try #require(await EnrichNightWithStagesUseCase(sessions: repository, sleepStages: port)(session))
 
     #expect(detail.session.sleepStages == stages)
     #expect(detail.summary.score == session.summary().score - 15)
@@ -145,7 +145,7 @@ struct LoadSessionDetailTests {
     let repository = FakeSessionRepository([session])
     let port = FakeSleepStageSource(stages: stages)
 
-    #expect(await EnrichNightWithStages(sessions: repository, sleepStages: port)(session) == nil)
+    #expect(await EnrichNightWithStagesUseCase(sessions: repository, sleepStages: port)(session) == nil)
     #expect(await port.requests.isEmpty)
     #expect(await repository.stageUpdates.isEmpty)
   }
@@ -153,8 +153,8 @@ struct LoadSessionDetailTests {
   @Test func noStagesOrAFailingSourceChangesNothing() async {
     let session = Sample.night()
     let repository = FakeSessionRepository([session])
-    #expect(await EnrichNightWithStages(sessions: repository, sleepStages: FakeSleepStageSource())(session) == nil)
-    #expect(await EnrichNightWithStages(sessions: repository, sleepStages: FakeSleepStageSource(fails: true))(session) == nil)
+    #expect(await EnrichNightWithStagesUseCase(sessions: repository, sleepStages: FakeSleepStageSource())(session) == nil)
+    #expect(await EnrichNightWithStagesUseCase(sessions: repository, sleepStages: FakeSleepStageSource(fails: true))(session) == nil)
     #expect(await repository.stageUpdates.isEmpty)
   }
 
@@ -167,7 +167,7 @@ struct LoadSessionDetailTests {
     await repository.failNextCall(with: DiskFull())
 
     let detail = try #require(
-      await EnrichNightWithStages(sessions: repository, sleepStages: FakeSleepStageSource(stages: stages))(session))
+      await EnrichNightWithStagesUseCase(sessions: repository, sleepStages: FakeSleepStageSource(stages: stages))(session))
 
     #expect(detail.session.sleepStages == stages)
     #expect(await repository.sessions[session.id]?.sleepStages.isEmpty == true)

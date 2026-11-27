@@ -555,7 +555,7 @@ final class TickClock {
 }
 
 /// A checkpoint store whose saves wait until the test opens it: a stuck disk.
-actor GatedCheckpointStore: RecordingCheckpointStore {
+actor GatedCheckpointStore: RecordingCheckpointStorePort {
   private(set) var saved: [Night] = []
   private var isOpen = false
   private var waiting: [CheckedContinuation<Void, Never>] = []

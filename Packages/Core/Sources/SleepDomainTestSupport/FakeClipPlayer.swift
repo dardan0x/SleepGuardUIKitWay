@@ -1,10 +1,10 @@
 import Foundation
 import SleepDomain
 
-/// A `ClipPlayer` that records what it was asked and lets a test finish the
+/// A `ClipPlayerPort` that records what it was asked and lets a test finish the
 /// clip, interrupt, or move time. Files are "loaded" from `durations`.
 @MainActor
-public final class FakeClipPlayer: ClipPlayer {
+public final class FakeClipPlayer: ClipPlayerPort {
   public enum Call: Equatable {
     case load(String)
     case play(from: TimeInterval, for: TimeInterval)

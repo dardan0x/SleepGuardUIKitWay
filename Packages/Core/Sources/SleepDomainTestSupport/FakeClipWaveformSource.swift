@@ -2,7 +2,7 @@ import Foundation
 import SleepDomain
 
 /// Answers with fixed bars and records which files were asked for.
-public actor FakeClipWaveformSource: ClipWaveformSource {
+public actor FakeClipWaveformSource: ClipWaveformSourcePort {
   public private(set) var requested: [String] = []
   private let bars: [Float]
 

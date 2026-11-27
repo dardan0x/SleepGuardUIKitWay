@@ -37,24 +37,24 @@ struct RecordingFactory {
   }
 
   /// The Snore Interrupter's sounds; `nil` in a brand without it.
-  var melodyStore: (any MelodyStore)? {
+  var melodyStore: (any MelodyStorePort)? {
     container.makeMelodyStore()?()
   }
 
   func makeInterrupterSettings(
-    choice: SnoreInterrupterChoice, store: any MelodyStore, routes: SnoreInterrupterRoutes) -> UIViewController
+    choice: SnoreInterrupterChoice, store: any MelodyStorePort, routes: SnoreInterrupterRoutes) -> UIViewController
   {
     SnoreInterrupterViewController(
       viewModel: SnoreInterrupterViewModel(choice: choice, store: store, routes: routes), theme: theme, chrome: chrome)
   }
 
-  func makeMelodyPicker(selectedID: Int, store: any MelodyStore, routes: MelodyPickerRoutes) -> UIViewController {
+  func makeMelodyPicker(selectedID: Int, store: any MelodyStorePort, routes: MelodyPickerRoutes) -> UIViewController {
     let viewModel = MelodyPickerViewModel(
       selectedID: selectedID, store: store, preview: container.makeMelodyPlayer()(true), routes: routes)
     return MelodyPickerViewController(viewModel: viewModel, theme: theme, chrome: chrome)
   }
 
-  func makeRecordMelody(store: any MelodyStore, done: @escaping @MainActor (Melody?) -> Void) -> UIViewController {
+  func makeRecordMelody(store: any MelodyStorePort, done: @escaping @MainActor (Melody?) -> Void) -> UIViewController {
     let viewModel = RecordMelodyViewModel(
       store: store, recorder: container.makeMelodyRecorder()(), playback: container.makeMelodyPlayer()(true), done: done)
     return RecordMelodyViewController(viewModel: viewModel, theme: theme, chrome: chrome)
@@ -62,14 +62,14 @@ struct RecordingFactory {
 
   /// A new microphone capture for one night (warmed up first when the night
   /// starts after a delay).
-  func makeCapture() -> any AudioCapture {
+  func makeCapture() -> any AudioCapturePort {
     container.makeAudioCapture()()
   }
 
   /// A night's model over `capture`, with the Settings choices and, in a
   /// brand that has it, the Snore Interrupter over the same capture. The raw
   /// recording is kept only in Debug builds, when switched on.
-  func makeModel(capture: any AudioCapture, preferences: AppPreferences) -> LiveRecordingModel {
+  func makeModel(capture: any AudioCapturePort, preferences: AppPreferences) -> LiveRecordingModel {
     #if DEBUG
     let preserveRawAudio = preferences.preserveRawAudio
     #else

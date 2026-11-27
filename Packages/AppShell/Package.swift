@@ -3,7 +3,7 @@ import PackageDescription
 
 /// The composition root below the app targets: UIKit lifecycle, coordinators,
 /// composers and the Factory container. The only package that imports
-/// Factory. It does not depend on `SleepHealth`: brands that use HealthKit
+/// Factory. It does not depend on `SleepHealthAdapter`: brands that use HealthKit
 /// link it themselves.
 let package = Package(
   name: "AppShell",
@@ -26,8 +26,8 @@ let package = Package(
       name: "AppShell",
       dependencies: [
         .product(name: "SleepDomain", package: "Core"),
-        .product(name: "SleepPersistence", package: "Adapters"),
-        .product(name: "SleepAudio", package: "Adapters"),
+        .product(name: "SleepPersistenceAdapter", package: "Adapters"),
+        .product(name: "SleepAudioAdapter", package: "Adapters"),
         .product(name: "ScreenKit", package: "Presentation"),
         .product(name: "HistoryFeature", package: "Features"),
         .product(name: "SessionDetailFeature", package: "Features"),

@@ -41,7 +41,7 @@ public extension Target {
       dependencies: [
         .package(product: "AppShell"),
         .package(product: "SleepGuardDesignKit"),
-      ] + (brand.usesHealthKit ? [.package(product: "SleepHealth")] : []),
+      ] + (brand.usesHealthKit ? [.package(product: "SleepHealthAdapter")] : []),
       settings: .settings(base: [
         "SWIFT_VERSION": "6.0",
         "SWIFT_STRICT_CONCURRENCY": "complete",

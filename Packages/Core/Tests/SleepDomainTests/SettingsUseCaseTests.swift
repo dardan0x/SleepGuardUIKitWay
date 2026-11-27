@@ -29,10 +29,10 @@ struct EnforceStorageLimitsTests {
 
   private static func enforce(
     _ nights: [Night], files: FakeSessionFileStore, preferences: FakePreferencesStore,
-    checkpoint: Night? = nil) async throws -> (EnforceStorageLimits.Report, FakeSessionRepository)
+    checkpoint: Night? = nil) async throws -> (EnforceStorageLimitsUseCase.Report, FakeSessionRepository)
   {
     let repository = FakeSessionRepository(nights)
-    let report = try await EnforceStorageLimits(
+    let report = try await EnforceStorageLimitsUseCase(
       sessions: repository, files: files, checkpoints: FakeRecordingCheckpointStore(checkpoint),
       preferences: preferences, now: { now })()
     return (report, repository)
@@ -84,7 +84,7 @@ struct EnforceStorageLimitsTests {
 
     let (report, _) = try await Self.enforce([night], files: files, preferences: Self.limits())
 
-    #expect(report == EnforceStorageLimits.Report())
+    #expect(report == EnforceStorageLimitsUseCase.Report())
     #expect(await files.removed.isEmpty)
   }
 }
@@ -95,7 +95,7 @@ struct DeleteAllDataTests {
     let files = FakeSessionFileStore(files: ["a.m4a": 1, "rawlog_x.jsonl": 1])
     let checkpoints = FakeRecordingCheckpointStore(Sample.night())
 
-    try await DeleteAllData(sessions: repository, files: files, checkpoints: checkpoints)()
+    try await DeleteAllDataUseCase(sessions: repository, files: files, checkpoints: checkpoints)()
 
     #expect(await repository.sessions.isEmpty)
     #expect(await files.files.isEmpty)
@@ -108,7 +108,7 @@ struct DeleteAllDataTests {
     await repository.failNextCall(with: Broken())
     let files = FakeSessionFileStore(files: ["a.m4a": 1])
     await #expect(throws: Broken.self) {
-      try await DeleteAllData(sessions: repository, files: files, checkpoints: FakeRecordingCheckpointStore())()
+      try await DeleteAllDataUseCase(sessions: repository, files: files, checkpoints: FakeRecordingCheckpointStore())()
     }
     #expect(await files.files.count == 1)
   }
@@ -122,7 +122,7 @@ struct CommitSessionHealthTests {
     let health = FakeHealthAccess()
     let night = Sample.night()
 
-    try await CommitSession(
+    try await CommitSessionUseCase(
       sessions: FakeSessionRepository(), checkpoints: FakeRecordingCheckpointStore(),
       health: health, preferences: FakePreferencesStore(preferences))(night)
 
